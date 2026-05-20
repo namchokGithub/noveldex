@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { ChapterWithCharacters } from '../../../../types'
 import ChapterEditor from './ChapterEditor'
 import { backLinkClassName, DashboardPage, SectionHeading } from '../../../ui'
+import { T } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -42,13 +43,13 @@ export default async function ChapterPage({
           href={`/novels/${id}`}
           className={backLinkClassName}
         >
-          ← Back to novel
+          ← <T k="nav.backToNovel" />
         </Link>
 
         <SectionHeading
-          eyebrow={`Chapter ${chapter.number}`}
+          eyebrow={<T k="chapter.pageEyebrow" values={{ number: chapter.number }} />}
           title={chapter.title}
-          description="Edit chapter summary, reading date, linked cast, and tags."
+          description={<T k="chapter.pageDescription" />}
         />
 
         <ChapterEditor chapter={chapter} novelId={id} />

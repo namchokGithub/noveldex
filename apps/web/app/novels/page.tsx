@@ -1,15 +1,9 @@
 import Link from "next/link";
 import type { Novel } from "../types";
 import AddNovelForm from "./AddNovelForm";
+import { T } from "@/components/i18n/I18nProvider";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
-
-const STATUS_LABELS: Record<Novel["status"], string> = {
-  reading: "Reading",
-  completed: "Completed",
-  dropped: "Dropped",
-  on_hold: "On Hold",
-};
 
 const STATUS_COLORS: Record<Novel["status"], string> = {
   reading: "bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200",
@@ -22,7 +16,7 @@ const STATUS_COLORS: Record<Novel["status"], string> = {
 function formatDate(value: string) {
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) return "Recently updated";
+  if (Number.isNaN(date.getTime())) return null;
 
   return new Intl.DateTimeFormat("en", {
     month: "short",
@@ -60,34 +54,34 @@ export default async function NovelsPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-3">
                 <div className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                  Dashboard
+                  <T k="novels.dashboard" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-3">
                     <h1 className="text-3xl font-semibold tracking-[-0.04em] text-stone-950 sm:text-4xl">
-                      NovelDex Library
+                      <T k="novels.libraryTitle" />
                     </h1>
                     <span className="rounded-full bg-stone-900 px-3 py-1 text-xs font-medium text-stone-50">
-                      {totalNovels} {totalNovels === 1 ? "novel" : "novels"}
+                      <T
+                        k={totalNovels === 1 ? "novels.count.one" : "novels.count.other"}
+                        values={{ count: totalNovels }}
+                      />
                     </span>
                   </div>
                   <p className="max-w-2xl text-sm leading-6 text-stone-600 sm:text-base">
-                    Track reading progress, jump into chapter maps, and keep
-                    every story in one clean dashboard.
+                    <T k="novels.heroDescription" />
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col gap-3 sm:min-w-72 sm:max-w-sm sm:self-stretch lg:items-end">
-                {/* <div className="flex justify-start lg:justify-end">
+                <div className="flex justify-start lg:justify-end">
                   <AddNovelForm />
-                </div> */}
+                </div>
                 <div className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/80 px-4 py-3 text-sm text-stone-500 shadow-sm">
                   <div>
-                    <p className="font-medium text-stone-700">Quick search</p>
-                    <p className="text-xs text-stone-500">
-                      Open command palette with Cmd/Ctrl + K
-                    </p>
+                    <p className="font-medium text-stone-700"><T k="novels.quickSearch" /></p>
+                    <p className="text-xs text-stone-500"><T k="novels.quickSearchHelp" /></p>
                   </div>
                   <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600">
                     ⌘K
@@ -100,30 +94,30 @@ export default async function NovelsPage() {
               <aside className="rounded-[22px] border border-stone-200 bg-stone-50/90 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
                 <div className="mb-5 space-y-1">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                    Collection
+                    <T k="novels.collection" />
                   </p>
                   <h2 className="text-lg font-semibold tracking-[-0.03em] text-stone-900">
-                    Reading snapshot
+                    <T k="novels.readingSnapshot" />
                   </h2>
                 </div>
 
                 <div className="space-y-3">
                   <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
-                      Active now
+                      <T k="novels.activeNow" />
                     </p>
                     <p className="mt-2 text-3xl font-semibold tracking-tighter text-stone-950">
                       {readingCount}
                     </p>
                     <p className="mt-1 text-sm text-stone-500">
-                      Stories currently in progress
+                      <T k="novels.inProgress" />
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-stone-400">
-                        Done
+                        <T k="novels.done" />
                       </p>
                       <p className="mt-2 text-xl font-semibold text-stone-900">
                         {completedCount}
@@ -131,7 +125,7 @@ export default async function NovelsPage() {
                     </div>
                     <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-stone-400">
-                        On hold
+                        <T k="novels.onHold" />
                       </p>
                       <p className="mt-2 text-xl font-semibold text-stone-900">
                         {pausedCount}
@@ -142,20 +136,20 @@ export default async function NovelsPage() {
 
                 <div className="mt-6 border-t border-stone-200 pt-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                    Workflow
+                    <T k="novels.workflow" />
                   </p>
                   <ul className="mt-3 space-y-3 text-sm text-stone-600">
                     <li className="flex gap-3">
                       <span className="mt-0.5 h-2.5 w-2.5 rounded-full bg-sky-500" />
-                      Open novel for chapters, characters, timeline.
+                      <T k="novels.workflow.openNovel" />
                     </li>
                     <li className="flex gap-3">
                       <span className="mt-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                      Keep status badges updated while reading.
+                      <T k="novels.workflow.keepStatus" />
                     </li>
                     <li className="flex gap-3">
                       <span className="mt-0.5 h-2.5 w-2.5 rounded-full bg-amber-500" />
-                      Use search palette for fast recall across story notes.
+                      <T k="novels.workflow.search" />
                     </li>
                   </ul>
                 </div>
@@ -165,24 +159,19 @@ export default async function NovelsPage() {
                 {novels === null ? (
                   <div className="rounded-[22px] border border-rose-200 bg-rose-50 p-8 text-center shadow-sm">
                     <p className="text-base font-semibold text-rose-700">
-                      Failed to load novels
+                      <T k="novels.failedTitle" />
                     </p>
-                    <p className="mt-2 text-sm text-rose-600">
-                      Check API server, then refresh page.
-                    </p>
+                    <p className="mt-2 text-sm text-rose-600"><T k="novels.failedBody" /></p>
                   </div>
                 ) : novels.length === 0 ? (
                   <div className="flex min-h-105 flex-col items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center shadow-sm">
                     <div className="mb-4 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                      Empty shelf
+                      <T k="novels.emptyEyebrow" />
                     </div>
                     <h2 className="text-2xl font-semibold tracking-[-0.04em] text-stone-900">
-                      No novels yet
+                      <T k="novels.emptyTitle" />
                     </h2>
-                    <p className="mt-3 max-w-md text-sm leading-6 text-stone-600">
-                      Start collection with first title. Existing add flow
-                      unchanged.
-                    </p>
+                    <p className="mt-3 max-w-md text-sm leading-6 text-stone-600"><T k="novels.emptyBody" /></p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -201,7 +190,7 @@ export default async function NovelsPage() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
-                                  {novel.author || "Unknown author"}
+                                  {novel.author || <T k="novels.unknownAuthor" />}
                                 </p>
                                 <h2 className="mt-1 line-clamp-2 text-lg font-semibold leading-snug tracking-[-0.03em] text-stone-950">
                                   {novel.title}
@@ -211,31 +200,31 @@ export default async function NovelsPage() {
 
                             <span
                               className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_COLORS[novel.status]}`}>
-                              {STATUS_LABELS[novel.status]}
+                              <T k={`status.${novel.status}` as const} />
                             </span>
                           </div>
 
                           <div className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
-                              Overview
+                              <T k="common.overview" />
                             </p>
                             <p className="mt-2 line-clamp-4 text-sm leading-6 text-stone-600">
                               {novel.description ||
-                                "No description yet. Open novel to start mapping chapters and timeline details."}
+                                <T k="novels.noDescription" />}
                             </p>
                           </div>
 
                           <div className="mt-auto flex items-center justify-between gap-3 border-t border-stone-200/80 pt-4 text-sm text-stone-500">
                             <div>
                               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
-                                Updated
+                                <T k="common.updated" />
                               </p>
                               <p className="mt-1 font-medium text-stone-700">
-                                {formatDate(novel.updated_at)}
+                                {formatDate(novel.updated_at) ?? <T k="novels.recentlyUpdated" />}
                               </p>
                             </div>
                             <span className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-3 py-1.5 text-xs font-medium text-stone-50 transition group-hover:bg-stone-800">
-                              Open novel
+                              <T k="novels.openNovel" />
                               <span aria-hidden="true">→</span>
                             </span>
                           </div>

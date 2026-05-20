@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Novel, Chapter, Character, Tag } from '../../types'
 import AddChapterForm from './AddChapterForm'
 import ChapterListWithFilters from './ChapterListWithFilters'
+import { T } from '@/components/i18n/I18nProvider'
 import {
   backLinkClassName,
   cardClassName,
@@ -15,13 +16,6 @@ import {
 } from '../ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
-
-const STATUS_LABELS: Record<Novel['status'], string> = {
-  reading: 'Reading',
-  completed: 'Completed',
-  dropped: 'Dropped',
-  on_hold: 'On Hold',
-}
 
 async function getNovel(id: string): Promise<Novel | null> {
   try {
@@ -104,15 +98,15 @@ export default async function NovelPage({
           href="/novels"
           className={backLinkClassName}
         >
-          ← All novels
+          ← <T k="nav.allNovels" />
         </Link>
 
         <SectionHeading
-          eyebrow="Novel"
+          eyebrow={<T k="novel.eyebrow" />}
           title={novel.title}
           description={
             novel.description ||
-            'Story workspace for chapters, timeline markers, and character tracking.'
+            <T k="novel.workspaceFallback" />
           }
           action={<AddChapterForm novelId={id} />}
         />
@@ -122,14 +116,14 @@ export default async function NovelPage({
             <div className="space-y-5">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                  Overview
+                  <T k="common.overview" />
                 </p>
                 <div className="mt-3 space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusColorClassNames[novel.status]}`}
                     >
-                      {STATUS_LABELS[novel.status]}
+                      <T k={`status.${novel.status}` as const} />
                     </span>
                     {novel.author ? (
                       <span className={chipClassName}>{novel.author}</span>
@@ -138,13 +132,13 @@ export default async function NovelPage({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-stone-400">
-                        Chapters
+                        <T k="novel.chapters" />
                       </p>
                       <p className="mt-2 text-2xl font-semibold text-stone-900">{sorted.length}</p>
                     </div>
                     <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-stone-400">
-                        Read
+                        <T k="novel.read" />
                       </p>
                       <p className="mt-2 text-2xl font-semibold text-stone-900">{readCount}</p>
                     </div>
@@ -154,25 +148,25 @@ export default async function NovelPage({
 
               <div className="border-t border-stone-200 pt-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                  Explore
+                  <T k="novel.explore" />
                 </p>
                 <div className="mt-3 flex flex-col gap-3">
                   <Link
                     href={`/novels/${id}/characters`}
                     className={`${cardClassName} p-4 transition hover:border-stone-300 hover:bg-white`}
                   >
-                    <p className="text-sm font-semibold text-stone-900">Characters</p>
+                    <p className="text-sm font-semibold text-stone-900"><T k="novel.characters" /></p>
                     <p className="mt-1 text-sm text-stone-500">
-                      {characters.length} tracked cast members
+                      <T k="novel.trackedCast" values={{ count: characters.length }} />
                     </p>
                   </Link>
                   <Link
                     href={`/novels/${id}/timeline`}
                     className={`${cardClassName} p-4 transition hover:border-stone-300 hover:bg-white`}
                   >
-                    <p className="text-sm font-semibold text-stone-900">Timeline</p>
+                    <p className="text-sm font-semibold text-stone-900"><T k="novel.timeline" /></p>
                     <p className="mt-1 text-sm text-stone-500">
-                      Plot sequence and in-world date rail
+                      <T k="novel.timelineHelp" />
                     </p>
                   </Link>
                 </div>
@@ -185,10 +179,10 @@ export default async function NovelPage({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                    Chapters
+                    <T k="novel.chapters" />
                   </p>
                   <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                    Reading structure
+                    <T k="novel.readingStructure" />
                   </h2>
                 </div>
                 <div className="text-right text-sm text-stone-500">
@@ -199,7 +193,7 @@ export default async function NovelPage({
 
             {sorted.length === 0 ? (
               <div className="flex min-h-[260px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
-                No chapters yet.
+                <T k="novel.noChapters" />
               </div>
             ) : (
               <ChapterListWithFilters

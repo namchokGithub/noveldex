@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SearchPalette from "@/components/SearchPalette";
+import { I18nProvider } from "@/components/i18n/I18nProvider";
+import LanguageToggle from "@/components/i18n/LanguageToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +31,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        <SearchPalette />
+        <I18nProvider>
+          <LanguageToggle />
+          {children}
+          <SearchPalette />
+        </I18nProvider>
       </body>
     </html>
   );

@@ -9,6 +9,7 @@ import type {
   SearchEventResult,
   SearchResult,
 } from '@/app/types'
+import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -18,12 +19,6 @@ type SearchItem =
   | { section: 'chapters'; id: string; href: string; data: SearchChapterResult }
   | { section: 'characters'; id: string; href: string; data: SearchCharacterResult }
   | { section: 'events'; id: string; href: string; data: SearchEventResult }
-
-const SECTION_LABELS: Record<SearchSection, string> = {
-  chapters: 'CHAPTERS',
-  characters: 'CHARACTERS',
-  events: 'EVENTS',
-}
 
 const EMPTY_RESULTS: SearchResult = {
   chapters: [],
@@ -40,6 +35,7 @@ function getNovelIdFromPath(pathname: string): string | null {
 export default function SearchPalette() {
   const pathname = usePathname()
   const router = useRouter()
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const novelId = getNovelIdFromPath(pathname)
 
@@ -214,6 +210,11 @@ export default function SearchPalette() {
   if (!isOpen) return null
 
   const hasResults = items.length > 0
+  const sectionLabels: Record<SearchSection, string> = {
+    chapters: t('search.section.chapters'),
+    characters: t('search.section.characters'),
+    events: t('search.section.events'),
+  }
 
   return (
     <div
@@ -221,7 +222,7 @@ export default function SearchPalette() {
       onClick={closePalette}
       role="dialog"
       aria-modal="true"
-      aria-label="Search palette"
+      aria-label={t('search.ariaLabel')}
     >
       <div
         className="mx-auto flex max-h-[60vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl"
@@ -242,7 +243,7 @@ export default function SearchPalette() {
                 }
               }}
               onKeyDown={onInputKeyDown}
-              placeholder={novelId ? 'Search chapters, characters...' : 'Open a novel to search'}
+              placeholder={novelId ? t('search.placeholder') : t('search.placeholderNoNovel')}
               disabled={!novelId}
               className="w-full bg-transparent text-sm text-white outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
             />
@@ -251,29 +252,29 @@ export default function SearchPalette() {
 
         <div className="overflow-y-auto">
           {!novelId && (
-            <p className="px-4 py-6 text-sm text-gray-500">Open a novel to search.</p>
+            <p className="px-4 py-6 text-sm text-gray-500">{t('search.openNovel')}</p>
           )}
 
           {novelId && trimmedQuery.length > 0 && trimmedQuery.length < 2 && (
-            <p className="px-4 py-6 text-sm text-gray-500">Type at least 2 characters.</p>
+            <p className="px-4 py-6 text-sm text-gray-500">{t('search.minChars')}</p>
           )}
 
           {novelId && loading && (
-            <p className="px-4 py-6 text-sm text-gray-500">Searching…</p>
+            <p className="px-4 py-6 text-sm text-gray-500">{t('search.searching')}</p>
           )}
 
           {novelId && !loading && trimmedQuery.length >= 2 && !hasResults && (
-            <p className="px-4 py-6 text-sm text-gray-500">No matches found.</p>
+            <p className="px-4 py-6 text-sm text-gray-500">{t('search.noMatches')}</p>
           )}
 
-          {(Object.keys(SECTION_LABELS) as SearchSection[]).map((section) => {
+          {(Object.keys(sectionLabels) as SearchSection[]).map((section) => {
             const sectionItems = items.filter((item) => item.section === section)
             if (sectionItems.length === 0) return null
 
             return (
               <section key={section} className="border-t border-gray-900 first:border-t-0">
                 <h2 className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
-                  {SECTION_LABELS[section]}
+                  {sectionLabels[section]}
                 </h2>
                 <ul>
                   {sectionItems.map((item) => {

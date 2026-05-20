@@ -11,6 +11,7 @@ import {
   smallLabelClassName,
   tagClassName,
 } from '../../../ui'
+import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -21,6 +22,7 @@ export default function ChapterEditor({
   chapter: ChapterWithCharacters
   novelId: string
 }) {
+  const { t } = useI18n()
   const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -95,7 +97,7 @@ export default function ChapterEditor({
       const body = await res.json()
       setAllTags((body.data as Tag[]) ?? [])
     } catch {
-      setTagError('Network error. Please try again.')
+      setTagError(t('common.networkError'))
     } finally {
       setTagLoading(false)
     }
@@ -154,7 +156,7 @@ export default function ChapterEditor({
       setTagQuery('')
       setTagPickerOpen(false)
     } catch (error) {
-      setTagError(error instanceof Error ? error.message : 'Failed to add tag.')
+      setTagError(error instanceof Error ? error.message : t('chapter.failedAddTag'))
     } finally {
       setTagSaving(false)
     }
@@ -175,7 +177,7 @@ export default function ChapterEditor({
       }
       setTags((current) => current.filter((tag) => tag.id !== tagId))
     } catch {
-      setTagError('Network error. Please try again.')
+      setTagError(t('common.networkError'))
     } finally {
       setTagSaving(false)
     }
@@ -200,7 +202,7 @@ export default function ChapterEditor({
       }
       router.refresh()
     } catch {
-      setSummaryError('Network error. Please try again.')
+      setSummaryError(t('common.networkError'))
     } finally {
       setSummarySaving(false)
     }
@@ -225,7 +227,7 @@ export default function ChapterEditor({
       }
       router.refresh()
     } catch {
-      setReadAtError('Network error. Please try again.')
+      setReadAtError(t('common.networkError'))
     } finally {
       setReadAtSaving(false)
     }
@@ -234,7 +236,7 @@ export default function ChapterEditor({
   return (
     <div className="flex flex-col gap-8">
       <div className={cardClassName}>
-        <label className={smallLabelClassName}>Summary</label>
+        <label className={smallLabelClassName}>{t('addChapter.summary')}</label>
         <div className="relative">
           <textarea
             ref={textareaRef}
@@ -243,7 +245,7 @@ export default function ChapterEditor({
             onKeyUp={handleKeyUp}
             rows={6}
             className={`${inputClassName} min-h-[180px]`}
-            placeholder="Chapter summary"
+            placeholder={t('addChapter.summaryPlaceholder')}
           />
           {suggestion && suggestion.names.length > 0 && (
             <ul className="absolute left-0 top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg">
@@ -268,14 +270,14 @@ export default function ChapterEditor({
             disabled={summarySaving}
             className={primaryButtonClassName}
           >
-            {summarySaving ? 'Saving…' : 'Save summary'}
+            {summarySaving ? t('common.saving') : t('chapter.saveSummary')}
           </button>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className={cardClassName}>
-          <label className={smallLabelClassName}>Date Read</label>
+          <label className={smallLabelClassName}>{t('addChapter.dateRead')}</label>
           <input
             type="date"
             value={readAt}
@@ -289,17 +291,17 @@ export default function ChapterEditor({
               disabled={readAtSaving}
               className={primaryButtonClassName}
             >
-              {readAtSaving ? 'Saving…' : 'Save date'}
+              {readAtSaving ? t('common.saving') : t('chapter.saveDate')}
             </button>
           </div>
         </div>
 
         <div className={cardClassName}>
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-            Characters
+            {t('chapter.characters')}
           </h2>
           {chapter.characters.length === 0 ? (
-            <p className="text-sm text-stone-500">No characters linked yet.</p>
+            <p className="text-sm text-stone-500">{t('chapter.noLinkedCharacters')}</p>
           ) : (
             <ul className="flex flex-wrap gap-2">
               {chapter.characters.map(char => (
@@ -319,7 +321,7 @@ export default function ChapterEditor({
       </div>
 
       <div className={cardClassName}>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">Tags</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">{t('chapter.tags')}</h2>
         <div className="flex flex-wrap items-center gap-2">
           {tags.map((tag) => (
             <span
@@ -332,7 +334,7 @@ export default function ChapterEditor({
                 onClick={() => handleRemoveTag(tag.id)}
                 disabled={tagSaving}
                 className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
-                aria-label={`Remove ${tag.name}`}
+                aria-label={t('chapter.removeTag', { name: tag.name })}
               >
                 ×
               </button>
@@ -348,7 +350,7 @@ export default function ChapterEditor({
               }}
               className="rounded-full border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900"
             >
-              + Add tag
+              {t('chapter.addTag')}
             </button>
           ) : (
             <div className="w-full max-w-sm rounded-[22px] border border-stone-200 bg-stone-50/90 p-3 shadow-sm">
@@ -365,11 +367,11 @@ export default function ChapterEditor({
                     setTagQuery('')
                   }
                 }}
-                placeholder="Add tag"
+                placeholder={t('chapter.addTagPlaceholder')}
                 className={inputClassName}
               />
               <div className="mt-2 max-h-40 overflow-y-auto">
-                {tagLoading && <p className="text-xs text-stone-500">Loading tags…</p>}
+                {tagLoading && <p className="text-xs text-stone-500">{t('chapter.loadingTags')}</p>}
                 {!tagLoading && filteredTagOptions.length > 0 && (
                   <ul className="space-y-1">
                     {filteredTagOptions.map((tag) => (
@@ -387,7 +389,7 @@ export default function ChapterEditor({
                 )}
                 {!tagLoading && filteredTagOptions.length === 0 && (
                   <p className="text-xs text-stone-500">
-                    {tagQuery.trim() ? 'Press Enter to create this tag.' : 'No more tags available.'}
+                    {tagQuery.trim() ? t('chapter.createTagHint') : t('chapter.noMoreTags')}
                   </p>
                 )}
               </div>
@@ -400,7 +402,7 @@ export default function ChapterEditor({
                   }}
                   className={secondaryButtonClassName}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="button"
@@ -408,7 +410,7 @@ export default function ChapterEditor({
                   disabled={tagSaving || !tagQuery.trim()}
                   className={primaryButtonClassName}
                 >
-                  Add
+                  {t('common.add')}
                 </button>
               </div>
             </div>

@@ -16,6 +16,7 @@ import {
   timelineDotClassName,
   timelineRailClassName,
 } from '../../ui'
+import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -64,6 +65,7 @@ export default function TimelinePage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  const { t } = useI18n()
   const { id: novelId } = use(params)
 
   const [events, setEvents] = useState<NovelEvent[]>([])
@@ -163,7 +165,7 @@ export default function TimelinePage({
       setShowAddForm(false)
       await loadEvents()
     } catch {
-      setAddError('Network error. Please try again.')
+      setAddError(t('common.networkError'))
     } finally {
       setAddSaving(false)
     }
@@ -206,14 +208,14 @@ export default function TimelinePage({
       setEditingId(null)
       await loadEvents()
     } catch {
-      setEditError('Network error. Please try again.')
+      setEditError(t('common.networkError'))
     } finally {
       setEditSaving(false)
     }
   }
 
   async function handleDelete(eventId: string) {
-    if (!confirm('Delete this event?')) return
+    if (!confirm(t('timeline.deleteConfirm'))) return
     setDeletingId(eventId)
     try {
       await fetch(`${BASE}/api/v1/novels/${novelId}/events/${eventId}`, { method: 'DELETE' })
@@ -235,19 +237,19 @@ export default function TimelinePage({
           href={`/novels/${novelId}`}
           className={backLinkClassName}
         >
-          ← Back to novel
+          ← {t('nav.backToNovel')}
         </Link>
 
         <SectionHeading
-          eyebrow="Timeline"
-          title="Story sequence"
-          description="Manage major events, link them to chapters, and filter timeline by character."
+          eyebrow={t('timeline.eyebrow')}
+          title={t('timeline.title')}
+          description={t('timeline.description')}
           action={
             <button
               onClick={() => setShowAddForm((v) => !v)}
               className={showAddForm ? secondaryButtonClassName : primaryButtonClassName}
             >
-              {showAddForm ? 'Cancel' : '+ Add event'}
+              {showAddForm ? t('common.cancel') : t('timeline.addEventToggle')}
             </button>
           }
         />
@@ -258,7 +260,7 @@ export default function TimelinePage({
             className={cardClassName}
           >
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-              New event
+              {t('timeline.newEvent')}
             </h2>
             <EventFormFields form={addForm} onChange={setAddForm} chapters={chapters} />
             {addError && <p className="mt-2 text-sm text-rose-600">{addError}</p>}
@@ -271,14 +273,14 @@ export default function TimelinePage({
                 }}
                 className={secondaryButtonClassName}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={addSaving}
                 className={primaryButtonClassName}
               >
-                {addSaving ? 'Saving…' : 'Add event'}
+                {addSaving ? t('common.saving') : t('timeline.addEvent')}
               </button>
             </div>
           </form>
@@ -290,7 +292,7 @@ export default function TimelinePage({
               onClick={() => setFilterOpen((v) => !v)}
               className={secondaryButtonClassName}
             >
-              Filter by character
+              {t('timeline.filterByCharacter')}
               {filterChars.length > 0 && (
                 <span className="rounded-full bg-stone-900 px-2 py-0.5 text-xs text-stone-50">
                   {filterChars.length}
@@ -319,7 +321,7 @@ export default function TimelinePage({
                     onClick={() => setFilterChars([])}
                     className="w-full border-t border-stone-200 px-3 py-2 text-left text-xs text-stone-500 hover:text-stone-900"
                   >
-                    Clear filter
+                    {t('timeline.clearFilter')}
                   </button>
                 )}
               </div>
@@ -329,11 +331,11 @@ export default function TimelinePage({
 
         {loading ? (
           <div className="flex min-h-[260px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
-            Loading…
+            {t('common.loading')}
           </div>
         ) : displayed.length === 0 ? (
           <div className="flex min-h-[260px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
-            No events yet.
+            {t('timeline.noEvents')}
           </div>
         ) : (
           <div className="relative">
@@ -363,14 +365,14 @@ export default function TimelinePage({
                           onClick={() => setEditingId(null)}
                           className={secondaryButtonClassName}
                         >
-                          Cancel
+                          {t('common.cancel')}
                         </button>
                         <button
                           type="submit"
                           disabled={editSaving}
                           className={primaryButtonClassName}
                         >
-                          {editSaving ? 'Saving…' : 'Save'}
+                          {editSaving ? t('common.saving') : t('common.save')}
                         </button>
                       </div>
                     </form>
@@ -384,7 +386,7 @@ export default function TimelinePage({
                           <button
                             onClick={() => startEdit(ev)}
                             className={iconButtonClassName}
-                            aria-label="Edit"
+                            aria-label={t('common.edit')}
                           >
                             ✏
                           </button>
@@ -392,7 +394,7 @@ export default function TimelinePage({
                             onClick={() => handleDelete(ev.id)}
                             disabled={deletingId === ev.id}
                             className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
-                            aria-label="Delete"
+                            aria-label={t('common.delete')}
                           >
                             ×
                           </button>
@@ -461,6 +463,8 @@ function EventFormFields({
   onChange: (f: FormState) => void
   chapters: ChapterOption[]
 }) {
+  const { t } = useI18n()
+
   function set(key: keyof FormState) {
     return (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -470,28 +474,28 @@ function EventFormFields({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label className={smallLabelClassName}>Title *</label>
+        <label className={smallLabelClassName}>{t('common.titleRequired')}</label>
         <input
           value={form.title}
           onChange={set('title')}
           required
           className={inputClassName}
-          placeholder="Event title"
+          placeholder={t('timeline.field.eventTitlePlaceholder')}
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={smallLabelClassName}>Story date *</label>
+          <label className={smallLabelClassName}>{t('timeline.field.storyDate')}</label>
           <input
             value={form.story_date}
             onChange={set('story_date')}
             required
             className={inputClassName}
-            placeholder="e.g. Year 1349"
+            placeholder={t('timeline.field.storyDatePlaceholder')}
           />
         </div>
         <div>
-          <label className={smallLabelClassName}>Sort order *</label>
+          <label className={smallLabelClassName}>{t('timeline.field.sortOrder')}</label>
           <input
             type="number"
             value={form.sort_order}
@@ -502,24 +506,24 @@ function EventFormFields({
         </div>
       </div>
       <div>
-        <label className={smallLabelClassName}>Description</label>
+        <label className={smallLabelClassName}>{t('common.description')}</label>
         <textarea
           value={form.description}
           onChange={set('description')}
           rows={2}
           className={inputClassName}
-          placeholder="Optional description"
+          placeholder={t('timeline.field.optionalDescription')}
         />
       </div>
       {chapters.length > 0 && (
         <div>
-          <label className={smallLabelClassName}>Chapter</label>
+          <label className={smallLabelClassName}>{t('timeline.field.chapter')}</label>
           <select
             value={form.chapter_id}
             onChange={set('chapter_id')}
             className={inputClassName}
           >
-            <option value="">— none —</option>
+            <option value="">{t('timeline.field.noneOption')}</option>
             {chapters.map((ch) => (
               <option key={ch.id} value={ch.id}>
                 Ch.{ch.number} · {ch.title}

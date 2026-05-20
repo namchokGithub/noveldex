@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Novel, Character } from '../../../types'
 import AddCharacterForm from './AddCharacterForm'
+import { T } from '@/components/i18n/I18nProvider'
 import {
   backLinkClassName,
   DashboardPage,
@@ -58,15 +59,15 @@ export default async function CharactersPage({
         </Link>
 
         <SectionHeading
-          eyebrow="Characters"
-          title="Cast directory"
-          description="Browse tracked cast, role labels, and chapter appearance counts."
+          eyebrow={<T k="characters.eyebrow" />}
+          title={<T k="characters.directoryTitle" />}
+          description={<T k="characters.directoryDescription" />}
           action={<AddCharacterForm novelId={id} />}
         />
 
         {characters.length === 0 ? (
           <div className="flex min-h-[260px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
-            No characters yet.
+            <T k="characters.noCharacters" />
           </div>
         ) : (
           <ul className={`${listClassName} divide-y divide-stone-200`}>
@@ -93,11 +94,14 @@ export default async function CharactersPage({
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleColorClassNames[char.role] ?? roleColorClassNames.minor}`}
                     >
-                      {char.role}
+                      <T k={`role.${char.role}` as const} />
                     </span>
                   </div>
                   <span className="text-xs text-stone-500">
-                    {char.chapter_count} {char.chapter_count === 1 ? 'chapter' : 'chapters'}
+                    <T
+                      k={char.chapter_count === 1 ? 'characters.chapter.one' : 'characters.chapter.other'}
+                      values={{ count: char.chapter_count }}
+                    />
                   </span>
                 </Link>
               </li>

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 
 import type { Chapter, Tag } from '@/app/types'
+import { useI18n } from '@/components/i18n/I18nProvider'
 import {
   cardClassName,
   inputClassName,
@@ -21,6 +22,7 @@ export default function ChapterListWithFilters({
   chapters: Chapter[]
   availableTags: Tag[]
 }) {
+  const { t } = useI18n()
   const [selectedTags, setSelectedTags] = useState<Tag[]>([])
 
   const remainingTags = useMemo(
@@ -49,7 +51,7 @@ export default function ChapterListWithFilters({
     <>
       <div className={cardClassName}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-stone-700">Tags:</span>
+          <span className="text-sm font-medium text-stone-700">{t('chapter.filters.tags')}</span>
           {selectedTags.map((tag) => (
             <button
               key={tag.id}
@@ -67,7 +69,7 @@ export default function ChapterListWithFilters({
             disabled={remainingTags.length === 0}
             className={`${inputClassName} w-auto min-w-40 rounded-full py-2 text-xs disabled:cursor-not-allowed disabled:text-stone-400`}
           >
-            <option value="">+ Add tag filter</option>
+            <option value="">{t('chapter.filters.addTag')}</option>
             {remainingTags.map((tag) => (
               <option key={tag.id} value={tag.id}>
                 {tag.name}
@@ -79,7 +81,7 @@ export default function ChapterListWithFilters({
 
       {filteredChapters.length === 0 ? (
         <div className="flex min-h-[220px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
-          No chapters match selected tags.
+          {t('chapter.filters.noMatch')}
         </div>
       ) : (
         <ul className={`${listClassName} divide-y divide-stone-200`}>

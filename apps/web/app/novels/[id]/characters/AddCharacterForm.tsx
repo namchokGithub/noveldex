@@ -10,10 +10,12 @@ import {
   primaryButtonClassName,
   smallLabelClassName,
 } from '../../ui'
+import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 export default function AddCharacterForm({ novelId }: { novelId: string }) {
+  const { t } = useI18n()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +52,7 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
       setOpen(false)
       router.refresh()
     } catch {
-      setError('Network error. Please try again.')
+      setError(t('common.networkError'))
     } finally {
       setSubmitting(false)
     }
@@ -62,7 +64,7 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
         onClick={() => setOpen(true)}
         className={primaryButtonClassName}
       >
-        Add character
+        {t('addCharacter.button')}
       </button>
     )
   }
@@ -72,50 +74,50 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
       <div className={modalPanelClassName}>
         <div className="mb-5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-            Characters
+            {t('addCharacter.eyebrow')}
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-            Add character
+            {t('addCharacter.title')}
           </h2>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className={smallLabelClassName}>Name *</label>
+            <label className={smallLabelClassName}>{t('addCharacter.nameRequired')}</label>
             <input
               name="name"
               required
               className={inputClassName}
-              placeholder="Character name"
+              placeholder={t('addCharacter.namePlaceholder')}
             />
           </div>
           <div>
-            <label className={smallLabelClassName}>Role</label>
+            <label className={smallLabelClassName}>{t('addCharacter.role')}</label>
             <select
               name="role"
               defaultValue="minor"
               className={inputClassName}
             >
-              <option value="protagonist">Protagonist</option>
-              <option value="antagonist">Antagonist</option>
-              <option value="supporting">Supporting</option>
-              <option value="minor">Minor</option>
+              <option value="protagonist">{t('role.protagonist')}</option>
+              <option value="antagonist">{t('role.antagonist')}</option>
+              <option value="supporting">{t('role.supporting')}</option>
+              <option value="minor">{t('role.minor')}</option>
             </select>
           </div>
           <div>
-            <label className={smallLabelClassName}>Aliases (comma-separated)</label>
+            <label className={smallLabelClassName}>{t('addCharacter.aliases')}</label>
             <input
               name="aliases"
               className={inputClassName}
-              placeholder="Alias 1, Alias 2"
+              placeholder={t('addCharacter.aliasesPlaceholder')}
             />
           </div>
           <div>
-            <label className={smallLabelClassName}>Description</label>
+            <label className={smallLabelClassName}>{t('common.description')}</label>
             <textarea
               name="description"
               rows={3}
               className={inputClassName}
-              placeholder="Character description"
+              placeholder={t('addCharacter.descriptionPlaceholder')}
             />
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
@@ -125,14 +127,14 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
               onClick={() => { setOpen(false); setError(null) }}
               className={ghostButtonClassName}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className={primaryButtonClassName}
             >
-              {submitting ? 'Saving…' : 'Save'}
+              {submitting ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </form>

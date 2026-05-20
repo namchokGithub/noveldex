@@ -15,6 +15,7 @@ import {
   secondaryButtonClassName,
   smallLabelClassName,
 } from '../../../ui'
+import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -27,6 +28,7 @@ export default function CharacterDetail({
   character: Character
   novelId: string
 }) {
+  const { t } = useI18n()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -62,7 +64,7 @@ export default function CharacterDetail({
       setEditing(false)
       router.refresh()
     } catch {
-      setError('Network error. Please try again.')
+      setError(t('common.networkError'))
     } finally {
       setSaving(false)
     }
@@ -83,7 +85,7 @@ export default function CharacterDetail({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-              Character profile
+              {t('character.profile')}
             </div>
             {editing ? (
               <input
@@ -103,14 +105,14 @@ export default function CharacterDetail({
                 onClick={cancel}
                 className={ghostButtonClassName}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={save}
                 disabled={saving}
                 className={primaryButtonClassName}
               >
-                {saving ? 'Saving…' : 'Save'}
+                {saving ? t('common.saving') : t('common.save')}
               </button>
             </div>
           ) : (
@@ -118,7 +120,7 @@ export default function CharacterDetail({
               onClick={() => setEditing(true)}
               className={secondaryButtonClassName}
             >
-              Edit
+              {t('common.edit')}
             </button>
           )}
         </div>
@@ -128,7 +130,7 @@ export default function CharacterDetail({
 
       <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className={cardClassName}>
-          <p className={smallLabelClassName}>Role</p>
+          <p className={smallLabelClassName}>{t('character.role')}</p>
           {editing ? (
             <select
               value={role}
@@ -136,19 +138,19 @@ export default function CharacterDetail({
               className={inputClassName}
             >
               {ROLE_OPTIONS.map(r => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>{t(`role.${r}` as const)}</option>
               ))}
             </select>
           ) : (
             <span
               className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleColorClassNames[character.role] ?? roleColorClassNames.minor}`}
             >
-              {character.role}
+              {t(`role.${character.role}` as const)}
             </span>
           )}
 
           <div className="mt-6 border-t border-stone-200 pt-5">
-            <p className={smallLabelClassName}>Chapter appearances</p>
+            <p className={smallLabelClassName}>{t('character.chapterAppearances')}</p>
             <p className="text-3xl font-semibold tracking-[-0.05em] text-stone-950">
               {character.chapter_count}
             </p>
@@ -157,34 +159,34 @@ export default function CharacterDetail({
 
         <div className={`${cardClassName} space-y-5`}>
           <div>
-            <p className={smallLabelClassName}>Aliases</p>
+            <p className={smallLabelClassName}>{t('character.aliases')}</p>
             {editing ? (
               <input
                 value={aliases}
                 onChange={e => setAliases(e.target.value)}
-                placeholder="Alias 1, Alias 2"
+                placeholder={t('addCharacter.aliasesPlaceholder')}
                 className={inputClassName}
               />
             ) : (
               <p className="text-sm leading-6 text-stone-600">
-                {character.aliases.length > 0 ? character.aliases.join(', ') : <span className="text-stone-400">None</span>}
+                {character.aliases.length > 0 ? character.aliases.join(', ') : <span className="text-stone-400">{t('common.none')}</span>}
               </p>
             )}
           </div>
 
           <div>
-            <p className={smallLabelClassName}>Description</p>
+            <p className={smallLabelClassName}>{t('common.description')}</p>
             {editing ? (
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={4}
                 className={inputClassName}
-                placeholder="Character description"
+                placeholder={t('addCharacter.descriptionPlaceholder')}
               />
             ) : (
               <p className="text-sm leading-7 text-stone-600">
-                {character.description || <span className="text-stone-400">No description.</span>}
+                {character.description || <span className="text-stone-400">{t('character.noDescription')}</span>}
               </p>
             )}
           </div>
@@ -194,7 +196,7 @@ export default function CharacterDetail({
       {character.chapters && character.chapters.length > 0 && (
         <div className={cardClassName}>
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-            Appears in ({character.chapter_count})
+            {t('character.appearsIn', { count: character.chapter_count })}
           </h2>
           <ul className={`${listClassName} divide-y divide-stone-200`}>
             {character.chapters.map(ch => (

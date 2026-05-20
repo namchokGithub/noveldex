@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Character } from '../../../../types';
+import { T } from '@/components/i18n/I18nProvider';
 
 interface Props {
   characters: Character[];
@@ -8,13 +9,13 @@ interface Props {
 
 export default function LinkedCharactersPanel({ characters, novelId }: Props) {
   if (characters.length === 0) {
-    return <p className="text-sm text-gray-500">No characters linked yet.</p>;
+    return <p className="text-sm text-gray-500"><T k="chapter.noLinkedCharacters" /></p>;
   }
 
   return (
     <div>
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-400">
-        Characters
+        <T k="chapter.characters" />
       </h2>
       <ul className="flex flex-wrap gap-2">
         {characters.map((char) => (

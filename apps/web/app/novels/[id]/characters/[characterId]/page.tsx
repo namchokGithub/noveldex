@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Novel, Character } from '../../../../types'
 import CharacterDetail from './CharacterDetail'
 import { backLinkClassName, DashboardPage } from '../../../ui'
+import { T } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -51,7 +52,7 @@ export default async function CharacterPage({
           href={`/novels/${id}/characters`}
           className={backLinkClassName}
         >
-          ← Characters
+          ← <T k="nav.characters" />
         </Link>
 
         <CharacterDetail character={character} novelId={id} />

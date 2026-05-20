@@ -10,10 +10,12 @@ import {
   primaryButtonClassName,
   smallLabelClassName,
 } from './ui'
+import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 export default function AddNovelForm() {
+  const { t } = useI18n()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +52,7 @@ export default function AddNovelForm() {
       setOpen(false)
       router.refresh()
     } catch {
-      setError('Network error. Please try again.')
+      setError(t('common.networkError'))
     } finally {
       setSubmitting(false)
     }
@@ -62,7 +64,7 @@ export default function AddNovelForm() {
         onClick={() => setOpen(true)}
         className={primaryButtonClassName}
       >
-        Add novel
+        {t('addNovel.button')}
       </button>
     )
   }
@@ -72,54 +74,54 @@ export default function AddNovelForm() {
       <div className={modalPanelClassName}>
         <div className="mb-5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-            Library
+            {t('addNovel.eyebrow')}
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-            Add novel
+            {t('addNovel.title')}
           </h2>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className={smallLabelClassName}>Title *</label>
+            <label className={smallLabelClassName}>{t('common.titleRequired')}</label>
             <input
               name="title"
               required
               className={inputClassName}
-              placeholder="Novel title"
+              placeholder={t('addNovel.titlePlaceholder')}
             />
           </div>
           <div>
-            <label className={smallLabelClassName}>Author</label>
+            <label className={smallLabelClassName}>{t('addNovel.author')}</label>
             <input
               name="author"
               className={inputClassName}
-              placeholder="Author name"
+              placeholder={t('addNovel.authorPlaceholder')}
             />
           </div>
           <div>
-            <label className={smallLabelClassName}>Status</label>
+            <label className={smallLabelClassName}>{t('addNovel.status')}</label>
             <select
               name="status"
               defaultValue="reading"
               className={inputClassName}
             >
-              <option value="reading">Reading</option>
-              <option value="completed">Completed</option>
-              <option value="dropped">Dropped</option>
-              <option value="on_hold">On Hold</option>
+              <option value="reading">{t('status.reading')}</option>
+              <option value="completed">{t('status.completed')}</option>
+              <option value="dropped">{t('status.dropped')}</option>
+              <option value="on_hold">{t('status.on_hold')}</option>
             </select>
           </div>
           <div>
-            <label className={smallLabelClassName}>Description</label>
+            <label className={smallLabelClassName}>{t('common.description')}</label>
             <textarea
               name="description"
               rows={3}
               className={inputClassName}
-              placeholder="Short description"
+              placeholder={t('addNovel.shortDescription')}
             />
           </div>
           <div>
-            <label className={smallLabelClassName}>Cover URL</label>
+            <label className={smallLabelClassName}>{t('addNovel.coverUrl')}</label>
             <input
               name="cover_url"
               type="url"
@@ -134,14 +136,14 @@ export default function AddNovelForm() {
               onClick={() => { setOpen(false); setError(null) }}
               className={ghostButtonClassName}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className={primaryButtonClassName}
             >
-              {submitting ? 'Saving…' : 'Save'}
+              {submitting ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </form>

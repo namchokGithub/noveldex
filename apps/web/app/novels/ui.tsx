@@ -106,9 +106,9 @@ export function SectionHeading({
   description,
   action,
 }: {
-  eyebrow?: string
-  title: string
-  description?: string
+  eyebrow?: ReactNode
+  title: ReactNode
+  description?: ReactNode
   action?: ReactNode
 }) {
   return (

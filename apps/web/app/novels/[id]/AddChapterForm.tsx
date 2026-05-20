@@ -10,10 +10,12 @@ import {
   primaryButtonClassName,
   smallLabelClassName,
 } from '../ui'
+import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
 export default function AddChapterForm({ novelId }: { novelId: string }) {
+  const { t } = useI18n()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +52,7 @@ export default function AddChapterForm({ novelId }: { novelId: string }) {
       setOpen(false)
       router.refresh()
     } catch {
-      setError('Network error. Please try again.')
+      setError(t('common.networkError'))
     } finally {
       setSubmitting(false)
     }
@@ -62,7 +64,7 @@ export default function AddChapterForm({ novelId }: { novelId: string }) {
         onClick={() => setOpen(true)}
         className={primaryButtonClassName}
       >
-        Add chapter
+        {t('addChapter.button')}
       </button>
     )
   }
@@ -72,15 +74,15 @@ export default function AddChapterForm({ novelId }: { novelId: string }) {
       <div className={modalPanelClassName}>
         <div className="mb-5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-            Chapters
+            {t('addChapter.eyebrow')}
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-            Add chapter
+            {t('addChapter.title')}
           </h2>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className={smallLabelClassName}>Number *</label>
+            <label className={smallLabelClassName}>{t('addChapter.numberRequired')}</label>
             <input
               name="number"
               type="number"
@@ -91,25 +93,25 @@ export default function AddChapterForm({ novelId }: { novelId: string }) {
             />
           </div>
           <div>
-            <label className={smallLabelClassName}>Title *</label>
+            <label className={smallLabelClassName}>{t('common.titleRequired')}</label>
             <input
               name="title"
               required
               className={inputClassName}
-              placeholder="Chapter title"
+              placeholder={t('addChapter.chapterTitlePlaceholder')}
             />
           </div>
           <div>
-            <label className={smallLabelClassName}>Summary</label>
+            <label className={smallLabelClassName}>{t('addChapter.summary')}</label>
             <textarea
               name="summary"
               rows={3}
               className={inputClassName}
-              placeholder="Chapter summary"
+              placeholder={t('addChapter.summaryPlaceholder')}
             />
           </div>
           <div>
-            <label className={smallLabelClassName}>Date Read</label>
+            <label className={smallLabelClassName}>{t('addChapter.dateRead')}</label>
             <input
               name="read_at"
               type="date"
@@ -123,14 +125,14 @@ export default function AddChapterForm({ novelId }: { novelId: string }) {
               onClick={() => { setOpen(false); setError(null) }}
               className={ghostButtonClassName}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className={primaryButtonClassName}
             >
-              {submitting ? 'Saving…' : 'Save'}
+              {submitting ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </form>
