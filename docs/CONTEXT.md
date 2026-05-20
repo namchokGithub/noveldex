@@ -28,16 +28,16 @@ apps/
     cmd/server/main.go                    # entry point, chi router, all routes
     internal/config/config.go             # ENV loading
     internal/domain/                      # structs + repository interfaces
-      novel.go, chapter.go, character.go
+      novel.go, chapter.go, character.go, event.go
     internal/handler/                     # HTTP handlers (one file per domain)
-      health.go, novel_handler.go, chapter_handler.go, character_handler.go
+      health.go, novel_handler.go, chapter_handler.go, character_handler.go, event_handler.go
     internal/repository/                  # pgx implementations
-      novel_repo.go, chapter_repo.go, character_repo.go
+      novel_repo.go, chapter_repo.go, character_repo.go, event_repo.go
     internal/usecase/                     # business logic
-      novel_usecase.go, chapter_usecase.go, character_usecase.go
+      novel_usecase.go, chapter_usecase.go, character_usecase.go, event_usecase.go
     internal/util/
       mention.go                          # [[Name]] regex extraction
-    migrations/                           # golang-migrate SQL files (000001–000004)
+    migrations/                           # golang-migrate SQL files (000001–000006)
     Dockerfile
     fly.toml
   web/
@@ -61,6 +61,8 @@ apps/
             [characterId]/
               page.tsx                    # character profile
               CharacterDetail.tsx         # inline edit + appears-in chapter list
+          timeline/
+            page.tsx                      # vertical rail timeline, add/edit/delete, character filter
 docker-compose.yml
 Makefile                        # make dev / api / web / migrate-up / db / logs
 docs/
@@ -94,6 +96,13 @@ DELETE /api/v1/novels/:id/characters/:characterId
 GET    /api/v1/novels/:id/chapters/:chapterId/characters
 POST   /api/v1/novels/:id/chapters/:chapterId/characters
 DELETE /api/v1/novels/:id/chapters/:chapterId/characters/:characterId
+
+GET    /api/v1/novels/:id/events
+POST   /api/v1/novels/:id/events
+PATCH  /api/v1/novels/:id/events/:eventId
+DELETE /api/v1/novels/:id/events/:eventId
+POST   /api/v1/novels/:id/events/:eventId/characters
+DELETE /api/v1/novels/:id/events/:eventId/characters/:characterId
 ```
 
 ## Key Decisions
@@ -122,6 +131,8 @@ DELETE /api/v1/novels/:id/chapters/:chapterId/characters/:characterId
 | 000002 | create_chapters | chapters table |
 | 000003 | create_characters | characters table (TEXT[] aliases, role DEFAULT 'minor') |
 | 000004 | create_chapter_characters | join table (composite PK) |
+| 000005 | create_events | events table (novel-scoped, optional chapter FK, story_date TEXT, sort_order INT) |
+| 000006 | create_event_characters | event↔character join table (composite PK) |
 
 ## ENV
 
@@ -155,7 +166,7 @@ make migrate-up
 
 | Field          | Value                          |
 |----------------|--------------------------------|
-| Current phase  | Phase 3 — Timeline             |
-| Last completed | Phase 2 — Characters (full stack) |
+| Current phase  | Phase 4 — Search + Tags        |
+| Last completed | Phase 3 — Timeline (full stack) |
 | Working on     | —                              |
 | Blocked by     | —                              |

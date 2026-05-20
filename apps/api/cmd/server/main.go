@@ -36,13 +36,21 @@ func main() {
 	characterUC := usecase.NewCharacterUsecase(characterRepo)
 	characterH := handler.NewCharacterHandler(characterUC)
 
+	tagRepo := repository.NewTagRepository(pool)
+	tagUC := usecase.NewTagUsecase(tagRepo)
+	tagH := handler.NewTagHandler(tagUC)
+
 	chapterRepo := repository.NewChapterRepository(pool)
-	chapterUC := usecase.NewChapterUsecase(chapterRepo, characterRepo)
+	chapterUC := usecase.NewChapterUsecase(chapterRepo, characterRepo, tagRepo)
 	chapterH := handler.NewChapterHandler(chapterUC)
 
 	eventRepo := repository.NewEventRepository(pool)
 	eventUC := usecase.NewEventUsecase(eventRepo)
 	eventH := handler.NewEventHandler(eventUC)
+
+	searchRepo := repository.NewSearchRepository(pool)
+	searchUC := usecase.NewSearchUsecase(searchRepo)
+	searchH := handler.NewSearchHandler(searchUC)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -80,6 +88,15 @@ func main() {
 
 		r.Post("/novels/{novelID}/events/{eventID}/characters", eventH.LinkCharacter)
 		r.Delete("/novels/{novelID}/events/{eventID}/characters/{characterID}", eventH.UnlinkCharacter)
+
+		r.Get("/novels/{novelID}/tags", tagH.List)
+		r.Post("/novels/{novelID}/tags", tagH.Create)
+		r.Delete("/novels/{novelID}/tags/{tagID}", tagH.Delete)
+
+		r.Post("/novels/{novelID}/chapters/{chapterID}/tags", tagH.LinkToChapter)
+		r.Delete("/novels/{novelID}/chapters/{chapterID}/tags/{tagID}", tagH.UnlinkFromChapter)
+
+		r.Get("/novels/{novelID}/search", searchH.Search)
 	})
 
 	addr := fmt.Sprintf(":%s", cfg.Port)

@@ -13,10 +13,11 @@ import (
 type ChapterUsecase struct {
 	repo     domain.ChapterRepository
 	charRepo domain.CharacterRepository
+	tagRepo  domain.TagRepository
 }
 
-func NewChapterUsecase(repo domain.ChapterRepository, charRepo domain.CharacterRepository) *ChapterUsecase {
-	return &ChapterUsecase{repo: repo, charRepo: charRepo}
+func NewChapterUsecase(repo domain.ChapterRepository, charRepo domain.CharacterRepository, tagRepo domain.TagRepository) *ChapterUsecase {
+	return &ChapterUsecase{repo: repo, charRepo: charRepo, tagRepo: tagRepo}
 }
 
 func (u *ChapterUsecase) List(ctx context.Context, novelID string) ([]domain.Chapter, error) {
@@ -55,7 +56,14 @@ func (u *ChapterUsecase) GetByIDWithCharacters(ctx context.Context, novelID, id 
 	if chars == nil {
 		chars = []domain.Character{}
 	}
-	return &domain.ChapterWithCharacters{Chapter: *ch, Characters: chars}, nil
+	tags, err := u.tagRepo.ListByChapter(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if tags == nil {
+		tags = []domain.Tag{}
+	}
+	return &domain.ChapterWithCharacters{Chapter: *ch, Characters: chars, Tags: tags}, nil
 }
 
 func (u *ChapterUsecase) Update(ctx context.Context, ch *domain.Chapter) error {

@@ -19,6 +19,7 @@ type Chapter struct {
 type ChapterWithCharacters struct {
 	Chapter
 	Characters []Character `json:"characters"`
+	Tags       []Tag       `json:"tags"`
 }
 
 type ChapterRepository interface {
