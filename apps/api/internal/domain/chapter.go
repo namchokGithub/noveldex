@@ -6,14 +6,19 @@ import (
 )
 
 type Chapter struct {
-	ID        string
-	NovelID   string
-	Number    int
-	Title     string
-	Summary   string
-	ReadAt    *time.Time
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        string     `json:"id"`
+	NovelID   string     `json:"novel_id"`
+	Number    int        `json:"number"`
+	Title     string     `json:"title"`
+	Summary   string     `json:"summary"`
+	ReadAt    *time.Time `json:"read_at"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+}
+
+type ChapterWithCharacters struct {
+	Chapter
+	Characters []Character `json:"characters"`
 }
 
 type ChapterRepository interface {

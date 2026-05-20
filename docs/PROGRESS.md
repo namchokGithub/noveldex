@@ -1,6 +1,6 @@
 # NovelDex — Progress
 
-## Phase 0: Foundation ← current
+## Phase 0: Foundation
 
 - [x] Go API skeleton (chi, config, /health)
 - [x] Next.js 15 skeleton (homepage, health display)
@@ -11,21 +11,24 @@
 
 ## Phase 1: MVP CRUD
 
-- [ ] novels table + migration
-- [ ] CRUD endpoints: POST/GET/PATCH/DELETE /novels
-- [ ] chapters table + migration
-- [ ] CRUD endpoints for chapters
-- [ ] Next.js: list + detail pages
+- [x] novels table + migration
+- [x] CRUD endpoints: POST/GET/PATCH/DELETE /novels
+- [x] chapters table + migration
+- [x] CRUD endpoints for chapters
+- [x] Next.js: list + detail pages
 
 ## Phase 2: Characters
 
-- [ ] characters table + migration
-- [ ] character↔novel join table
-- [ ] CRUD endpoints for characters
-- [ ] Character profile page
-- [ ] Chapter ↔ character appearance linking
+- [x] characters table + migration (000003)
+- [x] chapter_characters join table + migration (000004)
+- [x] CRUD endpoints for characters (under /novels/{id}/characters)
+- [x] Character profile page (with inline edit)
+- [x] Chapter ↔ character appearance linking (manual + [[Name]] auto-link on summary save)
+- [x] [[Name]] autocomplete dropdown in chapter editor
+- [x] Characters list page with role badges + chapter counts
+- [x] Characters link on novel detail page
 
-## Phase 3: Timeline
+## Phase 3: Timeline ← current
 
 - [ ] story_date field on chapters (TEXT, flexible format)
 - [ ] Timeline API endpoint (ordered by story_date)

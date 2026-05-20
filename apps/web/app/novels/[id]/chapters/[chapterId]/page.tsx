@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Chapter } from '../../../../types'
+import type { ChapterWithCharacters } from '../../../../types'
 import ChapterEditor from './ChapterEditor'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
-async function getChapter(novelId: string, chapterId: string): Promise<Chapter | null> {
+async function getChapter(novelId: string, chapterId: string): Promise<ChapterWithCharacters | null> {
   try {
     const res = await fetch(
       `${BASE}/api/v1/novels/${novelId}/chapters/${chapterId}`,
@@ -14,7 +14,10 @@ async function getChapter(novelId: string, chapterId: string): Promise<Chapter |
     if (res.status === 404) return null
     if (!res.ok) return null
     const body = await res.json()
-    return body.data as Chapter
+    const data = body.data as ChapterWithCharacters
+    // Ensure characters array is always present (API may omit it if empty)
+    if (!data.characters) data.characters = []
+    return data
   } catch {
     return null
   }

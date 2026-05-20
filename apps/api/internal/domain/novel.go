@@ -6,14 +6,14 @@ import (
 )
 
 type Novel struct {
-	ID          string
-	Title       string
-	Author      string
-	Status      string
-	Description string
-	CoverURL    string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          string    `json:"id"`
+	Title       string    `json:"title"`
+	Author      string    `json:"author"`
+	Status      string    `json:"status"`
+	Description string    `json:"description"`
+	CoverURL    string    `json:"cover_url"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type NovelRepository interface {

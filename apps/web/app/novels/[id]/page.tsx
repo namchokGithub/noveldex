@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Novel, Chapter } from '../../types'
+import type { Novel, Chapter, Character } from '../../types'
 import AddChapterForm from './AddChapterForm'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
@@ -42,6 +42,17 @@ async function getChapters(id: string): Promise<Chapter[]> {
   }
 }
 
+async function getCharacters(id: string): Promise<Character[]> {
+  try {
+    const res = await fetch(`${BASE}/api/v1/novels/${id}/characters`, { cache: 'no-store' })
+    if (!res.ok) return []
+    const body = await res.json()
+    return (body.data as Character[]) ?? []
+  } catch {
+    return []
+  }
+}
+
 export default async function NovelPage({
   params,
 }: {
@@ -49,7 +60,7 @@ export default async function NovelPage({
 }) {
   const { id } = await params
 
-  const [novel, chapters] = await Promise.all([getNovel(id), getChapters(id)])
+  const [novel, chapters, characters] = await Promise.all([getNovel(id), getChapters(id), getCharacters(id)])
 
   if (!novel) notFound()
 
@@ -80,6 +91,18 @@ export default async function NovelPage({
           {novel.description && (
             <p className="text-sm leading-relaxed text-gray-300">{novel.description}</p>
           )}
+        </div>
+
+        <div className="mb-6 flex gap-4">
+          <Link
+            href={`/novels/${id}/characters`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:border-gray-500 hover:text-white"
+          >
+            Characters
+            <span className="rounded-full bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
+              {characters.length}
+            </span>
+          </Link>
         </div>
 
         <div className="mb-4 flex items-center justify-between">

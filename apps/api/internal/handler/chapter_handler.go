@@ -87,10 +87,10 @@ func (h *ChapterHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *ChapterHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	novelID := chi.URLParam(r, "novelID")
 	chapterID := chi.URLParam(r, "chapterID")
-	ch, err := h.uc.GetByID(r.Context(), novelID, chapterID)
+	ch, err := h.uc.GetByIDWithCharacters(r.Context(), novelID, chapterID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			writeError(w, http.StatusNotFound, err.Error())
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -153,7 +153,7 @@ func (h *ChapterHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	chapterID := chi.URLParam(r, "chapterID")
 	if err := h.uc.Delete(r.Context(), novelID, chapterID); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			writeError(w, http.StatusNotFound, err.Error())
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, err.Error())
