@@ -2,7 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Novel } from '../types'
+import {
+  ghostButtonClassName,
+  inputClassName,
+  modalBackdropClassName,
+  modalPanelClassName,
+  primaryButtonClassName,
+  smallLabelClassName,
+} from './ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -53,41 +60,48 @@ export default function AddNovelForm() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 focus:outline-none"
+        className={primaryButtonClassName}
       >
-        Add Novel
+        Add novel
       </button>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-6">
-        <h2 className="mb-4 text-lg font-semibold text-white">Add Novel</h2>
+    <div className={modalBackdropClassName}>
+      <div className={modalPanelClassName}>
+        <div className="mb-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+            Library
+          </p>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+            Add novel
+          </h2>
+        </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Title *</label>
+            <label className={smallLabelClassName}>Title *</label>
             <input
               name="title"
               required
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
               placeholder="Novel title"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Author</label>
+            <label className={smallLabelClassName}>Author</label>
             <input
               name="author"
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
               placeholder="Author name"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Status</label>
+            <label className={smallLabelClassName}>Status</label>
             <select
               name="status"
               defaultValue="reading"
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
             >
               <option value="reading">Reading</option>
               <option value="completed">Completed</option>
@@ -96,36 +110,36 @@ export default function AddNovelForm() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Description</label>
+            <label className={smallLabelClassName}>Description</label>
             <textarea
               name="description"
               rows={3}
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
               placeholder="Short description"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Cover URL</label>
+            <label className={smallLabelClassName}>Cover URL</label>
             <input
               name="cover_url"
               type="url"
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
               placeholder="https://..."
             />
           </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <div className="mt-1 flex justify-end gap-2">
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+          <div className="mt-2 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => { setOpen(false); setError(null) }}
-              className="rounded-md px-4 py-2 text-sm text-gray-400 hover:text-white"
+              className={ghostButtonClassName}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className={primaryButtonClassName}
             >
               {submitting ? 'Saving…' : 'Save'}
             </button>

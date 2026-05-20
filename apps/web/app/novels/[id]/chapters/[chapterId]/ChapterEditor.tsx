@@ -3,6 +3,14 @@
 import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ChapterWithCharacters, Tag } from '../../../../types'
+import {
+  cardClassName,
+  inputClassName,
+  primaryButtonClassName,
+  secondaryButtonClassName,
+  smallLabelClassName,
+  tagClassName,
+} from '../../../ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -225,8 +233,8 @@ export default function ChapterEditor({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-300">Summary</label>
+      <div className={cardClassName}>
+        <label className={smallLabelClassName}>Summary</label>
         <div className="relative">
           <textarea
             ref={textareaRef}
@@ -234,17 +242,17 @@ export default function ChapterEditor({
             onChange={(e) => setSummary(e.target.value)}
             onKeyUp={handleKeyUp}
             rows={6}
-            className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+            className={`${inputClassName} min-h-[180px]`}
             placeholder="Chapter summary"
           />
           {suggestion && suggestion.names.length > 0 && (
-            <ul className="absolute left-0 top-full z-10 mt-1 w-full rounded-md border border-gray-700 bg-gray-900 shadow-lg">
+            <ul className="absolute left-0 top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg">
               {suggestion.names.map(name => (
                 <li key={name}>
                   <button
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); insertSuggestion(name) }}
-                    className="w-full px-3 py-2 text-left text-sm text-white hover:bg-gray-800"
+                    className="w-full px-3 py-2 text-left text-sm text-stone-700 hover:bg-stone-50"
                   >
                     {name}
                   </button>
@@ -253,74 +261,77 @@ export default function ChapterEditor({
             </ul>
           )}
         </div>
-        {summaryError && <p className="mt-1 text-sm text-red-400">{summaryError}</p>}
+        {summaryError && <p className="mt-2 text-sm text-rose-600">{summaryError}</p>}
         <div className="mt-2 flex justify-end">
           <button
             onClick={saveSummary}
             disabled={summarySaving}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            className={primaryButtonClassName}
           >
             {summarySaving ? 'Saving…' : 'Save summary'}
           </button>
         </div>
       </div>
 
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-300">Date Read</label>
-        <input
-          type="date"
-          value={readAt}
-          onChange={(e) => setReadAt(e.target.value)}
-          className="rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-        />
-        {readAtError && <p className="mt-1 text-sm text-red-400">{readAtError}</p>}
-        <div className="mt-2 flex justify-end">
-          <button
-            onClick={saveReadAt}
-            disabled={readAtSaving}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-          >
-            {readAtSaving ? 'Saving…' : 'Save date'}
-          </button>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className={cardClassName}>
+          <label className={smallLabelClassName}>Date Read</label>
+          <input
+            type="date"
+            value={readAt}
+            onChange={(e) => setReadAt(e.target.value)}
+            className={inputClassName}
+          />
+          {readAtError && <p className="mt-2 text-sm text-rose-600">{readAtError}</p>}
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={saveReadAt}
+              disabled={readAtSaving}
+              className={primaryButtonClassName}
+            >
+              {readAtSaving ? 'Saving…' : 'Save date'}
+            </button>
+          </div>
+        </div>
+
+        <div className={cardClassName}>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
+            Characters
+          </h2>
+          {chapter.characters.length === 0 ? (
+            <p className="text-sm text-stone-500">No characters linked yet.</p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {chapter.characters.map(char => (
+                <li key={char.id}>
+                  <a
+                    href={`/novels/${novelId}/characters/${char.id}`}
+                    className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1.5 text-sm text-stone-700 ring-1 ring-inset ring-stone-200 hover:bg-stone-200/70"
+                  >
+                    {char.name}
+                    <span className="text-xs text-stone-500">{char.role}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
-      {/* Characters panel */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-400">Characters</h2>
-        {chapter.characters.length === 0 ? (
-          <p className="text-sm text-gray-500">No characters linked yet.</p>
-        ) : (
-          <ul className="flex flex-wrap gap-2">
-            {chapter.characters.map(char => (
-              <li key={char.id}>
-                <a
-                  href={`/novels/${novelId}/characters/${char.id}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-gray-800 px-3 py-1 text-sm text-gray-200 hover:bg-gray-700"
-                >
-                  {char.name}
-                  <span className="text-xs text-gray-500">{char.role}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-400">Tags</h2>
+      <div className={cardClassName}>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">Tags</h2>
         <div className="flex flex-wrap items-center gap-2">
           {tags.map((tag) => (
             <span
               key={tag.id}
-              className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[11px] text-purple-800"
+              className={tagClassName}
             >
               {tag.name}
               <button
                 type="button"
                 onClick={() => handleRemoveTag(tag.id)}
                 disabled={tagSaving}
-                className="text-purple-700 hover:text-purple-900 disabled:opacity-50"
+                className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
                 aria-label={`Remove ${tag.name}`}
               >
                 ×
@@ -335,12 +346,12 @@ export default function ChapterEditor({
                 setTagPickerOpen(true)
                 await ensureTagListLoaded()
               }}
-              className="rounded-full border border-dashed border-gray-700 px-2.5 py-1 text-xs text-gray-300 hover:border-gray-500 hover:text-white"
+              className="rounded-full border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900"
             >
               + Add tag
             </button>
           ) : (
-            <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-3">
+            <div className="w-full max-w-sm rounded-[22px] border border-stone-200 bg-stone-50/90 p-3 shadow-sm">
               <input
                 value={tagQuery}
                 onChange={(e) => setTagQuery(e.target.value)}
@@ -355,10 +366,10 @@ export default function ChapterEditor({
                   }
                 }}
                 placeholder="Add tag"
-                className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                className={inputClassName}
               />
               <div className="mt-2 max-h-40 overflow-y-auto">
-                {tagLoading && <p className="text-xs text-gray-500">Loading tags…</p>}
+                {tagLoading && <p className="text-xs text-stone-500">Loading tags…</p>}
                 {!tagLoading && filteredTagOptions.length > 0 && (
                   <ul className="space-y-1">
                     {filteredTagOptions.map((tag) => (
@@ -366,7 +377,7 @@ export default function ChapterEditor({
                         <button
                           type="button"
                           onClick={() => void handleAddTag(tag.name)}
-                          className="w-full rounded-md px-2 py-1.5 text-left text-sm text-gray-300 hover:bg-gray-800 hover:text-white"
+                          className="w-full rounded-xl px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-white"
                         >
                           {tag.name}
                         </button>
@@ -375,7 +386,7 @@ export default function ChapterEditor({
                   </ul>
                 )}
                 {!tagLoading && filteredTagOptions.length === 0 && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-stone-500">
                     {tagQuery.trim() ? 'Press Enter to create this tag.' : 'No more tags available.'}
                   </p>
                 )}
@@ -387,7 +398,7 @@ export default function ChapterEditor({
                     setTagPickerOpen(false)
                     setTagQuery('')
                   }}
-                  className="rounded-md border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:border-gray-500"
+                  className={secondaryButtonClassName}
                 >
                   Cancel
                 </button>
@@ -395,7 +406,7 @@ export default function ChapterEditor({
                   type="button"
                   onClick={() => void handleAddTag()}
                   disabled={tagSaving || !tagQuery.trim()}
-                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                  className={primaryButtonClassName}
                 >
                   Add
                 </button>
@@ -403,7 +414,7 @@ export default function ChapterEditor({
             </div>
           )}
         </div>
-        {tagError && <p className="mt-2 text-sm text-red-400">{tagError}</p>}
+        {tagError && <p className="mt-2 text-sm text-rose-600">{tagError}</p>}
       </div>
     </div>
   )

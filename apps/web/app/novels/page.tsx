@@ -1,77 +1,254 @@
-import Link from 'next/link'
-import type { Novel } from '../types'
-import AddNovelForm from './AddNovelForm'
+import Link from "next/link";
+import type { Novel } from "../types";
+import AddNovelForm from "./AddNovelForm";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
-const STATUS_LABELS: Record<Novel['status'], string> = {
-  reading: 'Reading',
-  completed: 'Completed',
-  dropped: 'Dropped',
-  on_hold: 'On Hold',
-}
+const STATUS_LABELS: Record<Novel["status"], string> = {
+  reading: "Reading",
+  completed: "Completed",
+  dropped: "Dropped",
+  on_hold: "On Hold",
+};
 
-const STATUS_COLORS: Record<Novel['status'], string> = {
-  reading: 'bg-blue-900 text-blue-300',
-  completed: 'bg-green-900 text-green-300',
-  dropped: 'bg-red-900 text-red-300',
-  on_hold: 'bg-yellow-900 text-yellow-300',
+const STATUS_COLORS: Record<Novel["status"], string> = {
+  reading: "bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200",
+  completed:
+    "bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+  dropped: "bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-200",
+  on_hold: "bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200",
+};
+
+function formatDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "Recently updated";
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
 }
 
 async function getNovels(): Promise<Novel[] | null> {
   try {
-    const res = await fetch(`${BASE}/api/v1/novels`, { cache: 'no-store' })
-    if (!res.ok) return null
-    const body = await res.json()
-    return body.data as Novel[]
+    const res = await fetch(`${BASE}/api/v1/novels`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body.data as Novel[];
   } catch {
-    return null
+    return null;
   }
 }
 
 export default async function NovelsPage() {
-  const novels = await getNovels()
+  const novels = await getNovels();
+  const totalNovels = novels?.length ?? 0;
+  const readingCount =
+    novels?.filter((novel) => novel.status === "reading").length ?? 0;
+  const completedCount =
+    novels?.filter((novel) => novel.status === "completed").length ?? 0;
+  const pausedCount =
+    novels?.filter((novel) => novel.status === "on_hold").length ?? 0;
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">NovelDex</h1>
-          <AddNovelForm />
-        </div>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8f6f0_0%,#f3efe6_52%,#ece7db_100%)] px-4 py-6 text-stone-900 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-7xl">
+        <section className="rounded-[28px] border border-white/70 bg-white/80 p-4 shadow-[0_20px_80px_rgba(120,108,84,0.12)] backdrop-blur sm:p-6">
+          <div className="flex flex-col gap-4 rounded-3xl border border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,240,232,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                  Dashboard
+                </div>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-3xl font-semibold tracking-[-0.04em] text-stone-950 sm:text-4xl">
+                      NovelDex Library
+                    </h1>
+                    <span className="rounded-full bg-stone-900 px-3 py-1 text-xs font-medium text-stone-50">
+                      {totalNovels} {totalNovels === 1 ? "novel" : "novels"}
+                    </span>
+                  </div>
+                  <p className="max-w-2xl text-sm leading-6 text-stone-600 sm:text-base">
+                    Track reading progress, jump into chapter maps, and keep
+                    every story in one clean dashboard.
+                  </p>
+                </div>
+              </div>
 
-        {novels === null ? (
-          <p className="text-red-400">Failed to load novels. Check that the API is running.</p>
-        ) : novels.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <p className="mb-2 text-lg text-gray-400">No novels yet.</p>
-            <p className="text-sm text-gray-600">Add your first one.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {novels.map((novel) => (
-              <Link
-                key={novel.id}
-                href={`/novels/${novel.id}`}
-                className="flex flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900 p-4 transition-colors hover:border-gray-700 hover:bg-gray-800"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-sm font-semibold leading-snug text-white">{novel.title}</h2>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[novel.status]}`}
-                  >
-                    {STATUS_LABELS[novel.status]}
+              <div className="flex flex-col gap-3 sm:min-w-72 sm:max-w-sm sm:self-stretch lg:items-end">
+                {/* <div className="flex justify-start lg:justify-end">
+                  <AddNovelForm />
+                </div> */}
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/80 px-4 py-3 text-sm text-stone-500 shadow-sm">
+                  <div>
+                    <p className="font-medium text-stone-700">Quick search</p>
+                    <p className="text-xs text-stone-500">
+                      Open command palette with Cmd/Ctrl + K
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600">
+                    ⌘K
                   </span>
                 </div>
-                <p className="text-xs text-gray-500">{novel.author || '—'}</p>
-                {novel.description && (
-                  <p className="line-clamp-2 text-xs text-gray-400">{novel.description}</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+              <aside className="rounded-[22px] border border-stone-200 bg-stone-50/90 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+                <div className="mb-5 space-y-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                    Collection
+                  </p>
+                  <h2 className="text-lg font-semibold tracking-[-0.03em] text-stone-900">
+                    Reading snapshot
+                  </h2>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
+                      Active now
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold tracking-tighter text-stone-950">
+                      {readingCount}
+                    </p>
+                    <p className="mt-1 text-sm text-stone-500">
+                      Stories currently in progress
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-stone-400">
+                        Done
+                      </p>
+                      <p className="mt-2 text-xl font-semibold text-stone-900">
+                        {completedCount}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-stone-400">
+                        On hold
+                      </p>
+                      <p className="mt-2 text-xl font-semibold text-stone-900">
+                        {pausedCount}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 border-t border-stone-200 pt-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                    Workflow
+                  </p>
+                  <ul className="mt-3 space-y-3 text-sm text-stone-600">
+                    <li className="flex gap-3">
+                      <span className="mt-0.5 h-2.5 w-2.5 rounded-full bg-sky-500" />
+                      Open novel for chapters, characters, timeline.
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="mt-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                      Keep status badges updated while reading.
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="mt-0.5 h-2.5 w-2.5 rounded-full bg-amber-500" />
+                      Use search palette for fast recall across story notes.
+                    </li>
+                  </ul>
+                </div>
+              </aside>
+
+              <div className="min-w-0">
+                {novels === null ? (
+                  <div className="rounded-[22px] border border-rose-200 bg-rose-50 p-8 text-center shadow-sm">
+                    <p className="text-base font-semibold text-rose-700">
+                      Failed to load novels
+                    </p>
+                    <p className="mt-2 text-sm text-rose-600">
+                      Check API server, then refresh page.
+                    </p>
+                  </div>
+                ) : novels.length === 0 ? (
+                  <div className="flex min-h-105 flex-col items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center shadow-sm">
+                    <div className="mb-4 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                      Empty shelf
+                    </div>
+                    <h2 className="text-2xl font-semibold tracking-[-0.04em] text-stone-900">
+                      No novels yet
+                    </h2>
+                    <p className="mt-3 max-w-md text-sm leading-6 text-stone-600">
+                      Start collection with first title. Existing add flow
+                      unchanged.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {novels.map((novel) => (
+                      <Link
+                        key={novel.id}
+                        href={`/novels/${novel.id}`}
+                        className="group relative overflow-hidden rounded-3xl border border-stone-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7f2e8_100%)] p-5 shadow-[0_14px_36px_rgba(120,108,84,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_18px_48px_rgba(120,108,84,0.18)]">
+                        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_62%),radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_58%)]" />
+
+                        <div className="relative flex h-full flex-col gap-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-sm">
+                                {novel.title.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
+                                  {novel.author || "Unknown author"}
+                                </p>
+                                <h2 className="mt-1 line-clamp-2 text-lg font-semibold leading-snug tracking-[-0.03em] text-stone-950">
+                                  {novel.title}
+                                </h2>
+                              </div>
+                            </div>
+
+                            <span
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_COLORS[novel.status]}`}>
+                              {STATUS_LABELS[novel.status]}
+                            </span>
+                          </div>
+
+                          <div className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
+                              Overview
+                            </p>
+                            <p className="mt-2 line-clamp-4 text-sm leading-6 text-stone-600">
+                              {novel.description ||
+                                "No description yet. Open novel to start mapping chapters and timeline details."}
+                            </p>
+                          </div>
+
+                          <div className="mt-auto flex items-center justify-between gap-3 border-t border-stone-200/80 pt-4 text-sm text-stone-500">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
+                                Updated
+                              </p>
+                              <p className="mt-1 font-medium text-stone-700">
+                                {formatDate(novel.updated_at)}
+                              </p>
+                            </div>
+                            <span className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-3 py-1.5 text-xs font-medium text-stone-50 transition group-hover:bg-stone-800">
+                              Open novel
+                              <span aria-hidden="true">→</span>
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 )}
-              </Link>
-            ))}
+              </div>
+            </div>
           </div>
-        )}
+        </section>
       </div>
     </main>
-  )
+  );
 }

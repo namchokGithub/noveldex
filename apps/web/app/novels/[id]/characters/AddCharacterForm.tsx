@@ -2,6 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  ghostButtonClassName,
+  inputClassName,
+  modalBackdropClassName,
+  modalPanelClassName,
+  primaryButtonClassName,
+  smallLabelClassName,
+} from '../../ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -52,33 +60,40 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 focus:outline-none"
+        className={primaryButtonClassName}
       >
-        Add Character
+        Add character
       </button>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-6">
-        <h2 className="mb-4 text-lg font-semibold text-white">Add Character</h2>
+    <div className={modalBackdropClassName}>
+      <div className={modalPanelClassName}>
+        <div className="mb-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+            Characters
+          </p>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+            Add character
+          </h2>
+        </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Name *</label>
+            <label className={smallLabelClassName}>Name *</label>
             <input
               name="name"
               required
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
               placeholder="Character name"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Role</label>
+            <label className={smallLabelClassName}>Role</label>
             <select
               name="role"
               defaultValue="minor"
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
             >
               <option value="protagonist">Protagonist</option>
               <option value="antagonist">Antagonist</option>
@@ -87,35 +102,35 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Aliases (comma-separated)</label>
+            <label className={smallLabelClassName}>Aliases (comma-separated)</label>
             <input
               name="aliases"
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
               placeholder="Alias 1, Alias 2"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-400">Description</label>
+            <label className={smallLabelClassName}>Description</label>
             <textarea
               name="description"
               rows={3}
-              className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className={inputClassName}
               placeholder="Character description"
             />
           </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-rose-600">{error}</p>}
           <div className="mt-1 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => { setOpen(false); setError(null) }}
-              className="rounded-md px-4 py-2 text-sm text-gray-400 hover:text-white"
+              className={ghostButtonClassName}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className={primaryButtonClassName}
             >
               {submitting ? 'Saving…' : 'Save'}
             </button>

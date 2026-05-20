@@ -2,6 +2,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Novel, Character } from '../../../types'
 import AddCharacterForm from './AddCharacterForm'
+import {
+  backLinkClassName,
+  DashboardPage,
+  listClassName,
+  listRowClassName,
+  roleColorClassNames,
+  SectionHeading,
+} from '../../ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -28,13 +36,6 @@ async function getCharacters(novelId: string): Promise<Character[]> {
   }
 }
 
-const ROLE_COLORS: Record<string, string> = {
-  protagonist: 'bg-blue-900 text-blue-300',
-  antagonist: 'bg-red-900 text-red-300',
-  supporting: 'bg-purple-900 text-purple-300',
-  minor: 'bg-gray-800 text-gray-400',
-}
-
 export default async function CharactersPage({
   params,
 }: {
@@ -47,39 +48,55 @@ export default async function CharactersPage({
   if (!novel) notFound()
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-      <div className="mx-auto max-w-3xl">
+    <DashboardPage maxWidth="max-w-5xl">
+      <div className="space-y-5">
         <Link
           href={`/novels/${id}`}
-          className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300"
+          className={backLinkClassName}
         >
           ← {novel.title}
         </Link>
 
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Characters</h1>
-          <AddCharacterForm novelId={id} />
-        </div>
+        <SectionHeading
+          eyebrow="Characters"
+          title="Cast directory"
+          description="Browse tracked cast, role labels, and chapter appearance counts."
+          action={<AddCharacterForm novelId={id} />}
+        />
 
         {characters.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-600">No characters yet.</p>
+          <div className="flex min-h-[260px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
+            No characters yet.
+          </div>
         ) : (
-          <ul className="divide-y divide-gray-800 rounded-xl border border-gray-800">
+          <ul className={`${listClassName} divide-y divide-stone-200`}>
             {characters.map((char) => (
               <li key={char.id}>
                 <Link
                   href={`/novels/${id}/characters/${char.id}`}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-gray-900"
+                  className={listRowClassName}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-white">{char.name}</span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50">
+                      {char.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-stone-900">
+                        {char.name}
+                      </span>
+                      {char.aliases.length > 0 ? (
+                        <span className="mt-1 block truncate text-xs text-stone-500">
+                          {char.aliases.join(', ')}
+                        </span>
+                      ) : null}
+                    </div>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[char.role] ?? 'bg-gray-800 text-gray-400'}`}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleColorClassNames[char.role] ?? roleColorClassNames.minor}`}
                     >
                       {char.role}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-stone-500">
                     {char.chapter_count} {char.chapter_count === 1 ? 'chapter' : 'chapters'}
                   </span>
                 </Link>
@@ -88,6 +105,6 @@ export default async function CharactersPage({
           </ul>
         )}
       </div>
-    </main>
+    </DashboardPage>
   )
 }

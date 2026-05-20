@@ -4,6 +4,13 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 
 import type { Chapter, Tag } from '@/app/types'
+import {
+  cardClassName,
+  inputClassName,
+  listClassName,
+  listRowClassName,
+  tagClassName,
+} from '../ui'
 
 export default function ChapterListWithFilters({
   novelId,
@@ -40,15 +47,15 @@ export default function ChapterListWithFilters({
 
   return (
     <>
-      <div className="mb-4 rounded-xl border border-gray-800 bg-gray-900/70 p-4">
+      <div className={cardClassName}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-gray-300">Tags:</span>
+          <span className="text-sm font-medium text-stone-700">Tags:</span>
           {selectedTags.map((tag) => (
             <button
               key={tag.id}
               type="button"
               onClick={() => removeTag(tag.id)}
-              className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[11px] text-purple-800"
+              className={tagClassName}
             >
               {tag.name}
               <span aria-hidden="true">×</span>
@@ -58,7 +65,7 @@ export default function ChapterListWithFilters({
             value=""
             onChange={(event) => addTag(event.target.value)}
             disabled={remainingTags.length === 0}
-            className="rounded-full border border-gray-700 bg-gray-950 px-3 py-1 text-xs text-gray-300 outline-none disabled:cursor-not-allowed disabled:text-gray-600"
+            className={`${inputClassName} w-auto min-w-40 rounded-full py-2 text-xs disabled:cursor-not-allowed disabled:text-stone-400`}
           >
             <option value="">+ Add tag filter</option>
             {remainingTags.map((tag) => (
@@ -71,17 +78,19 @@ export default function ChapterListWithFilters({
       </div>
 
       {filteredChapters.length === 0 ? (
-        <p className="py-8 text-center text-sm text-gray-600">No chapters match the selected tags.</p>
+        <div className="flex min-h-[220px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
+          No chapters match selected tags.
+        </div>
       ) : (
-        <ul className="divide-y divide-gray-800 rounded-xl border border-gray-800">
+        <ul className={`${listClassName} divide-y divide-stone-200`}>
           {filteredChapters.map((chapter) => (
             <li key={chapter.id}>
               <Link
                 href={`/novels/${novelId}/chapters/${chapter.id}`}
-                className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-gray-900"
+                className={listRowClassName}
               >
                 <div className="min-w-0">
-                  <span className="text-sm text-white">
+                  <span className="text-sm font-medium text-stone-900">
                     Ch. {chapter.number} — {chapter.title}
                   </span>
                   {chapter.tags.length > 0 && (
@@ -89,7 +98,7 @@ export default function ChapterListWithFilters({
                       {chapter.tags.map((tag) => (
                         <span
                           key={tag.id}
-                          className="rounded-full bg-purple-50 px-2 py-0.5 text-[11px] text-purple-800"
+                          className={tagClassName}
                         >
                           {tag.name}
                         </span>
@@ -98,7 +107,7 @@ export default function ChapterListWithFilters({
                   )}
                 </div>
                 {chapter.read_at && (
-                  <span className="shrink-0 text-xs text-gray-500">{chapter.read_at}</span>
+                  <span className="shrink-0 text-xs text-stone-500">{chapter.read_at}</span>
                 )}
               </Link>
             </li>

@@ -3,6 +3,16 @@ import { notFound } from 'next/navigation'
 import type { Novel, Chapter, Character, Tag } from '../../types'
 import AddChapterForm from './AddChapterForm'
 import ChapterListWithFilters from './ChapterListWithFilters'
+import {
+  backLinkClassName,
+  cardClassName,
+  chipClassName,
+  DashboardPage,
+  formatDisplayDate,
+  mutedCardClassName,
+  SectionHeading,
+  statusColorClassNames,
+} from '../ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -11,13 +21,6 @@ const STATUS_LABELS: Record<Novel['status'], string> = {
   completed: 'Completed',
   dropped: 'Dropped',
   on_hold: 'On Hold',
-}
-
-const STATUS_COLORS: Record<Novel['status'], string> = {
-  reading: 'bg-blue-900 text-blue-300',
-  completed: 'bg-green-900 text-green-300',
-  dropped: 'bg-red-900 text-red-300',
-  on_hold: 'bg-yellow-900 text-yellow-300',
 }
 
 async function getNovel(id: string): Promise<Novel | null> {
@@ -92,66 +95,122 @@ export default async function NovelPage({
           .flatMap((chapter) => chapter.tags)
           .filter((tag, index, array) => array.findIndex((entry) => entry.id === tag.id) === index)
 
+  const readCount = sorted.filter((chapter) => chapter.read_at).length
+
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-      <div className="mx-auto max-w-3xl">
+    <DashboardPage maxWidth="max-w-6xl">
+      <div className="space-y-5">
         <Link
           href="/novels"
-          className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300"
+          className={backLinkClassName}
         >
           ← All novels
         </Link>
 
-        <div className="mb-8">
-          <div className="mb-2 flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{novel.title}</h1>
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[novel.status]}`}
-            >
-              {STATUS_LABELS[novel.status]}
-            </span>
+        <SectionHeading
+          eyebrow="Novel"
+          title={novel.title}
+          description={
+            novel.description ||
+            'Story workspace for chapters, timeline markers, and character tracking.'
+          }
+          action={<AddChapterForm novelId={id} />}
+        />
+
+        <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className={mutedCardClassName}>
+            <div className="space-y-5">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                  Overview
+                </p>
+                <div className="mt-3 space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusColorClassNames[novel.status]}`}
+                    >
+                      {STATUS_LABELS[novel.status]}
+                    </span>
+                    {novel.author ? (
+                      <span className={chipClassName}>{novel.author}</span>
+                    ) : null}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-stone-400">
+                        Chapters
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-stone-900">{sorted.length}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-stone-400">
+                        Read
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-stone-900">{readCount}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-stone-200 pt-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                  Explore
+                </p>
+                <div className="mt-3 flex flex-col gap-3">
+                  <Link
+                    href={`/novels/${id}/characters`}
+                    className={`${cardClassName} p-4 transition hover:border-stone-300 hover:bg-white`}
+                  >
+                    <p className="text-sm font-semibold text-stone-900">Characters</p>
+                    <p className="mt-1 text-sm text-stone-500">
+                      {characters.length} tracked cast members
+                    </p>
+                  </Link>
+                  <Link
+                    href={`/novels/${id}/timeline`}
+                    className={`${cardClassName} p-4 transition hover:border-stone-300 hover:bg-white`}
+                  >
+                    <p className="text-sm font-semibold text-stone-900">Timeline</p>
+                    <p className="mt-1 text-sm text-stone-500">
+                      Plot sequence and in-world date rail
+                    </p>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <div className="space-y-4">
+            <div className={cardClassName}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                    Chapters
+                  </p>
+                  <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+                    Reading structure
+                  </h2>
+                </div>
+                <div className="text-right text-sm text-stone-500">
+                  {novel.updated_at ? formatDisplayDate(novel.updated_at) : null}
+                </div>
+              </div>
+            </div>
+
+            {sorted.length === 0 ? (
+              <div className="flex min-h-[260px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
+                No chapters yet.
+              </div>
+            ) : (
+              <ChapterListWithFilters
+                novelId={id}
+                chapters={sorted}
+                availableTags={availableTags}
+              />
+            )}
           </div>
-          {novel.author && (
-            <p className="mb-3 text-sm text-gray-400">by {novel.author}</p>
-          )}
-          {novel.description && (
-            <p className="text-sm leading-relaxed text-gray-300">{novel.description}</p>
-          )}
         </div>
-
-        <div className="mb-6 flex gap-4">
-          <Link
-            href={`/novels/${id}/characters`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:border-gray-500 hover:text-white"
-          >
-            Characters
-            <span className="rounded-full bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
-              {characters.length}
-            </span>
-          </Link>
-          <Link
-            href={`/novels/${id}/timeline`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:border-gray-500 hover:text-white"
-          >
-            Timeline
-          </Link>
-        </div>
-
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-200">Chapters</h2>
-          <AddChapterForm novelId={id} />
-        </div>
-
-        {sorted.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-600">No chapters yet.</p>
-        ) : (
-          <ChapterListWithFilters
-            novelId={id}
-            chapters={sorted}
-            availableTags={availableTags}
-          />
-        )}
       </div>
-    </main>
+    </DashboardPage>
   )
 }

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { ChapterWithCharacters } from '../../../../types'
 import ChapterEditor from './ChapterEditor'
+import { backLinkClassName, DashboardPage, SectionHeading } from '../../../ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -35,21 +36,23 @@ export default async function ChapterPage({
   if (!chapter) notFound()
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-      <div className="mx-auto max-w-2xl">
+    <DashboardPage maxWidth="max-w-4xl">
+      <div className="space-y-5">
         <Link
           href={`/novels/${id}`}
-          className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300"
+          className={backLinkClassName}
         >
           ← Back to novel
         </Link>
 
-        <h1 className="mb-8 text-2xl font-bold tracking-tight">
-          Ch. {chapter.number} — {chapter.title}
-        </h1>
+        <SectionHeading
+          eyebrow={`Chapter ${chapter.number}`}
+          title={chapter.title}
+          description="Edit chapter summary, reading date, linked cast, and tags."
+        />
 
         <ChapterEditor chapter={chapter} novelId={id} />
       </div>
-    </main>
+    </DashboardPage>
   )
 }

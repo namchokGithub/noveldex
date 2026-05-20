@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Novel, Character } from '../../../../types'
 import CharacterDetail from './CharacterDetail'
+import { backLinkClassName, DashboardPage } from '../../../ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -44,17 +45,17 @@ export default async function CharacterPage({
   if (!novel || !character) notFound()
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-      <div className="mx-auto max-w-2xl">
+    <DashboardPage maxWidth="max-w-4xl">
+      <div className="space-y-5">
         <Link
           href={`/novels/${id}/characters`}
-          className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300"
+          className={backLinkClassName}
         >
           ← Characters
         </Link>
 
         <CharacterDetail character={character} novelId={id} />
       </div>
-    </main>
+    </DashboardPage>
   )
 }

@@ -2,6 +2,20 @@
 
 import { use, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import {
+  backLinkClassName,
+  cardClassName,
+  DashboardPage,
+  iconButtonClassName,
+  inputClassName,
+  primaryButtonClassName,
+  secondaryButtonClassName,
+  SectionHeading,
+  smallLabelClassName,
+  tagClassName,
+  timelineDotClassName,
+  timelineRailClassName,
+} from '../../ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -215,33 +229,39 @@ export default function TimelinePage({
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
-      <div className="mx-auto max-w-2xl">
+    <DashboardPage maxWidth="max-w-5xl">
+      <div className="space-y-5">
         <Link
           href={`/novels/${novelId}`}
-          className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-300"
+          className={backLinkClassName}
         >
           ← Back to novel
         </Link>
 
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Timeline</h1>
-          <button
-            onClick={() => setShowAddForm((v) => !v)}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
-          >
-            {showAddForm ? 'Cancel' : '+ Add event'}
-          </button>
-        </div>
+        <SectionHeading
+          eyebrow="Timeline"
+          title="Story sequence"
+          description="Manage major events, link them to chapters, and filter timeline by character."
+          action={
+            <button
+              onClick={() => setShowAddForm((v) => !v)}
+              className={showAddForm ? secondaryButtonClassName : primaryButtonClassName}
+            >
+              {showAddForm ? 'Cancel' : '+ Add event'}
+            </button>
+          }
+        />
 
         {showAddForm && (
           <form
             onSubmit={handleAdd}
-            className="mb-6 rounded-xl border border-gray-800 bg-gray-900 p-4"
+            className={cardClassName}
           >
-            <h2 className="mb-4 text-sm font-semibold text-gray-300">New Event</h2>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
+              New event
+            </h2>
             <EventFormFields form={addForm} onChange={setAddForm} chapters={chapters} />
-            {addError && <p className="mt-2 text-sm text-red-400">{addError}</p>}
+            {addError && <p className="mt-2 text-sm text-rose-600">{addError}</p>}
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
@@ -249,14 +269,14 @@ export default function TimelinePage({
                   setShowAddForm(false)
                   setAddForm(EMPTY_FORM)
                 }}
-                className="rounded-md border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:border-gray-500"
+                className={secondaryButtonClassName}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={addSaving}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                className={primaryButtonClassName}
               >
                 {addSaving ? 'Saving…' : 'Add event'}
               </button>
@@ -265,31 +285,31 @@ export default function TimelinePage({
         )}
 
         {characters.length > 0 && (
-          <div ref={filterRef} className="relative mb-6">
+          <div ref={filterRef} className="relative">
             <button
               onClick={() => setFilterOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-md border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:border-gray-500"
+              className={secondaryButtonClassName}
             >
               Filter by character
               {filterChars.length > 0 && (
-                <span className="rounded-full bg-blue-700 px-1.5 py-0.5 text-xs text-white">
+                <span className="rounded-full bg-stone-900 px-2 py-0.5 text-xs text-stone-50">
                   {filterChars.length}
                 </span>
               )}
-              <span className="text-gray-500 text-xs">{filterOpen ? '▲' : '▼'}</span>
+              <span className="text-stone-400 text-xs">{filterOpen ? '▲' : '▼'}</span>
             </button>
             {filterOpen && (
-              <div className="absolute left-0 top-full z-10 mt-1 min-w-48 rounded-md border border-gray-700 bg-gray-900 py-1 shadow-lg">
+              <div className="absolute left-0 top-full z-10 mt-2 min-w-56 overflow-hidden rounded-2xl border border-stone-200 bg-white py-1 shadow-lg">
                 {characters.map((c) => (
                   <label
                     key={c.id}
-                    className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-800"
+                    className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50"
                   >
                     <input
                       type="checkbox"
                       checked={filterChars.includes(c.name)}
                       onChange={() => toggleFilterChar(c.name)}
-                      className="accent-blue-500"
+                      className="accent-stone-900"
                     />
                     {c.name}
                   </label>
@@ -297,7 +317,7 @@ export default function TimelinePage({
                 {filterChars.length > 0 && (
                   <button
                     onClick={() => setFilterChars([])}
-                    className="w-full border-t border-gray-800 px-3 py-1.5 text-left text-xs text-gray-500 hover:text-gray-300"
+                    className="w-full border-t border-stone-200 px-3 py-2 text-left text-xs text-stone-500 hover:text-stone-900"
                   >
                     Clear filter
                   </button>
@@ -308,56 +328,62 @@ export default function TimelinePage({
         )}
 
         {loading ? (
-          <p className="py-8 text-center text-sm text-gray-600">Loading…</p>
+          <div className="flex min-h-[260px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
+            Loading…
+          </div>
         ) : displayed.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-600">No events yet.</p>
+          <div className="flex min-h-[260px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
+            No events yet.
+          </div>
         ) : (
           <div className="relative">
-            <div className="absolute left-[5px] top-0 h-full w-px bg-gray-800" />
+            <div className={timelineRailClassName} />
             <ul className="flex flex-col gap-8">
               {displayed.map((ev) => (
                 <li id={`event-${ev.id}`} key={ev.id} className="relative pl-8">
-                  <p className="mb-1 text-[11px] text-gray-500">{ev.story_date}</p>
-                  <span className="absolute left-0 top-6 h-[11px] w-[11px] rounded-full border-2 border-blue-500 bg-gray-950" />
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+                    {ev.story_date}
+                  </p>
+                  <span className={timelineDotClassName} />
 
                   {editingId === ev.id ? (
                     <form
                       onSubmit={handleEdit}
-                      className="rounded-xl border border-blue-800 bg-gray-900 p-4"
+                      className={cardClassName}
                     >
                       <EventFormFields
                         form={editForm}
                         onChange={setEditForm}
                         chapters={chapters}
                       />
-                      {editError && <p className="mt-2 text-sm text-red-400">{editError}</p>}
+                      {editError && <p className="mt-2 text-sm text-rose-600">{editError}</p>}
                       <div className="mt-4 flex justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => setEditingId(null)}
-                          className="rounded-md border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:border-gray-500"
+                          className={secondaryButtonClassName}
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
                           disabled={editSaving}
-                          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                          className={primaryButtonClassName}
                         >
                           {editSaving ? 'Saving…' : 'Save'}
                         </button>
                       </div>
                     </form>
                   ) : (
-                    <div className="group rounded-xl border border-gray-800 bg-gray-900 p-4">
+                    <div className={`${cardClassName} group`}>
                       <div className="mb-2 flex items-start justify-between gap-2">
-                        <p className="text-[15px] font-medium leading-snug text-white">
+                        <p className="text-[15px] font-semibold leading-snug text-stone-900">
                           {ev.title}
                         </p>
                         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                           <button
                             onClick={() => startEdit(ev)}
-                            className="rounded p-1 text-sm text-gray-500 hover:text-gray-300"
+                            className={iconButtonClassName}
                             aria-label="Edit"
                           >
                             ✏
@@ -365,7 +391,7 @@ export default function TimelinePage({
                           <button
                             onClick={() => handleDelete(ev.id)}
                             disabled={deletingId === ev.id}
-                            className="rounded p-1 text-lg leading-none text-gray-500 hover:text-red-400 disabled:opacity-50"
+                            className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
                             aria-label="Delete"
                           >
                             ×
@@ -374,7 +400,7 @@ export default function TimelinePage({
                       </div>
 
                       {ev.description && (
-                        <p className="mb-3 line-clamp-2 text-[13px] leading-relaxed text-gray-400">
+                        <p className="mb-3 line-clamp-2 text-[13px] leading-relaxed text-stone-600">
                           {ev.description}
                         </p>
                       )}
@@ -383,7 +409,7 @@ export default function TimelinePage({
                         <div className="mb-3">
                           <Link
                             href={`/novels/${novelId}/chapters/${ev.chapter_id}`}
-                            className="inline-flex items-center rounded-md bg-gray-800 px-2 py-0.5 text-xs text-gray-300 hover:bg-gray-700"
+                            className={tagClassName}
                           >
                             Ch.{String(ev.chapter_number ?? '').padStart(2, '0')} ·{' '}
                             {ev.chapter_title}
@@ -399,14 +425,14 @@ export default function TimelinePage({
                               <Link
                                 key={name}
                                 href={`/novels/${novelId}/characters/${char.id}`}
-                                className="rounded-full bg-gray-800 px-2.5 py-0.5 text-xs text-gray-300 hover:bg-gray-700"
+                                className="rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-700 ring-1 ring-inset ring-stone-200 hover:bg-stone-200/70"
                               >
                                 {name}
                               </Link>
                             ) : (
                               <span
                                 key={name}
-                                className="rounded-full bg-gray-800 px-2.5 py-0.5 text-xs text-gray-400"
+                                className="rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-500 ring-1 ring-inset ring-stone-200"
                               >
                                 {name}
                               </span>
@@ -422,7 +448,7 @@ export default function TimelinePage({
           </div>
         )}
       </div>
-    </main>
+    </DashboardPage>
   )
 }
 
@@ -444,54 +470,54 @@ function EventFormFields({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label className="mb-1 block text-xs font-medium text-gray-400">Title *</label>
+        <label className={smallLabelClassName}>Title *</label>
         <input
           value={form.title}
           onChange={set('title')}
           required
-          className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none"
+          className={inputClassName}
           placeholder="Event title"
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-400">Story date *</label>
+          <label className={smallLabelClassName}>Story date *</label>
           <input
             value={form.story_date}
             onChange={set('story_date')}
             required
-            className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none"
+            className={inputClassName}
             placeholder="e.g. Year 1349"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-400">Sort order *</label>
+          <label className={smallLabelClassName}>Sort order *</label>
           <input
             type="number"
             value={form.sort_order}
             onChange={set('sort_order')}
             required
-            className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-1.5 text-sm text-white focus:border-blue-500 focus:outline-none"
+            className={inputClassName}
           />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-gray-400">Description</label>
+        <label className={smallLabelClassName}>Description</label>
         <textarea
           value={form.description}
           onChange={set('description')}
           rows={2}
-          className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none"
+          className={inputClassName}
           placeholder="Optional description"
         />
       </div>
       {chapters.length > 0 && (
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-400">Chapter</label>
+          <label className={smallLabelClassName}>Chapter</label>
           <select
             value={form.chapter_id}
             onChange={set('chapter_id')}
-            className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-1.5 text-sm text-white focus:border-blue-500 focus:outline-none"
+            className={inputClassName}
           >
             <option value="">— none —</option>
             {chapters.map((ch) => (
