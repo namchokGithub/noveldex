@@ -103,6 +103,12 @@ export default async function NovelPage({
               {characters.length}
             </span>
           </Link>
+          <Link
+            href={`/novels/${id}/timeline`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:border-gray-500 hover:text-white"
+          >
+            Timeline
+          </Link>
         </div>
 
         <div className="mb-4 flex items-center justify-between">

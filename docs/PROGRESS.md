@@ -30,10 +30,11 @@
 
 ## Phase 3: Timeline ← current
 
-- [ ] story_date field on chapters (TEXT, flexible format)
-- [ ] Timeline API endpoint (ordered by story_date)
-- [ ] Timeline page (visual)
-- [ ] Filtering by novel / character
+- [x] events table + migration (000005) — novel-scoped, optional chapter FK, story_date TEXT, sort_order INT
+- [x] event_characters join table + migration (000006)
+- [x] Timeline API endpoints (GET/POST/PATCH/DELETE /novels/:id/events, character link/unlink)
+- [x] Timeline page — vertical rail UI, add/edit/delete, chapter badge, character chips
+- [x] Client-side filter by character
 - [ ] Handle unknown / approximate dates
 
 ## Phase 4: Search + Tags

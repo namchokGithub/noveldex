@@ -40,6 +40,10 @@ func main() {
 	chapterUC := usecase.NewChapterUsecase(chapterRepo, characterRepo)
 	chapterH := handler.NewChapterHandler(chapterUC)
 
+	eventRepo := repository.NewEventRepository(pool)
+	eventUC := usecase.NewEventUsecase(eventRepo)
+	eventH := handler.NewEventHandler(eventUC)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -68,6 +72,14 @@ func main() {
 		r.Get("/novels/{novelID}/chapters/{chapterID}/characters", characterH.ListByChapter)
 		r.Post("/novels/{novelID}/chapters/{chapterID}/characters", characterH.LinkToChapter)
 		r.Delete("/novels/{novelID}/chapters/{chapterID}/characters/{characterID}", characterH.UnlinkFromChapter)
+
+		r.Get("/novels/{novelID}/events", eventH.List)
+		r.Post("/novels/{novelID}/events", eventH.Create)
+		r.Patch("/novels/{novelID}/events/{eventID}", eventH.Update)
+		r.Delete("/novels/{novelID}/events/{eventID}", eventH.Delete)
+
+		r.Post("/novels/{novelID}/events/{eventID}/characters", eventH.LinkCharacter)
+		r.Delete("/novels/{novelID}/events/{eventID}/characters/{characterID}", eventH.UnlinkCharacter)
 	})
 
 	addr := fmt.Sprintf(":%s", cfg.Port)
