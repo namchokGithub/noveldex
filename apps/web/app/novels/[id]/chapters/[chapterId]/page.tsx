@@ -17,6 +17,7 @@ async function getChapter(novelId: string, chapterId: string): Promise<ChapterWi
     const data = body.data as ChapterWithCharacters
     // Ensure characters array is always present (API may omit it if empty)
     if (!data.characters) data.characters = []
+    if (!data.tags) data.tags = []
     return data
   } catch {
     return null

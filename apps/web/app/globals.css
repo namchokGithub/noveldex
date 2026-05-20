@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+mark {
+  background: #fef08a;
+  color: #713f12;
+  border-radius: 0.125rem;
+  padding: 0 0.125rem;
+}

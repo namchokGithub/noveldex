@@ -316,7 +316,7 @@ export default function TimelinePage({
             <div className="absolute left-[5px] top-0 h-full w-px bg-gray-800" />
             <ul className="flex flex-col gap-8">
               {displayed.map((ev) => (
-                <li key={ev.id} className="relative pl-8">
+                <li id={`event-${ev.id}`} key={ev.id} className="relative pl-8">
                   <p className="mb-1 text-[11px] text-gray-500">{ev.story_date}</p>
                   <span className="absolute left-0 top-6 h-[11px] w-[11px] rounded-full border-2 border-blue-500 bg-gray-950" />
 

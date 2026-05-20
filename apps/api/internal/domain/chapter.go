@@ -12,6 +12,7 @@ type Chapter struct {
 	Title     string     `json:"title"`
 	Summary   string     `json:"summary"`
 	ReadAt    *time.Time `json:"read_at"`
+	Tags      []Tag      `json:"tags"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }
@@ -19,7 +20,6 @@ type Chapter struct {
 type ChapterWithCharacters struct {
 	Chapter
 	Characters []Character `json:"characters"`
-	Tags       []Tag       `json:"tags"`
 }
 
 type ChapterRepository interface {

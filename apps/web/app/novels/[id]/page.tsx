@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Novel, Chapter, Character } from '../../types'
+import type { Novel, Chapter, Character, Tag } from '../../types'
 import AddChapterForm from './AddChapterForm'
+import ChapterListWithFilters from './ChapterListWithFilters'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -36,7 +37,10 @@ async function getChapters(id: string): Promise<Chapter[]> {
     const res = await fetch(`${BASE}/api/v1/novels/${id}/chapters`, { cache: 'no-store' })
     if (!res.ok) return []
     const body = await res.json()
-    return (body.data as Chapter[]) ?? []
+    return ((body.data as Chapter[]) ?? []).map((chapter) => ({
+      ...chapter,
+      tags: chapter.tags ?? [],
+    }))
   } catch {
     return []
   }
@@ -53,6 +57,17 @@ async function getCharacters(id: string): Promise<Character[]> {
   }
 }
 
+async function getTags(id: string): Promise<Tag[]> {
+  try {
+    const res = await fetch(`${BASE}/api/v1/novels/${id}/tags`, { cache: 'no-store' })
+    if (!res.ok) return []
+    const body = await res.json()
+    return (body.data as Tag[]) ?? []
+  } catch {
+    return []
+  }
+}
+
 export default async function NovelPage({
   params,
 }: {
@@ -60,11 +75,22 @@ export default async function NovelPage({
 }) {
   const { id } = await params
 
-  const [novel, chapters, characters] = await Promise.all([getNovel(id), getChapters(id), getCharacters(id)])
+  const [novel, chapters, characters, tags] = await Promise.all([
+    getNovel(id),
+    getChapters(id),
+    getCharacters(id),
+    getTags(id),
+  ])
 
   if (!novel) notFound()
 
   const sorted = [...chapters].sort((a, b) => a.number - b.number)
+  const availableTags =
+    tags.length > 0
+      ? tags
+      : sorted
+          .flatMap((chapter) => chapter.tags)
+          .filter((tag, index, array) => array.findIndex((entry) => entry.id === tag.id) === index)
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-8 text-white">
@@ -119,23 +145,11 @@ export default async function NovelPage({
         {sorted.length === 0 ? (
           <p className="py-8 text-center text-sm text-gray-600">No chapters yet.</p>
         ) : (
-          <ul className="divide-y divide-gray-800 rounded-xl border border-gray-800">
-            {sorted.map((chapter) => (
-              <li key={chapter.id}>
-                <Link
-                  href={`/novels/${id}/chapters/${chapter.id}`}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-gray-900"
-                >
-                  <span className="text-sm text-white">
-                    Ch. {chapter.number} — {chapter.title}
-                  </span>
-                  {chapter.read_at && (
-                    <span className="text-xs text-gray-500">{chapter.read_at}</span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <ChapterListWithFilters
+            novelId={id}
+            chapters={sorted}
+            availableTags={availableTags}
+          />
         )}
       </div>
     </main>

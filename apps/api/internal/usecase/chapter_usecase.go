@@ -21,7 +21,21 @@ func NewChapterUsecase(repo domain.ChapterRepository, charRepo domain.CharacterR
 }
 
 func (u *ChapterUsecase) List(ctx context.Context, novelID string) ([]domain.Chapter, error) {
-	return u.repo.List(ctx, novelID)
+	chapters, err := u.repo.List(ctx, novelID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range chapters {
+		tags, err := u.tagRepo.ListByChapter(ctx, chapters[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		if tags == nil {
+			tags = []domain.Tag{}
+		}
+		chapters[i].Tags = tags
+	}
+	return chapters, nil
 }
 
 func (u *ChapterUsecase) Create(ctx context.Context, ch *domain.Chapter) error {
@@ -63,7 +77,8 @@ func (u *ChapterUsecase) GetByIDWithCharacters(ctx context.Context, novelID, id 
 	if tags == nil {
 		tags = []domain.Tag{}
 	}
-	return &domain.ChapterWithCharacters{Chapter: *ch, Characters: chars, Tags: tags}, nil
+	ch.Tags = tags
+	return &domain.ChapterWithCharacters{Chapter: *ch, Characters: chars}, nil
 }
 
 func (u *ChapterUsecase) Update(ctx context.Context, ch *domain.Chapter) error {

@@ -9,6 +9,12 @@ export interface Novel {
   updated_at: string
 }
 
+export interface Tag {
+  id: string
+  novel_id: string
+  name: string
+}
+
 export interface Chapter {
   id: string
   novel_id: string
@@ -16,6 +22,7 @@ export interface Chapter {
   title: string
   summary: string
   read_at: string | null
+  tags: Tag[]
   created_at: string
   updated_at: string
 }
@@ -43,4 +50,31 @@ export interface Character {
 
 export interface ChapterWithCharacters extends Chapter {
   characters: Character[]
+}
+
+export interface SearchChapterResult {
+  id: string
+  number: number
+  title: string
+  summary_snippet: string
+}
+
+export interface SearchCharacterResult {
+  id: string
+  name: string
+  role: string
+  description_snippet: string
+}
+
+export interface SearchEventResult {
+  id: string
+  title: string
+  description: string
+  story_date: string
+}
+
+export interface SearchResult {
+  chapters: SearchChapterResult[]
+  characters: SearchCharacterResult[]
+  events: SearchEventResult[]
 }

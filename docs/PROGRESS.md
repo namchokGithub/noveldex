@@ -28,7 +28,7 @@
 - [x] Characters list page with role badges + chapter counts
 - [x] Characters link on novel detail page
 
-## Phase 3: Timeline ← current
+## Phase 3: Timeline
 
 - [x] events table + migration (000005) — novel-scoped, optional chapter FK, story_date TEXT, sort_order INT
 - [x] event_characters join table + migration (000006)
@@ -37,13 +37,18 @@
 - [x] Client-side filter by character
 - [ ] Handle unknown / approximate dates
 
-## Phase 4: Search + Tags
+## Phase 4: Search + Tags ← current
 
-- [ ] tags table + join tables
-- [ ] Tag CRUD + assign to novels/characters
-- [ ] Full-text search on novels/chapters (pg tsvector)
-- [ ] Search API endpoint
-- [ ] Search UI with filters
+- [x] tags table + migration (000007) — novel-scoped, unique per novel
+- [x] chapter_tags join table + migration (000008)
+- [x] search_vector columns + GIN indexes (000009) — chapters (title+summary), characters (name+description)
+- [x] Tag CRUD endpoints (GET/POST/DELETE /novels/:id/tags)
+- [x] Chapter↔tag link/unlink endpoints
+- [x] GET /novels/:id/chapters/:id now includes tags[] in response
+- [x] Search API endpoint (GET /novels/:id/search?q=&type=all|chapters|characters|events)
+- [x] Search UI — global Cmd/Ctrl+K palette with chapter/character/event results
+- [x] Chapter tag UI — add/remove tags from chapter detail page
+- [x] Tag filter UI on chapters list
 
 ## Phase 5: Auth
 
