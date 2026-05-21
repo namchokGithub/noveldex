@@ -93,7 +93,7 @@ export default function ChapterListWithFilters({
           {filteredChapters.map((chapter) => (
             <li key={chapter.id}>
               <Link
-                href={`/novels/${novelId}/chapters/${chapter.id}`}
+                href={`/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapter.id}`}
                 className={listRowClassName}>
                 <div className="min-w-0">
                   <span className="text-sm font-medium text-stone-900">
