@@ -1,6 +1,6 @@
 # NovelDex — Agent Instructions
 
-Read this before touching any code. Also read `docs/CONTEXT.md` for current project state.
+Read this before touching any code. Also read `docs/ai/CONTEXT.md` for current project state.
 
 ## Project
 
@@ -36,7 +36,7 @@ Novel indexing webapp. Monorepo: `apps/api` (Go) + `apps/web` (Next.js 16).
 
 - UUIDs for PKs (`gen_random_uuid()`)
 - All tables: `created_at`, `updated_at` (trigger-managed), `deleted_at` (soft delete)
-- `story_date` is TEXT — in-universe dates are non-standard (see `docs/DECISIONS.md` ADR-004)
+- `story_date` is TEXT — in-universe dates are non-standard (see `docs/engineering/DECISIONS.md` ADR-004)
 - Migration files: `{version}_{description}.up.sql` / `.down.sql` in `apps/api/migrations/`
 
 ### Git
@@ -67,9 +67,9 @@ cd apps/web && npx tsc --noEmit
 
 ## Phase Status
 
-See `docs/PROGRESS.md` for current phase and checklist.
-See `docs/DECISIONS.md` for why things are the way they are.
-See `docs/CONTEXT.md` for current working state (update it each session).
+See `docs/engineering/PROGRESS.md` for current phase and checklist.
+See `docs/engineering/DECISIONS.md` for why things are the way they are.
+See `docs/ai/CONTEXT.md` for current working state (update it each session).
 
 ## What NOT to do
 
@@ -77,4 +77,4 @@ See `docs/CONTEXT.md` for current working state (update it each session).
 - Don't add tests (no test suite yet — Phase 1+ decision)
 - Don't containerize `apps/api` or `apps/web` (they run natively)
 - Don't use `any` in TypeScript without a comment explaining why
-- Don't add dependencies without updating `docs/DECISIONS.md` if non-obvious
+- Don't add dependencies without updating `docs/engineering/DECISIONS.md` if non-obvious

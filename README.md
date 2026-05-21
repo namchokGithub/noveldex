@@ -49,4 +49,4 @@ make logs         # tail docker logs
 
 ## Status
 
-Phase 3 (Timeline) complete. See [docs/PROGRESS.md](docs/PROGRESS.md) for full roadmap.
+Phase 3 (Timeline) complete. See [docs/engineering/PROGRESS.md](docs/engineering/PROGRESS.md) for full roadmap.

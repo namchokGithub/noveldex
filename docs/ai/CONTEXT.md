@@ -66,9 +66,15 @@ apps/
 docker-compose.yml
 Makefile                        # make dev / api / web / migrate-up / db / logs
 docs/
-  PROGRESS.md                   # phase tracker
-  DECISIONS.md                  # architecture decisions
-  CONTEXT.md                    # this file
+  README.md                     # navigation index
+  ai/
+    AGENTS.md                   # agent instructions
+    CONTEXT.md                  # this file
+    plans/                      # implementation plans
+    specs/                      # design specs
+  engineering/
+    PROGRESS.md                 # phase tracker
+    DECISIONS.md                # architecture decisions
 ```
 
 ## API Routes
