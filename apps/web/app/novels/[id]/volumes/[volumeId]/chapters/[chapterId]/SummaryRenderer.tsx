@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Character } from '../../../../types'
+import { Character } from '@/app/types'
 
 interface Props {
   summary: string

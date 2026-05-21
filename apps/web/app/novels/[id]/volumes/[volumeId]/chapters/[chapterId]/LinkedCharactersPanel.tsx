@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Character } from '../../../../types';
+import { Character } from '@/app/types';
 import { T } from '@/components/i18n/I18nProvider';
 
 interface Props {
