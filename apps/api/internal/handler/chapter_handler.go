@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -13,11 +14,12 @@ import (
 )
 
 type ChapterHandler struct {
-	uc *usecase.ChapterUsecase
+	uc       *usecase.ChapterUsecase
+	volumeUC *usecase.VolumeUsecase
 }
 
-func NewChapterHandler(uc *usecase.ChapterUsecase) *ChapterHandler {
-	return &ChapterHandler{uc: uc}
+func NewChapterHandler(uc *usecase.ChapterUsecase, volumeUC *usecase.VolumeUsecase) *ChapterHandler {
+	return &ChapterHandler{uc: uc, volumeUC: volumeUC}
 }
 
 type chapterCreateRequest struct {
@@ -45,9 +47,27 @@ func parseReadAt(s string) (*time.Time, error) {
 	return &t, nil
 }
 
+// resolveVolume verifies volumeID belongs to novelID. Writes error and returns false on failure.
+func (h *ChapterHandler) resolveVolume(ctx context.Context, w http.ResponseWriter, novelID, volumeID string) bool {
+	_, err := h.volumeUC.GetByID(ctx, novelID, volumeID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "not found")
+		} else {
+			writeError(w, http.StatusInternalServerError, err.Error())
+		}
+		return false
+	}
+	return true
+}
+
 func (h *ChapterHandler) List(w http.ResponseWriter, r *http.Request) {
 	novelID := chi.URLParam(r, "novelID")
-	chapters, err := h.uc.List(r.Context(), novelID)
+	volumeID := chi.URLParam(r, "volumeID")
+	if !h.resolveVolume(r.Context(), w, novelID, volumeID) {
+		return
+	}
+	chapters, err := h.uc.List(r.Context(), volumeID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -60,6 +80,10 @@ func (h *ChapterHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *ChapterHandler) Create(w http.ResponseWriter, r *http.Request) {
 	novelID := chi.URLParam(r, "novelID")
+	volumeID := chi.URLParam(r, "volumeID")
+	if !h.resolveVolume(r.Context(), w, novelID, volumeID) {
+		return
+	}
 	var req chapterCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
@@ -71,13 +95,13 @@ func (h *ChapterHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ch := &domain.Chapter{
-		NovelID: novelID,
-		Number:  req.Number,
-		Title:   req.Title,
-		Summary: req.Summary,
-		ReadAt:  readAt,
+		VolumeID: volumeID,
+		Number:   req.Number,
+		Title:    req.Title,
+		Summary:  req.Summary,
+		ReadAt:   readAt,
 	}
-	if err := h.uc.Create(r.Context(), ch); err != nil {
+	if err := h.uc.Create(r.Context(), novelID, ch); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -86,8 +110,12 @@ func (h *ChapterHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *ChapterHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	novelID := chi.URLParam(r, "novelID")
+	volumeID := chi.URLParam(r, "volumeID")
 	chapterID := chi.URLParam(r, "chapterID")
-	ch, err := h.uc.GetByIDWithCharacters(r.Context(), novelID, chapterID)
+	if !h.resolveVolume(r.Context(), w, novelID, volumeID) {
+		return
+	}
+	ch, err := h.uc.GetByIDWithCharacters(r.Context(), volumeID, chapterID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not found")
@@ -101,9 +129,13 @@ func (h *ChapterHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 func (h *ChapterHandler) Update(w http.ResponseWriter, r *http.Request) {
 	novelID := chi.URLParam(r, "novelID")
+	volumeID := chi.URLParam(r, "volumeID")
 	chapterID := chi.URLParam(r, "chapterID")
+	if !h.resolveVolume(r.Context(), w, novelID, volumeID) {
+		return
+	}
 
-	ch, err := h.uc.GetByID(r.Context(), novelID, chapterID)
+	ch, err := h.uc.GetByID(r.Context(), volumeID, chapterID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not found")
@@ -137,7 +169,7 @@ func (h *ChapterHandler) Update(w http.ResponseWriter, r *http.Request) {
 		ch.ReadAt = readAt
 	}
 
-	if err := h.uc.Update(r.Context(), ch); err != nil {
+	if err := h.uc.Update(r.Context(), novelID, ch); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not found")
 			return
@@ -150,8 +182,12 @@ func (h *ChapterHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *ChapterHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	novelID := chi.URLParam(r, "novelID")
+	volumeID := chi.URLParam(r, "volumeID")
 	chapterID := chi.URLParam(r, "chapterID")
-	if err := h.uc.Delete(r.Context(), novelID, chapterID); err != nil {
+	if !h.resolveVolume(r.Context(), w, novelID, volumeID) {
+		return
+	}
+	if err := h.uc.Delete(r.Context(), volumeID, chapterID); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not found")
 			return

@@ -41,9 +41,13 @@ func main() {
 	tagUC := usecase.NewTagUsecase(tagRepo)
 	tagH := handler.NewTagHandler(tagUC)
 
+	volumeRepo := repository.NewVolumeRepository(pool)
+	volumeUC := usecase.NewVolumeUsecase(volumeRepo)
+	volumeH := handler.NewVolumeHandler(volumeUC)
+
 	chapterRepo := repository.NewChapterRepository(pool)
 	chapterUC := usecase.NewChapterUsecase(chapterRepo, characterRepo, tagRepo)
-	chapterH := handler.NewChapterHandler(chapterUC)
+	chapterH := handler.NewChapterHandler(chapterUC, volumeUC)
 
 	eventRepo := repository.NewEventRepository(pool)
 	eventUC := usecase.NewEventUsecase(eventRepo)
@@ -67,11 +71,24 @@ func main() {
 		r.Patch("/novels/{id}", novelH.Update)
 		r.Delete("/novels/{id}", novelH.Delete)
 
-		r.Get("/novels/{novelID}/chapters", chapterH.List)
-		r.Post("/novels/{novelID}/chapters", chapterH.Create)
-		r.Get("/novels/{novelID}/chapters/{chapterID}", chapterH.GetByID)
-		r.Patch("/novels/{novelID}/chapters/{chapterID}", chapterH.Update)
-		r.Delete("/novels/{novelID}/chapters/{chapterID}", chapterH.Delete)
+		r.Get("/novels/{novelID}/volumes", volumeH.List)
+		r.Post("/novels/{novelID}/volumes", volumeH.Create)
+		r.Get("/novels/{novelID}/volumes/{volumeID}", volumeH.GetByID)
+		r.Patch("/novels/{novelID}/volumes/{volumeID}", volumeH.Update)
+		r.Delete("/novels/{novelID}/volumes/{volumeID}", volumeH.Delete)
+
+		r.Get("/novels/{novelID}/volumes/{volumeID}/chapters", chapterH.List)
+		r.Post("/novels/{novelID}/volumes/{volumeID}/chapters", chapterH.Create)
+		r.Get("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}", chapterH.GetByID)
+		r.Patch("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}", chapterH.Update)
+		r.Delete("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}", chapterH.Delete)
+
+		r.Get("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}/characters", characterH.ListByChapter)
+		r.Post("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}/characters", characterH.LinkToChapter)
+		r.Delete("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}/characters/{characterID}", characterH.UnlinkFromChapter)
+
+		r.Post("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}/tags", tagH.LinkToChapter)
+		r.Delete("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}/tags/{tagID}", tagH.UnlinkFromChapter)
 
 		r.Get("/novels/{novelID}/characters", characterH.List)
 		r.Post("/novels/{novelID}/characters", characterH.Create)
@@ -79,24 +96,16 @@ func main() {
 		r.Patch("/novels/{novelID}/characters/{characterID}", characterH.Update)
 		r.Delete("/novels/{novelID}/characters/{characterID}", characterH.Delete)
 
-		r.Get("/novels/{novelID}/chapters/{chapterID}/characters", characterH.ListByChapter)
-		r.Post("/novels/{novelID}/chapters/{chapterID}/characters", characterH.LinkToChapter)
-		r.Delete("/novels/{novelID}/chapters/{chapterID}/characters/{characterID}", characterH.UnlinkFromChapter)
-
 		r.Get("/novels/{novelID}/events", eventH.List)
 		r.Post("/novels/{novelID}/events", eventH.Create)
 		r.Patch("/novels/{novelID}/events/{eventID}", eventH.Update)
 		r.Delete("/novels/{novelID}/events/{eventID}", eventH.Delete)
-
 		r.Post("/novels/{novelID}/events/{eventID}/characters", eventH.LinkCharacter)
 		r.Delete("/novels/{novelID}/events/{eventID}/characters/{characterID}", eventH.UnlinkCharacter)
 
 		r.Get("/novels/{novelID}/tags", tagH.List)
 		r.Post("/novels/{novelID}/tags", tagH.Create)
 		r.Delete("/novels/{novelID}/tags/{tagID}", tagH.Delete)
-
-		r.Post("/novels/{novelID}/chapters/{chapterID}/tags", tagH.LinkToChapter)
-		r.Delete("/novels/{novelID}/chapters/{chapterID}/tags/{tagID}", tagH.UnlinkFromChapter)
 
 		r.Get("/novels/{novelID}/search", searchH.Search)
 	})

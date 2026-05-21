@@ -42,7 +42,8 @@ make logs         # tail docker logs
 ## Features
 
 - **Novels** — track reading status, author, description
-- **Chapters** — summaries with `[[Name]]` auto-linking to characters
+- **Volumes** — group chapters into arcs or parts within a novel
+- **Chapters** — summaries with `[[Name]]` auto-linking to characters; scoped under volumes
 - **Characters** — profiles, role badges, chapter appearance tracking
 - **Timeline** — event log with story dates, chapter links, character tags, client-side filtering
 

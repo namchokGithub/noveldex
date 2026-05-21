@@ -18,14 +18,16 @@ func NewSearchRepository(pool *pgxpool.Pool) domain.SearchRepository {
 
 func (r *pgxSearchRepo) SearchChapters(ctx context.Context, novelID, tsQuery string) ([]domain.ChapterSnippet, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT id, number, title,
-		  ts_headline('simple', coalesce(summary,''), query,
+		SELECT c.id, c.number, c.title,
+		  ts_headline('simple', coalesce(c.summary,''), query,
 		    'MaxWords=15, MinWords=8, StartSel=<mark>, StopSel=</mark>'
 		  ) AS summary_snippet
-		FROM chapters, to_tsquery('simple', $1 || ':*') query
-		WHERE novel_id = $2
-		  AND search_vector @@ query
-		ORDER BY ts_rank(search_vector, query) DESC
+		FROM chapters c
+		JOIN volumes v ON v.id = c.volume_id,
+		to_tsquery('simple', $1 || ':*') query
+		WHERE v.novel_id = $2
+		  AND c.search_vector @@ query
+		ORDER BY ts_rank(c.search_vector, query) DESC
 		LIMIT 10
 	`, tsQuery, novelID)
 	if err != nil {
