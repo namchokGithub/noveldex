@@ -9,6 +9,15 @@ export interface Novel {
   updated_at: string
 }
 
+export interface Volume {
+  id: string
+  novel_id: string
+  number: number
+  title: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Tag {
   id: string
   novel_id: string
@@ -17,7 +26,7 @@ export interface Tag {
 
 export interface Chapter {
   id: string
-  novel_id: string
+  volume_id: string
   number: number
   title: string
   summary: string
