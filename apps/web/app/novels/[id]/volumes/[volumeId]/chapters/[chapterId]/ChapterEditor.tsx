@@ -41,6 +41,7 @@ export default function ChapterEditor({
   const [allTags, setAllTags] = useState<Tag[]>(chapter.tags ?? [])
   const [tagQuery, setTagQuery] = useState('')
   const [tagPickerOpen, setTagPickerOpen] = useState(false)
+  const [tagListFetched, setTagListFetched] = useState(false)
   const [tagLoading, setTagLoading] = useState(false)
   const [tagError, setTagError] = useState<string | null>(null)
   const [tagSaving, setTagSaving] = useState(false)
@@ -87,7 +88,7 @@ export default function ChapterEditor({
   }
 
   async function ensureTagListLoaded() {
-    if (allTags.length > 0 || tagLoading) return
+    if (tagListFetched || tagLoading) return
     setTagLoading(true)
     setTagError(null)
     try {
@@ -99,6 +100,7 @@ export default function ChapterEditor({
       }
       const body = await res.json()
       setAllTags((body.data as Tag[]) ?? [])
+      setTagListFetched(true)
     } catch {
       setTagError(t('common.networkError'))
     } finally {
