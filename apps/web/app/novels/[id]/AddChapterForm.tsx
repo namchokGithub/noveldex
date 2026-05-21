@@ -14,7 +14,13 @@ import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
-export default function AddChapterForm({ novelId }: { novelId: string }) {
+export default function AddChapterForm({
+  novelId,
+  volumeId,
+}: {
+  novelId: string
+  volumeId: string
+}) {
   const { t } = useI18n()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -36,11 +42,14 @@ export default function AddChapterForm({ novelId }: { novelId: string }) {
     }
 
     try {
-      const res = await fetch(`${BASE}/api/v1/novels/${novelId}/chapters`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
+      const res = await fetch(
+        `${BASE}/api/v1/novels/${novelId}/volumes/${volumeId}/chapters`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      )
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
@@ -60,10 +69,7 @@ export default function AddChapterForm({ novelId }: { novelId: string }) {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className={primaryButtonClassName}
-      >
+      <button onClick={() => setOpen(true)} className={primaryButtonClassName}>
         {t('addChapter.button')}
       </button>
     )
@@ -112,26 +118,21 @@ export default function AddChapterForm({ novelId }: { novelId: string }) {
           </div>
           <div>
             <label className={smallLabelClassName}>{t('addChapter.dateRead')}</label>
-            <input
-              name="read_at"
-              type="date"
-              className={inputClassName}
-            />
+            <input name="read_at" type="date" className={inputClassName} />
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <div className="mt-1 flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => { setOpen(false); setError(null) }}
+              onClick={() => {
+                setOpen(false)
+                setError(null)
+              }}
               className={ghostButtonClassName}
             >
               {t('common.cancel')}
             </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className={primaryButtonClassName}
-            >
+            <button type="submit" disabled={submitting} className={primaryButtonClassName}>
               {submitting ? t('common.saving') : t('common.save')}
             </button>
           </div>

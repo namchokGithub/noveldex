@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Novel, Chapter, Character, Tag } from '../../types'
+import type { Novel, Volume, Chapter, Character, Tag } from '../../types'
 import AddChapterForm from './AddChapterForm'
 import ChapterListWithFilters from './ChapterListWithFilters'
 import { T } from '@/components/i18n/I18nProvider'
@@ -29,9 +29,23 @@ async function getNovel(id: string): Promise<Novel | null> {
   }
 }
 
-async function getChapters(id: string): Promise<Chapter[]> {
+async function getVolumes(novelId: string): Promise<Volume[]> {
   try {
-    const res = await fetch(`${BASE}/api/v1/novels/${id}/chapters`, { cache: 'no-store' })
+    const res = await fetch(`${BASE}/api/v1/novels/${novelId}/volumes`, { cache: 'no-store' })
+    if (!res.ok) return []
+    const body = await res.json()
+    return (body.data as Volume[]) ?? []
+  } catch {
+    return []
+  }
+}
+
+async function getChaptersByVolume(novelId: string, volumeId: string): Promise<Chapter[]> {
+  try {
+    const res = await fetch(
+      `${BASE}/api/v1/novels/${novelId}/volumes/${volumeId}/chapters`,
+      { cache: 'no-store' }
+    )
     if (!res.ok) return []
     const body = await res.json()
     return ((body.data as Chapter[]) ?? []).map((chapter) => ({
@@ -72,14 +86,18 @@ export default async function NovelPage({
 }) {
   const { id } = await params
 
-  const [novel, chapters, characters, tags] = await Promise.all([
+  const [novel, volumes, characters, tags] = await Promise.all([
     getNovel(id),
-    getChapters(id),
+    getVolumes(id),
     getCharacters(id),
     getTags(id),
   ])
 
   if (!novel) notFound()
+
+  const chapters = (
+    await Promise.all(volumes.map((v) => getChaptersByVolume(id, v.id)))
+  ).flat()
 
   const sorted = [...chapters].sort((a, b) => a.number - b.number)
   const availableTags =
@@ -94,21 +112,15 @@ export default async function NovelPage({
   return (
     <DashboardPage maxWidth="max-w-6xl">
       <div className="space-y-5">
-        <Link
-          href="/novels"
-          className={backLinkClassName}
-        >
+        <Link href="/novels" className={backLinkClassName}>
           ← <T k="nav.allNovels" />
         </Link>
 
         <SectionHeading
           eyebrow={<T k="novel.eyebrow" />}
           title={novel.title}
-          description={
-            novel.description ||
-            <T k="novel.workspaceFallback" />
-          }
-          action={<AddChapterForm novelId={id} />}
+          description={novel.description || <T k="novel.workspaceFallback" />}
+          action={<AddChapterForm novelId={id} volumeId={volumes[0]?.id ?? ''} />}
         />
 
         <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -155,7 +167,9 @@ export default async function NovelPage({
                     href={`/novels/${id}/characters`}
                     className={`${cardClassName} p-4 transition hover:border-stone-300 hover:bg-white`}
                   >
-                    <p className="text-sm font-semibold text-stone-900"><T k="novel.characters" /></p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      <T k="novel.characters" />
+                    </p>
                     <p className="mt-1 text-sm text-stone-500">
                       <T k="novel.trackedCast" values={{ count: characters.length }} />
                     </p>
@@ -164,7 +178,9 @@ export default async function NovelPage({
                     href={`/novels/${id}/timeline`}
                     className={`${cardClassName} p-4 transition hover:border-stone-300 hover:bg-white`}
                   >
-                    <p className="text-sm font-semibold text-stone-900"><T k="novel.timeline" /></p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      <T k="novel.timeline" />
+                    </p>
                     <p className="mt-1 text-sm text-stone-500">
                       <T k="novel.timelineHelp" />
                     </p>
