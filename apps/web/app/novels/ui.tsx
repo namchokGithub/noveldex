@@ -68,6 +68,9 @@ export const modalBackdropClassName =
 export const modalPanelClassName =
   'w-full max-w-md rounded-[28px] border border-stone-200 bg-[linear-gradient(180deg,#fffdf8_0%,#f6f0e7_100%)] p-6 shadow-[0_24px_80px_rgba(28,25,23,0.28)]'
 
+export const skeletonClassName =
+  'animate-pulse rounded-2xl bg-[linear-gradient(90deg,rgba(231,229,228,0.9),rgba(245,245,244,1),rgba(231,229,228,0.9))] bg-[length:200%_100%]'
+
 export const statusColorClassNames: Record<string, string> = {
   reading: 'bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200',
   completed: 'bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200',
@@ -140,4 +143,91 @@ export function formatDisplayDate(value: string | null | undefined) {
     day: 'numeric',
     year: 'numeric',
   }).format(date)
+}
+
+export function LoadingBar({
+  className,
+}: {
+  className: string
+}) {
+  return <div className={`${skeletonClassName} ${className}`} />
+}
+
+export function LoadingCard({
+  lines = 3,
+}: {
+  lines?: number
+}) {
+  return (
+    <div className={cardClassName}>
+      <div className="space-y-3">
+        {Array.from({ length: lines }).map((_, index) => (
+          <LoadingBar
+            key={index}
+            className={index === 0 ? 'h-4 w-28' : index === lines - 1 ? 'h-4 w-2/3' : 'h-4 w-full'}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function PageLoadingState({
+  maxWidth = 'max-w-6xl',
+  backLinkWidth,
+  headerWidths = ['h-7 w-24', 'h-12 w-80', 'h-4 w-full max-w-2xl'],
+  sidebar = false,
+  sidebarLines = ['h-4 w-28', 'h-24 w-full', 'h-20 w-full'],
+  contentCards = [3, 4, 4],
+  contentClassName = 'space-y-4',
+  gridClassName = 'grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]',
+}: {
+  maxWidth?: string
+  backLinkWidth?: string
+  headerWidths?: string[]
+  sidebar?: boolean
+  sidebarLines?: string[]
+  contentCards?: number[]
+  contentClassName?: string
+  gridClassName?: string
+}) {
+  const header = (
+    <div className="space-y-4">
+      {headerWidths.map((width, index) => (
+        <LoadingBar key={index} className={width} />
+      ))}
+    </div>
+  )
+
+  const content = (
+    <div className={contentClassName}>
+      {contentCards.map((lines, index) => (
+        <LoadingCard key={index} lines={lines} />
+      ))}
+    </div>
+  )
+
+  return (
+    <DashboardPage maxWidth={maxWidth}>
+      <div className="space-y-5">
+        {backLinkWidth ? <LoadingBar className={backLinkWidth} /> : null}
+        {header}
+
+        {sidebar ? (
+          <div className={gridClassName}>
+            <aside className={mutedCardClassName}>
+              <div className="space-y-4">
+                {sidebarLines.map((width, index) => (
+                  <LoadingBar key={index} className={width} />
+                ))}
+              </div>
+            </aside>
+            {content}
+          </div>
+        ) : (
+          content
+        )}
+      </div>
+    </DashboardPage>
+  )
 }

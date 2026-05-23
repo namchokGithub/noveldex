@@ -44,17 +44,19 @@ apps/
     app/
       types.ts                            # Novel, Chapter, Character, ChapterWithCharacters
       page.tsx                            # homepage
+      loading.tsx                         # global app loading skeleton
       novels/
+        loading.tsx                       # novels list loading
         page.tsx                          # novel list
         AddNovelForm.tsx
         [id]/
-          page.tsx                        # novel detail + chapters list + Characters link
+          loading.tsx                     # novel detail loading
+          page.tsx                        # novel detail + volume manager + Characters link
+          AddVolumeForm.tsx
+          VolumeManager.tsx
           AddChapterForm.tsx
-          chapters/[chapterId]/           # will move to volumes/[volumeId]/chapters/[chapterId]/ in web phase
-            page.tsx                      # chapter detail (fetches ChapterWithCharacters)
-            ChapterEditor.tsx             # summary edit + [[Name]] autocomplete + characters panel
-            SummaryRenderer.tsx           # renders [[Name]] as character links
-            LinkedCharactersPanel.tsx     # character chips
+          chapters/[chapterId]/
+            page.tsx                      # compatibility route; resolves volume then redirects
           characters/
             page.tsx                      # characters list (role badges, chapter counts)
             AddCharacterForm.tsx
@@ -63,6 +65,19 @@ apps/
               CharacterDetail.tsx         # inline edit + appears-in chapter list
           timeline/
             page.tsx                      # vertical rail timeline, add/edit/delete, character filter
+          volumes/
+            [volumeId]/
+              loading.tsx                 # volume detail loading
+              page.tsx                    # volume detail + chapter list
+              chapters/[chapterId]/
+                loading.tsx               # chapter detail loading
+                page.tsx                  # chapter detail (fetches ChapterWithCharacters)
+                ChapterEditor.tsx         # summary edit + [[Name]] autocomplete + tags
+                SummaryRenderer.tsx       # renders [[Name]] as character links
+                LinkedCharactersPanel.tsx # character chips
+      libs/api/
+        client.ts                         # authless fetch wrapper
+        index.ts                          # web API helpers for novels/volumes/chapters/tags
 docker-compose.yml
 Makefile                        # make dev / api / web / migrate-up / db / logs
 docs/
@@ -138,6 +153,8 @@ GET    /api/v1/novels/:id/search
 - **Novel→Volume→Chapter hierarchy** — chapters belong to volumes; novel ownership derived via JOIN (ADR-005)
 - **Chapter number is novel-scoped** — enforced in usecase via `NumberExistsInNovel`; DB constraint is per-volume for performance
 - **Data migration creates "Volume 1"** — all pre-existing chapters land in a generated Volume 1 per novel
+- **Web flow is Novel → Volume → Chapter** — novel page manages volumes; volume page manages chapters
+- **Route loading uses central skeleton component** — `PageLoadingState` in `app/novels/ui.tsx` powers segment `loading.tsx` files
 
 ## DB Conventions
 
@@ -195,7 +212,7 @@ make migrate-up
 
 | Field          | Value                          |
 |----------------|--------------------------------|
-| Current phase  | Phase 4 — Search + Tags           |
-| Last completed | Phase 4 partial + Volume layer    |
-| Working on     | —                                 |
+| Current phase  | Phase 4 — Search + Tags / Volume web layer |
+| Last completed | Volume web layer + loading skeletons |
+| Working on     | Docs sync / remaining route cleanup |
 | Blocked by     | —                                 |

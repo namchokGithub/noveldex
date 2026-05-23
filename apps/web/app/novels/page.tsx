@@ -1,8 +1,7 @@
 import Link from "next/link";
 import type { Novel } from "../types";
 import { T } from "@/components/i18n/I18nProvider";
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+import { getNovels as getNovelsFromApi } from "@/libs/api";
 
 const STATUS_COLORS: Record<Novel["status"], string> = {
   reading: "bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200",
@@ -26,10 +25,7 @@ function formatDate(value: string) {
 
 async function getNovels(): Promise<Novel[] | null> {
   try {
-    const res = await fetch(`${BASE}/api/v1/novels`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const body = await res.json();
-    return body.data as Novel[];
+    return await getNovelsFromApi();
   } catch {
     return null;
   }

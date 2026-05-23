@@ -49,6 +49,18 @@
 - [x] Search UI — global Cmd/Ctrl+K palette with chapter/character/event results
 - [x] Chapter tag UI — add/remove tags from chapter detail page
 - [x] Tag filter UI on chapters list
+- [x] Web chapter detail moved to volume-aware route `/novels/:id/volumes/:volumeId/chapters/:chapterId`
+- [x] Legacy chapter route `/novels/:id/chapters/:chapterId` redirects to resolved volume route
+- [x] Shared API client/helpers for novels, volumes, chapters, tags
+
+## Phase 4.5: Volume Web Layer
+
+- [x] Novel detail page now manages volumes first
+- [x] Volume CRUD UI in web (`AddVolumeForm`, `VolumeManager`)
+- [x] Dedicated volume detail page with per-volume chapter list
+- [x] Per-volume add chapter flow (no longer hardcoded to first volume)
+- [x] Chapter editor uses central API helpers
+- [x] Shared route loading skeleton component (`PageLoadingState`)
 
 ## Phase 5: Auth
 
@@ -62,7 +74,8 @@
 
 - [ ] Pagination on all list endpoints
 - [ ] Error handling + user-facing messages
-- [ ] Loading/empty states in UI
+- [x] Loading states in UI for major novel/volume/chapter routes
+- [ ] Empty states in remaining pages
 - [ ] Mobile-responsive layout
 - [ ] Rate limiting on API
 

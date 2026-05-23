@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ChapterWithCharacters, Tag } from '@/app/types'
+import LinkedCharactersPanel from './LinkedCharactersPanel'
 import {
   cardClassName,
   inputClassName,
@@ -12,8 +13,13 @@ import {
   tagClassName,
 } from '@/app/novels/ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+import {
+  createTag,
+  getTags,
+  linkChapterTag,
+  unlinkChapterTag,
+  updateChapter,
+} from '@/libs/api'
 
 export default function ChapterEditor({
   chapter,
@@ -92,17 +98,10 @@ export default function ChapterEditor({
     setTagLoading(true)
     setTagError(null)
     try {
-      const res = await fetch(`${BASE}/api/v1/novels/${novelId}/tags`)
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setTagError(body.error ?? `Request failed: ${res.status}`)
-        return
-      }
-      const body = await res.json()
-      setAllTags((body.data as Tag[]) ?? [])
+      setAllTags(await getTags(novelId))
       setTagListFetched(true)
-    } catch {
-      setTagError(t('common.networkError'))
+    } catch (error) {
+      setTagError(error instanceof Error ? error.message : t('common.networkError'))
     } finally {
       setTagLoading(false)
     }
@@ -117,19 +116,7 @@ export default function ChapterEditor({
     )
     if (existing) return existing
 
-    const res = await fetch(`${BASE}/api/v1/novels/${novelId}/tags`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: normalized }),
-    })
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      throw new Error(body.error ?? `Request failed: ${res.status}`)
-    }
-
-    const body = await res.json()
-    const created = body.data as Tag
+    const created = await createTag(novelId, normalized)
     setAllTags((current) => {
       if (current.some((tag) => tag.id === created.id)) return current
       return [...current, created].sort((a, b) => a.name.localeCompare(b.name))
@@ -139,18 +126,7 @@ export default function ChapterEditor({
 
   async function linkTag(tag: Tag) {
     if (tags.some((entry) => entry.id === tag.id)) return
-    const res = await fetch(
-      `${BASE}/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapter.id}/tags`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tag_id: tag.id }),
-      }
-    )
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      throw new Error(body.error ?? `Request failed: ${res.status}`)
-    }
+    await linkChapterTag(novelId, volumeId, chapter.id, tag.id)
     setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name)))
   }
 
@@ -176,18 +152,10 @@ export default function ChapterEditor({
     setTagSaving(true)
     setTagError(null)
     try {
-      const res = await fetch(
-        `${BASE}/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapter.id}/tags/${tagId}`,
-        { method: 'DELETE' }
-      )
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setTagError(body.error ?? `Request failed: ${res.status}`)
-        return
-      }
+      await unlinkChapterTag(novelId, volumeId, chapter.id, tagId)
       setTags((current) => current.filter((tag) => tag.id !== tagId))
-    } catch {
-      setTagError(t('common.networkError'))
+    } catch (error) {
+      setTagError(error instanceof Error ? error.message : t('common.networkError'))
     } finally {
       setTagSaving(false)
     }
@@ -197,22 +165,10 @@ export default function ChapterEditor({
     setSummaryError(null)
     setSummarySaving(true)
     try {
-      const res = await fetch(
-        `${BASE}/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapter.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ summary }),
-        }
-      )
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setSummaryError(body.error ?? `Request failed: ${res.status}`)
-        return
-      }
+      await updateChapter(novelId, volumeId, chapter.id, { summary })
       router.refresh()
-    } catch {
-      setSummaryError(t('common.networkError'))
+    } catch (error) {
+      setSummaryError(error instanceof Error ? error.message : t('common.networkError'))
     } finally {
       setSummarySaving(false)
     }
@@ -222,22 +178,12 @@ export default function ChapterEditor({
     setReadAtError(null)
     setReadAtSaving(true)
     try {
-      const res = await fetch(
-        `${BASE}/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapter.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ read_at: readAt }),
-        }
-      )
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setReadAtError(body.error ?? `Request failed: ${res.status}`)
-        return
-      }
+      await updateChapter(novelId, volumeId, chapter.id, {
+        read_at: readAt || null,
+      })
       router.refresh()
-    } catch {
-      setReadAtError(t('common.networkError'))
+    } catch (error) {
+      setReadAtError(error instanceof Error ? error.message : t('common.networkError'))
     } finally {
       setReadAtSaving(false)
     }
@@ -310,26 +256,7 @@ export default function ChapterEditor({
         </div>
 
         <div className={cardClassName}>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-            {t('chapter.characters')}
-          </h2>
-          {chapter.characters.length === 0 ? (
-            <p className="text-sm text-stone-500">{t('chapter.noLinkedCharacters')}</p>
-          ) : (
-            <ul className="flex flex-wrap gap-2">
-              {chapter.characters.map((char) => (
-                <li key={char.id}>
-                  <a
-                    href={`/novels/${novelId}/characters/${char.id}`}
-                    className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1.5 text-sm text-stone-700 ring-1 ring-inset ring-stone-200 hover:bg-stone-200/70"
-                  >
-                    {char.name}
-                    <span className="text-xs text-stone-500">{char.role}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
+          <LinkedCharactersPanel characters={chapter.characters} novelId={novelId} />
         </div>
       </div>
 

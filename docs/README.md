@@ -11,7 +11,7 @@ Documentation for AI-assisted workflows and session context.
 | File | Purpose |
 |------|---------|
 | [AGENTS.md](ai/AGENTS.md) | Agent instructions — rules, constraints, commands. Read before touching code. |
-| [CONTEXT.md](ai/CONTEXT.md) | Session restore context — stack, routes, migrations, current status. Update each session. |
+| [CONTEXT.md](ai/CONTEXT.md) | Session restore context — stack, routes, migrations, current status. Update after meaningful feature changes. |
 | [plans/](ai/plans/) | Implementation plans (date-prefixed, one per feature). Executed by agents. |
 | [specs/](ai/specs/) | Design specs (date-prefixed, one per feature). Written before plans. |
 

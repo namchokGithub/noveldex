@@ -14,7 +14,7 @@ export default function SummaryRenderer({
 }: Props) {
   if (!summary) {
     return (
-      <p className="text-gray-500 italic">No summary yet.</p>
+      <p className="text-sm italic text-stone-400">No summary yet.</p>
     )
   }
 
@@ -46,7 +46,7 @@ export default function SummaryRenderer({
           <Link
             key={index}
             href={`/novels/${novelId}/characters/${charId}`}
-            className="font-medium text-blue-400 hover:underline"
+            className="font-medium text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-900"
           >
             [[{part}]]
           </Link>
@@ -54,7 +54,7 @@ export default function SummaryRenderer({
       } else {
         // Not found - render as gray text
         return (
-          <span key={index} className="text-gray-400">
+          <span key={index} className="text-stone-400">
             [[{part}]]
           </span>
         )
@@ -63,7 +63,7 @@ export default function SummaryRenderer({
   })
 
   return (
-    <div className="text-sm leading-relaxed text-gray-300">
+    <div className="whitespace-pre-wrap text-sm leading-7 text-stone-600">
       {elements}
     </div>
   )
