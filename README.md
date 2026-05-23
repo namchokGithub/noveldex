@@ -36,8 +36,19 @@ make web          # Next.js only
 make migrate-up   # apply all pending migrations
 make migrate-down # roll back one migration
 make db           # psql shell
+make db-backup    # dump postgres to backups/postgres/
+make db-restore   # restore latest backup
+make db-backups   # list saved backups
 make logs         # tail docker logs
 ```
+
+Restore a specific backup:
+
+```bash
+make db-restore BACKUP_FILE=backups/postgres/noveldex-YYYYMMDD-HHMMSS.sql
+```
+
+Backups are stored in `backups/postgres/` inside the repo, and `make db-backup` automatically keeps only the latest 3 files.
 
 ## Features
 
