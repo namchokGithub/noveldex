@@ -6,8 +6,7 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 function buildUrl(path: string, query?: QueryParams) {
   const url = new URL(path, API_BASE_URL);
@@ -115,6 +114,12 @@ export const apiClient = {
     request<T>(path, {
       ...options,
       method: "PUT",
+    }),
+
+  patch: <T>(path: string, options?: RequestOptions) =>
+    request<T>(path, {
+      ...options,
+      method: "PATCH",
     }),
 
   delete: <T>(path: string, options?: RequestOptions) =>

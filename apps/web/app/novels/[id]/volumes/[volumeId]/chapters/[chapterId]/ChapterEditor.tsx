@@ -1,198 +1,216 @@
-'use client'
+"use client";
 
-import { useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import type { ChapterWithCharacters, Tag } from '@/app/types'
-import LinkedCharactersPanel from './LinkedCharactersPanel'
+import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { ChapterWithCharacters, Tag } from "@/app/types";
+import LinkedCharactersPanel from "./LinkedCharactersPanel";
 import {
   cardClassName,
   inputClassName,
+  normalizeDateTimeLocalToISOString,
   primaryButtonClassName,
   secondaryButtonClassName,
   smallLabelClassName,
   tagClassName,
-} from '@/app/novels/ui'
-import { useI18n } from '@/components/i18n/I18nProvider'
+  toDateTimeLocalInputValue,
+} from "@/app/novels/ui";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   createTag,
   getTags,
   linkChapterTag,
   unlinkChapterTag,
   updateChapter,
-} from '@/libs/api'
+} from "@/libs/api";
 
 export default function ChapterEditor({
   chapter,
   novelId,
   volumeId,
 }: {
-  chapter: ChapterWithCharacters
-  novelId: string
-  volumeId: string
+  chapter: ChapterWithCharacters;
+  novelId: string;
+  volumeId: string;
 }) {
-  const { t } = useI18n()
-  const router = useRouter()
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { t } = useI18n();
+  const router = useRouter();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const [summary, setSummary] = useState(chapter.summary ?? '')
-  const [summaryError, setSummaryError] = useState<string | null>(null)
-  const [summarySaving, setSummarySaving] = useState(false)
+  const [summary, setSummary] = useState(chapter.summary ?? "");
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [summarySaving, setSummarySaving] = useState(false);
 
-  const [readAt, setReadAt] = useState(chapter.read_at ?? '')
-  const [readAtError, setReadAtError] = useState<string | null>(null)
-  const [readAtSaving, setReadAtSaving] = useState(false)
+  const [readAt, setReadAt] = useState(toDateTimeLocalInputValue(chapter.read_at));
+  const [readAtError, setReadAtError] = useState<string | null>(null);
+  const [readAtSaving, setReadAtSaving] = useState(false);
 
-  const [suggestion, setSuggestion] = useState<{ names: string[]; anchorText: string } | null>(null)
-  const [tags, setTags] = useState<Tag[]>(chapter.tags ?? [])
-  const [allTags, setAllTags] = useState<Tag[]>(chapter.tags ?? [])
-  const [tagQuery, setTagQuery] = useState('')
-  const [tagPickerOpen, setTagPickerOpen] = useState(false)
-  const [tagListFetched, setTagListFetched] = useState(false)
-  const [tagLoading, setTagLoading] = useState(false)
-  const [tagError, setTagError] = useState<string | null>(null)
-  const [tagSaving, setTagSaving] = useState(false)
+  const [suggestion, setSuggestion] = useState<{
+    names: string[];
+    anchorText: string;
+  } | null>(null);
+  const [tags, setTags] = useState<Tag[]>(chapter.tags ?? []);
+  const [allTags, setAllTags] = useState<Tag[]>(chapter.tags ?? []);
+  const [tagQuery, setTagQuery] = useState("");
+  const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const [tagListFetched, setTagListFetched] = useState(false);
+  const [tagLoading, setTagLoading] = useState(false);
+  const [tagError, setTagError] = useState<string | null>(null);
+  const [tagSaving, setTagSaving] = useState(false);
 
   const filteredTagOptions = useMemo(() => {
-    const linked = new Set(tags.map((tag) => tag.id))
+    const linked = new Set(tags.map((tag) => tag.id));
     return allTags.filter((tag) => {
-      if (linked.has(tag.id)) return false
-      if (!tagQuery.trim()) return true
-      return tag.name.toLowerCase().includes(tagQuery.trim().toLowerCase())
-    })
-  }, [allTags, tagQuery, tags])
+      if (linked.has(tag.id)) return false;
+      if (!tagQuery.trim()) return true;
+      return tag.name.toLowerCase().includes(tagQuery.trim().toLowerCase());
+    });
+  }, [allTags, tagQuery, tags]);
 
   function handleKeyUp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Escape') {
-      setSuggestion(null)
-      return
+    if (e.key === "Escape") {
+      setSuggestion(null);
+      return;
     }
-    const ta = e.currentTarget
-    const before = ta.value.slice(0, ta.selectionStart ?? ta.value.length)
-    const match = before.match(/\[\[([^\]]*)$/)
+    const ta = e.currentTarget;
+    const before = ta.value.slice(0, ta.selectionStart ?? ta.value.length);
+    const match = before.match(/\[\[([^\]]*)$/);
     if (!match) {
-      setSuggestion(null)
-      return
+      setSuggestion(null);
+      return;
     }
-    const typed = match[1]
+    const typed = match[1];
     const names = chapter.characters
       .map((c) => c.name)
-      .filter((n) => n.toLowerCase().startsWith(typed.toLowerCase()))
-    setSuggestion({ names, anchorText: match[0] })
+      .filter((n) => n.toLowerCase().startsWith(typed.toLowerCase()));
+    setSuggestion({ names, anchorText: match[0] });
   }
 
   function insertSuggestion(name: string) {
-    if (!suggestion) return
-    const ta = textareaRef.current
-    if (!ta) return
-    const pos = ta.selectionStart ?? summary.length
-    const before = summary.slice(0, pos)
-    const after = summary.slice(pos)
+    if (!suggestion) return;
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const pos = ta.selectionStart ?? summary.length;
+    const before = summary.slice(0, pos);
+    const after = summary.slice(pos);
     const replaced =
-      before.slice(0, before.length - suggestion.anchorText.length) + `[[${name}]]`
-    setSummary(replaced + after)
-    setSuggestion(null)
+      before.slice(0, before.length - suggestion.anchorText.length) +
+      `[[${name}]]`;
+    setSummary(replaced + after);
+    setSuggestion(null);
   }
 
   async function ensureTagListLoaded() {
-    if (tagListFetched || tagLoading) return
-    setTagLoading(true)
-    setTagError(null)
+    if (tagListFetched || tagLoading) return;
+    setTagLoading(true);
+    setTagError(null);
     try {
-      setAllTags(await getTags(novelId))
-      setTagListFetched(true)
+      setAllTags(await getTags(novelId));
+      setTagListFetched(true);
     } catch (error) {
-      setTagError(error instanceof Error ? error.message : t('common.networkError'))
+      setTagError(
+        error instanceof Error ? error.message : t("common.networkError"),
+      );
     } finally {
-      setTagLoading(false)
+      setTagLoading(false);
     }
   }
 
   async function createOrFindTag(name: string): Promise<Tag | null> {
-    const normalized = name.trim()
-    if (!normalized) return null
+    const normalized = name.trim();
+    if (!normalized) return null;
 
     const existing = allTags.find(
-      (tag) => tag.name.toLowerCase() === normalized.toLowerCase()
-    )
-    if (existing) return existing
+      (tag) => tag.name.toLowerCase() === normalized.toLowerCase(),
+    );
+    if (existing) return existing;
 
-    const created = await createTag(novelId, normalized)
+    const created = await createTag(novelId, normalized);
     setAllTags((current) => {
-      if (current.some((tag) => tag.id === created.id)) return current
-      return [...current, created].sort((a, b) => a.name.localeCompare(b.name))
-    })
-    return created
+      if (current.some((tag) => tag.id === created.id)) return current;
+      return [...current, created].sort((a, b) => a.name.localeCompare(b.name));
+    });
+    return created;
   }
 
   async function linkTag(tag: Tag) {
-    if (tags.some((entry) => entry.id === tag.id)) return
-    await linkChapterTag(novelId, volumeId, chapter.id, tag.id)
-    setTags((current) => [...current, tag].sort((a, b) => a.name.localeCompare(b.name)))
+    if (tags.some((entry) => entry.id === tag.id)) return;
+    await linkChapterTag(novelId, volumeId, chapter.id, tag.id);
+    setTags((current) =>
+      [...current, tag].sort((a, b) => a.name.localeCompare(b.name)),
+    );
   }
 
   async function handleAddTag(name?: string) {
-    const nextName = (name ?? tagQuery).trim()
-    if (!nextName) return
-    setTagSaving(true)
-    setTagError(null)
+    const nextName = (name ?? tagQuery).trim();
+    if (!nextName) return;
+    setTagSaving(true);
+    setTagError(null);
     try {
-      const tag = await createOrFindTag(nextName)
-      if (!tag) return
-      await linkTag(tag)
-      setTagQuery('')
-      setTagPickerOpen(false)
+      const tag = await createOrFindTag(nextName);
+      if (!tag) return;
+      await linkTag(tag);
+      setTagQuery("");
+      setTagPickerOpen(false);
     } catch (error) {
-      setTagError(error instanceof Error ? error.message : t('chapter.failedAddTag'))
+      setTagError(
+        error instanceof Error ? error.message : t("chapter.failedAddTag"),
+      );
     } finally {
-      setTagSaving(false)
+      setTagSaving(false);
     }
   }
 
   async function handleRemoveTag(tagId: string) {
-    setTagSaving(true)
-    setTagError(null)
+    setTagSaving(true);
+    setTagError(null);
     try {
-      await unlinkChapterTag(novelId, volumeId, chapter.id, tagId)
-      setTags((current) => current.filter((tag) => tag.id !== tagId))
+      await unlinkChapterTag(novelId, volumeId, chapter.id, tagId);
+      setTags((current) => current.filter((tag) => tag.id !== tagId));
     } catch (error) {
-      setTagError(error instanceof Error ? error.message : t('common.networkError'))
+      setTagError(
+        error instanceof Error ? error.message : t("common.networkError"),
+      );
     } finally {
-      setTagSaving(false)
+      setTagSaving(false);
     }
   }
 
   async function saveSummary() {
-    setSummaryError(null)
-    setSummarySaving(true)
+    setSummaryError(null);
+    setSummarySaving(true);
     try {
-      await updateChapter(novelId, volumeId, chapter.id, { summary })
-      router.refresh()
+      await updateChapter(novelId, volumeId, chapter.id, { summary });
+      router.refresh();
     } catch (error) {
-      setSummaryError(error instanceof Error ? error.message : t('common.networkError'))
+      setSummaryError(
+        error instanceof Error ? error.message : t("common.networkError"),
+      );
     } finally {
-      setSummarySaving(false)
+      setSummarySaving(false);
     }
   }
 
   async function saveReadAt() {
-    setReadAtError(null)
-    setReadAtSaving(true)
+    setReadAtError(null);
+    setReadAtSaving(true);
     try {
       await updateChapter(novelId, volumeId, chapter.id, {
-        read_at: readAt || null,
-      })
-      router.refresh()
+        read_at: normalizeDateTimeLocalToISOString(readAt),
+      });
+      router.refresh();
     } catch (error) {
-      setReadAtError(error instanceof Error ? error.message : t('common.networkError'))
+      setReadAtError(
+        error instanceof Error ? error.message : t("common.networkError"),
+      );
     } finally {
-      setReadAtSaving(false)
+      setReadAtSaving(false);
     }
   }
 
   return (
     <div className="flex flex-col gap-8">
       <div className={cardClassName}>
-        <label className={smallLabelClassName}>{t('addChapter.summary')}</label>
+        <label className={smallLabelClassName}>{t("addChapter.summary")}</label>
         <div className="relative">
           <textarea
             ref={textareaRef}
@@ -200,8 +218,8 @@ export default function ChapterEditor({
             onChange={(e) => setSummary(e.target.value)}
             onKeyUp={handleKeyUp}
             rows={6}
-            className={`${inputClassName} min-h-[180px]`}
-            placeholder={t('addChapter.summaryPlaceholder')}
+            className={`${inputClassName} min-h-45`}
+            placeholder={t("addChapter.summaryPlaceholder")}
           />
           {suggestion && suggestion.names.length > 0 && (
             <ul className="absolute left-0 top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg">
@@ -210,11 +228,10 @@ export default function ChapterEditor({
                   <button
                     type="button"
                     onMouseDown={(e) => {
-                      e.preventDefault()
-                      insertSuggestion(name)
+                      e.preventDefault();
+                      insertSuggestion(name);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-stone-700 hover:bg-stone-50"
-                  >
+                    className="w-full px-3 py-2 text-left text-sm text-stone-700 hover:bg-stone-50">
                     {name}
                   </button>
                 </li>
@@ -222,47 +239,55 @@ export default function ChapterEditor({
             </ul>
           )}
         </div>
-        {summaryError && <p className="mt-2 text-sm text-rose-600">{summaryError}</p>}
+        {summaryError && (
+          <p className="mt-2 text-sm text-rose-600">{summaryError}</p>
+        )}
         <div className="mt-2 flex justify-end">
           <button
             onClick={saveSummary}
             disabled={summarySaving}
-            className={primaryButtonClassName}
-          >
-            {summarySaving ? t('common.saving') : t('chapter.saveSummary')}
+            className={primaryButtonClassName}>
+            {summarySaving ? t("common.saving") : t("chapter.saveSummary")}
           </button>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className={cardClassName}>
-          <label className={smallLabelClassName}>{t('addChapter.dateRead')}</label>
+          <label className={smallLabelClassName}>
+            {t("addChapter.dateRead")}
+          </label>
           <input
-            type="date"
+            type="datetime-local"
+            step={60}
             value={readAt}
             onChange={(e) => setReadAt(e.target.value)}
             className={inputClassName}
           />
-          {readAtError && <p className="mt-2 text-sm text-rose-600">{readAtError}</p>}
+          {readAtError && (
+            <p className="mt-2 text-sm text-rose-600">{readAtError}</p>
+          )}
           <div className="mt-3 flex justify-end">
             <button
               onClick={saveReadAt}
               disabled={readAtSaving}
-              className={primaryButtonClassName}
-            >
-              {readAtSaving ? t('common.saving') : t('chapter.saveDate')}
+              className={primaryButtonClassName}>
+              {readAtSaving ? t("common.saving") : t("chapter.saveDate")}
             </button>
           </div>
         </div>
 
         <div className={cardClassName}>
-          <LinkedCharactersPanel characters={chapter.characters} novelId={novelId} />
+          <LinkedCharactersPanel
+            characters={chapter.characters}
+            novelId={novelId}
+          />
         </div>
       </div>
 
       <div className={cardClassName}>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-          {t('chapter.tags')}
+          {t("chapter.tags")}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           {tags.map((tag) => (
@@ -273,8 +298,7 @@ export default function ChapterEditor({
                 onClick={() => handleRemoveTag(tag.id)}
                 disabled={tagSaving}
                 className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
-                aria-label={t('chapter.removeTag', { name: tag.name })}
-              >
+                aria-label={t("chapter.removeTag", { name: tag.name })}>
                 ×
               </button>
             </span>
@@ -284,12 +308,11 @@ export default function ChapterEditor({
             <button
               type="button"
               onClick={async () => {
-                setTagPickerOpen(true)
-                await ensureTagListLoaded()
+                setTagPickerOpen(true);
+                await ensureTagListLoaded();
               }}
-              className="rounded-full border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900"
-            >
-              {t('chapter.addTag')}
+              className="rounded-full border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900">
+              {t("chapter.addTag")}
             </button>
           ) : (
             <div className="w-full max-w-sm rounded-[22px] border border-stone-200 bg-stone-50/90 p-3 shadow-sm">
@@ -297,21 +320,23 @@ export default function ChapterEditor({
                 value={tagQuery}
                 onChange={(e) => setTagQuery(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    void handleAddTag()
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleAddTag();
                   }
-                  if (e.key === 'Escape') {
-                    setTagPickerOpen(false)
-                    setTagQuery('')
+                  if (e.key === "Escape") {
+                    setTagPickerOpen(false);
+                    setTagQuery("");
                   }
                 }}
-                placeholder={t('chapter.addTagPlaceholder')}
+                placeholder={t("chapter.addTagPlaceholder")}
                 className={inputClassName}
               />
               <div className="mt-2 max-h-40 overflow-y-auto">
                 {tagLoading && (
-                  <p className="text-xs text-stone-500">{t('chapter.loadingTags')}</p>
+                  <p className="text-xs text-stone-500">
+                    {t("chapter.loadingTags")}
+                  </p>
                 )}
                 {!tagLoading && filteredTagOptions.length > 0 && (
                   <ul className="space-y-1">
@@ -320,8 +345,7 @@ export default function ChapterEditor({
                         <button
                           type="button"
                           onClick={() => void handleAddTag(tag.name)}
-                          className="w-full rounded-xl px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-white"
-                        >
+                          className="w-full rounded-xl px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-white">
                           {tag.name}
                         </button>
                       </li>
@@ -330,7 +354,9 @@ export default function ChapterEditor({
                 )}
                 {!tagLoading && filteredTagOptions.length === 0 && (
                   <p className="text-xs text-stone-500">
-                    {tagQuery.trim() ? t('chapter.createTagHint') : t('chapter.noMoreTags')}
+                    {tagQuery.trim()
+                      ? t("chapter.createTagHint")
+                      : t("chapter.noMoreTags")}
                   </p>
                 )}
               </div>
@@ -338,20 +364,18 @@ export default function ChapterEditor({
                 <button
                   type="button"
                   onClick={() => {
-                    setTagPickerOpen(false)
-                    setTagQuery('')
+                    setTagPickerOpen(false);
+                    setTagQuery("");
                   }}
-                  className={secondaryButtonClassName}
-                >
-                  {t('common.cancel')}
+                  className={secondaryButtonClassName}>
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="button"
                   onClick={() => void handleAddTag()}
                   disabled={tagSaving || !tagQuery.trim()}
-                  className={primaryButtonClassName}
-                >
-                  {t('common.add')}
+                  className={primaryButtonClassName}>
+                  {t("common.add")}
                 </button>
               </div>
             </div>
@@ -360,5 +384,5 @@ export default function ChapterEditor({
         {tagError && <p className="mt-2 text-sm text-rose-600">{tagError}</p>}
       </div>
     </div>
-  )
+  );
 }

@@ -38,6 +38,7 @@ export interface Chapter {
 
 export interface ChapterSummary {
   id: string
+  volume_id: string
   number: number
   title: string
   read_at: string | null
@@ -63,6 +64,7 @@ export interface ChapterWithCharacters extends Chapter {
 
 export interface SearchChapterResult {
   id: string
+  volume_id: string
   number: number
   title: string
   summary_snippet: string

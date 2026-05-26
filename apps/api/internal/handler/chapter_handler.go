@@ -40,11 +40,20 @@ func parseReadAt(s string) (*time.Time, error) {
 	if s == "" {
 		return nil, nil
 	}
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return nil, errors.New("read_at must be in YYYY-MM-DD format")
+
+	// Accept both legacy date-only values and full timestamps during rollout.
+	for _, layout := range []string{
+		time.RFC3339,
+		"2006-01-02T15:04",
+		"2006-01-02",
+	} {
+		t, err := time.Parse(layout, s)
+		if err == nil {
+			return &t, nil
+		}
 	}
-	return &t, nil
+
+	return nil, errors.New("read_at must be an ISO timestamp or YYYY-MM-DD")
 }
 
 // resolveVolume verifies volumeID belongs to novelID. Writes error and returns false on failure.
@@ -68,6 +77,19 @@ func (h *ChapterHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	chapters, err := h.uc.List(r.Context(), volumeID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if chapters == nil {
+		chapters = []domain.Chapter{}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": chapters})
+}
+
+func (h *ChapterHandler) ListByNovel(w http.ResponseWriter, r *http.Request) {
+	novelID := chi.URLParam(r, "novelID")
+	chapters, err := h.uc.ListByNovel(r.Context(), novelID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

@@ -202,7 +202,8 @@ export default function CharacterDetail({
             {character.chapters.map(ch => (
               <li key={ch.id}>
                 <Link
-                  href={`/novels/${novelId}/chapters/${ch.id}`}
+                  // Characters can appear across many volumes, so each chapter row needs volume_id.
+                  href={`/novels/${novelId}/volumes/${ch.volume_id}/chapters/${ch.id}`}
                   className={listRowClassName}
                 >
                   <span className="text-sm font-medium text-stone-900">

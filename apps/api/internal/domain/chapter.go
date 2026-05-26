@@ -24,6 +24,7 @@ type ChapterWithCharacters struct {
 
 type ChapterRepository interface {
 	List(ctx context.Context, volumeID string) ([]Chapter, error)
+	ListByNovel(ctx context.Context, novelID string) ([]Chapter, error)
 	Create(ctx context.Context, ch *Chapter) error
 	GetByID(ctx context.Context, volumeID, id string) (*Chapter, error)
 	Update(ctx context.Context, ch *Chapter) error

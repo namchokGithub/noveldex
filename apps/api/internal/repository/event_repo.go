@@ -23,7 +23,7 @@ func (r *pgxEventRepo) List(ctx context.Context, novelID string) ([]domain.Event
 		SELECT
 			e.id, e.novel_id, e.chapter_id, e.title, e.description, e.story_date, e.sort_order,
 			e.created_at, e.updated_at,
-			ch.title AS chapter_title, ch.number AS chapter_number,
+			ch.volume_id AS chapter_volume_id, ch.title AS chapter_title, ch.number AS chapter_number,
 			array_agg(c.name) FILTER (WHERE c.id IS NOT NULL) AS character_names
 		FROM events e
 		LEFT JOIN chapters ch ON ch.id = e.chapter_id
@@ -41,17 +41,19 @@ func (r *pgxEventRepo) List(ctx context.Context, novelID string) ([]domain.Event
 	var events []domain.Event
 	for rows.Next() {
 		var e domain.Event
+		var chapterVolumeID *string
 		var chapterTitle *string
 		var chapterNumber *int
 		var characterNames []string
 		if err := rows.Scan(
 			&e.ID, &e.NovelID, &e.ChapterID, &e.Title, &e.Description, &e.StoryDate, &e.SortOrder,
 			&e.CreatedAt, &e.UpdatedAt,
-			&chapterTitle, &chapterNumber,
+			&chapterVolumeID, &chapterTitle, &chapterNumber,
 			&characterNames,
 		); err != nil {
 			return nil, err
 		}
+		e.ChapterVolumeID = chapterVolumeID
 		if chapterTitle != nil {
 			e.ChapterTitle = *chapterTitle
 		}

@@ -40,6 +40,31 @@ func (r *pgxChapterRepo) List(ctx context.Context, volumeID string) ([]domain.Ch
 	return chapters, rows.Err()
 }
 
+func (r *pgxChapterRepo) ListByNovel(ctx context.Context, novelID string) ([]domain.Chapter, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT c.id, c.volume_id, c.number, c.title, c.summary, c.read_at, c.created_at, c.updated_at
+		 FROM chapters c
+		 JOIN volumes v ON v.id = c.volume_id
+		 WHERE v.novel_id = $1
+		 ORDER BY c.number ASC`,
+		novelID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var chapters []domain.Chapter
+	for rows.Next() {
+		var ch domain.Chapter
+		if err := rows.Scan(&ch.ID, &ch.VolumeID, &ch.Number, &ch.Title, &ch.Summary, &ch.ReadAt, &ch.CreatedAt, &ch.UpdatedAt); err != nil {
+			return nil, err
+		}
+		chapters = append(chapters, ch)
+	}
+	return chapters, rows.Err()
+}
+
 func (r *pgxChapterRepo) Create(ctx context.Context, ch *domain.Chapter) error {
 	return r.pool.QueryRow(ctx,
 		`INSERT INTO chapters (volume_id, number, title, summary, read_at, created_at, updated_at)

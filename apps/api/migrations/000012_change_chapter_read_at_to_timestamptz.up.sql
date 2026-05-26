@@ -1,0 +1,6 @@
+ALTER TABLE chapters
+  ALTER COLUMN read_at TYPE TIMESTAMPTZ
+  USING CASE
+    WHEN read_at IS NULL THEN NULL
+    ELSE read_at::timestamp AT TIME ZONE 'UTC'
+  END;

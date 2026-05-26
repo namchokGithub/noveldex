@@ -10,6 +10,7 @@ type Tag struct {
 
 type ChapterSnippet struct {
 	ID             string `json:"id"`
+	VolumeID       string `json:"volume_id"`
 	Number         int    `json:"number"`
 	Title          string `json:"title"`
 	SummarySnippet string `json:"summary_snippet"`

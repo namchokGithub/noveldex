@@ -20,10 +20,11 @@ type Character struct {
 }
 
 type ChapterSummary struct {
-	ID     string     `json:"id"`
-	Number int        `json:"number"`
-	Title  string     `json:"title"`
-	ReadAt *time.Time `json:"read_at"`
+	ID       string     `json:"id"`
+	VolumeID string     `json:"volume_id"`
+	Number   int        `json:"number"`
+	Title    string     `json:"title"`
+	ReadAt   *time.Time `json:"read_at"`
 }
 
 type CharacterRepository interface {

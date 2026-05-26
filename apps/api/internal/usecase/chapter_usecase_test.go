@@ -14,7 +14,12 @@ type mockChapterRepo struct {
 	createErr    error
 }
 
-func (m *mockChapterRepo) List(_ context.Context, _ string) ([]domain.Chapter, error) { return nil, nil }
+func (m *mockChapterRepo) List(_ context.Context, _ string) ([]domain.Chapter, error) {
+	return nil, nil
+}
+func (m *mockChapterRepo) ListByNovel(_ context.Context, _ string) ([]domain.Chapter, error) {
+	return nil, nil
+}
 func (m *mockChapterRepo) Create(_ context.Context, ch *domain.Chapter) error {
 	ch.ID = "test-id"
 	return m.createErr
@@ -23,7 +28,7 @@ func (m *mockChapterRepo) GetByID(_ context.Context, _, _ string) (*domain.Chapt
 	return nil, nil
 }
 func (m *mockChapterRepo) Update(_ context.Context, _ *domain.Chapter) error { return nil }
-func (m *mockChapterRepo) Delete(_ context.Context, _, _ string) error        { return nil }
+func (m *mockChapterRepo) Delete(_ context.Context, _, _ string) error       { return nil }
 func (m *mockChapterRepo) NumberExistsInNovel(_ context.Context, _ string, _ int, _ string) (bool, error) {
 	return m.numberExists, m.numberErr
 }
@@ -38,11 +43,11 @@ func (m *mockCharRepoStub) GetByID(_ context.Context, _, _ string) (*domain.Char
 	return nil, nil
 }
 func (m *mockCharRepoStub) Update(_ context.Context, _ *domain.Character) error { return nil }
-func (m *mockCharRepoStub) Delete(_ context.Context, _, _ string) error          { return nil }
+func (m *mockCharRepoStub) Delete(_ context.Context, _, _ string) error         { return nil }
 func (m *mockCharRepoStub) ListByChapter(_ context.Context, _ string) ([]domain.Character, error) {
 	return nil, nil
 }
-func (m *mockCharRepoStub) LinkToChapter(_ context.Context, _, _ string) error    { return nil }
+func (m *mockCharRepoStub) LinkToChapter(_ context.Context, _, _ string) error     { return nil }
 func (m *mockCharRepoStub) UnlinkFromChapter(_ context.Context, _, _ string) error { return nil }
 func (m *mockCharRepoStub) LinkMentions(_ context.Context, _, _ string, _ []string) error {
 	return nil
@@ -58,7 +63,7 @@ func (m *mockTagRepoStub) Delete(_ context.Context, _, _ string) error   { retur
 func (m *mockTagRepoStub) ListByChapter(_ context.Context, _ string) ([]domain.Tag, error) {
 	return nil, nil
 }
-func (m *mockTagRepoStub) LinkToChapter(_ context.Context, _, _ string) error    { return nil }
+func (m *mockTagRepoStub) LinkToChapter(_ context.Context, _, _ string) error     { return nil }
 func (m *mockTagRepoStub) UnlinkFromChapter(_ context.Context, _, _ string) error { return nil }
 
 func newTestChapterUsecase(cr *mockChapterRepo) *usecase.ChapterUsecase {

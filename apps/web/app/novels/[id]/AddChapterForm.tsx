@@ -7,6 +7,7 @@ import {
   inputClassName,
   modalBackdropClassName,
   modalPanelClassName,
+  normalizeDateTimeLocalToISOString,
   primaryButtonClassName,
   smallLabelClassName,
 } from '../ui'
@@ -38,7 +39,7 @@ export default function AddChapterForm({
       number: Number((form.elements.namedItem('number') as HTMLInputElement).value),
       title: (form.elements.namedItem('title') as HTMLInputElement).value,
       summary: (form.elements.namedItem('summary') as HTMLTextAreaElement).value,
-      read_at: readAtRaw || null,
+      read_at: normalizeDateTimeLocalToISOString(readAtRaw),
     }
 
     try {
@@ -118,7 +119,12 @@ export default function AddChapterForm({
           </div>
           <div>
             <label className={smallLabelClassName}>{t('addChapter.dateRead')}</label>
-            <input name="read_at" type="date" className={inputClassName} />
+            <input
+              name="read_at"
+              type="datetime-local"
+              step={60}
+              className={inputClassName}
+            />
           </div>
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <div className="mt-1 flex justify-end gap-2">

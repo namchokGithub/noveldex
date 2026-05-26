@@ -83,7 +83,7 @@ func (r *pgxCharacterRepo) GetByID(ctx context.Context, novelID, id string) (*do
 	}
 
 	rows, err := r.pool.Query(ctx, `
-		SELECT ch.id, ch.number, ch.title, ch.read_at
+		SELECT ch.id, ch.volume_id, ch.number, ch.title, ch.read_at
 		FROM chapters ch
 		JOIN chapter_characters cc ON cc.chapter_id = ch.id
 		WHERE cc.character_id = $1
@@ -97,7 +97,7 @@ func (r *pgxCharacterRepo) GetByID(ctx context.Context, novelID, id string) (*do
 	c.Chapters = []domain.ChapterSummary{}
 	for rows.Next() {
 		var s domain.ChapterSummary
-		if err := rows.Scan(&s.ID, &s.Number, &s.Title, &s.ReadAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.VolumeID, &s.Number, &s.Title, &s.ReadAt); err != nil {
 			return nil, err
 		}
 		c.Chapters = append(c.Chapters, s)

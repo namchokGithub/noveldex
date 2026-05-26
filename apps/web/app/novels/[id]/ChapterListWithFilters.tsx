@@ -7,6 +7,7 @@ import type { Chapter, Tag } from "@/app/types";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   cardClassName,
+  formatDisplayDate,
   inputClassName,
   listClassName,
   listRowClassName,
@@ -85,7 +86,7 @@ export default function ChapterListWithFilters({
       </div>
 
       {filteredChapters.length === 0 ? (
-        <div className="flex min-h-[220px] items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
+        <div className="flex min-h-55 items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
           {t("chapter.filters.noMatch")}
         </div>
       ) : (
@@ -111,7 +112,7 @@ export default function ChapterListWithFilters({
                 </div>
                 {chapter.read_at && (
                   <span className="shrink-0 text-xs text-stone-500">
-                    {chapter.read_at}
+                    {formatDisplayDate(chapter.read_at) ?? chapter.read_at}
                   </span>
                 )}
               </Link>

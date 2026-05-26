@@ -1,41 +1,45 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import ChapterEditor from './ChapterEditor'
-import LinkedCharactersPanel from './LinkedCharactersPanel'
-import SummaryRenderer from './SummaryRenderer'
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import ChapterEditor from "./ChapterEditor";
+import LinkedCharactersPanel from "./LinkedCharactersPanel";
+import SummaryRenderer from "./SummaryRenderer";
 import {
   backLinkClassName,
   cardClassName,
   DashboardPage,
   SectionHeading,
-} from '@/app/novels/ui'
-import { T } from '@/components/i18n/I18nProvider'
-import { getChapter } from '@/libs/api'
+} from "@/app/novels/ui";
+import { T } from "@/components/i18n/I18nProvider";
+import { getChapter } from "@/libs/api";
 
 export default async function ChapterPage({
   params,
 }: {
-  params: Promise<{ id: string; volumeId: string; chapterId: string }>
+  params: Promise<{ id: string; volumeId: string; chapterId: string }>;
 }) {
-  const { id, volumeId, chapterId } = await params
+  const { id, volumeId, chapterId } = await params;
 
-  let chapter
+  let chapter;
 
   try {
-    chapter = await getChapter(id, volumeId, chapterId)
+    chapter = await getChapter(id, volumeId, chapterId);
   } catch {
-    notFound()
+    notFound();
   }
 
   return (
     <DashboardPage maxWidth="max-w-4xl">
       <div className="space-y-5">
-        <Link href={`/novels/${id}`} className={backLinkClassName}>
-          ← <T k="nav.backToNovel" />
+        <Link
+          href={`/novels/${id}/volumes/${volumeId}`}
+          className={backLinkClassName}>
+          ← <T k="nav.backToVolume" />
         </Link>
 
         <SectionHeading
-          eyebrow={<T k="chapter.pageEyebrow" values={{ number: chapter.number }} />}
+          eyebrow={
+            <T k="chapter.pageEyebrow" values={{ number: chapter.number }} />
+          }
           title={chapter.title}
           description={<T k="chapter.pageDescription" />}
         />
@@ -58,5 +62,5 @@ export default async function ChapterPage({
         <ChapterEditor chapter={chapter} novelId={id} volumeId={volumeId} />
       </div>
     </DashboardPage>
-  )
+  );
 }

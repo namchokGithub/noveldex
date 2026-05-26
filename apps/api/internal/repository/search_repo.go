@@ -18,7 +18,7 @@ func NewSearchRepository(pool *pgxpool.Pool) domain.SearchRepository {
 
 func (r *pgxSearchRepo) SearchChapters(ctx context.Context, novelID, tsQuery string) ([]domain.ChapterSnippet, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT c.id, c.number, c.title,
+		SELECT c.id, c.volume_id, c.number, c.title,
 		  ts_headline('simple', coalesce(c.summary,''), query,
 		    'MaxWords=15, MinWords=8, StartSel=<mark>, StopSel=</mark>'
 		  ) AS summary_snippet
@@ -37,7 +37,7 @@ func (r *pgxSearchRepo) SearchChapters(ctx context.Context, novelID, tsQuery str
 	var results []domain.ChapterSnippet
 	for rows.Next() {
 		var s domain.ChapterSnippet
-		if err := rows.Scan(&s.ID, &s.Number, &s.Title, &s.SummarySnippet); err != nil {
+		if err := rows.Scan(&s.ID, &s.VolumeID, &s.Number, &s.Title, &s.SummarySnippet); err != nil {
 			return nil, err
 		}
 		results = append(results, s)

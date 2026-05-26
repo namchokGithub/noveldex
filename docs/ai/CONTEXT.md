@@ -37,7 +37,7 @@ apps/
       novel_usecase.go, volume_usecase.go, chapter_usecase.go, character_usecase.go, event_usecase.go
     internal/util/
       mention.go                          # [[Name]] regex extraction
-    migrations/                           # golang-migrate SQL files (000001–000011)
+    migrations/                           # golang-migrate SQL files (000001–000012)
     Dockerfile
     fly.toml
   web/
@@ -55,8 +55,6 @@ apps/
           AddVolumeForm.tsx
           VolumeManager.tsx
           AddChapterForm.tsx
-          chapters/[chapterId]/
-            page.tsx                      # compatibility route; resolves volume then redirects
           characters/
             page.tsx                      # characters list (role badges, chapter counts)
             AddCharacterForm.tsx
@@ -108,6 +106,7 @@ GET    /api/v1/novels/:id/volumes/:volumeId
 PATCH  /api/v1/novels/:id/volumes/:volumeId
 DELETE /api/v1/novels/:id/volumes/:volumeId
 
+GET    /api/v1/novels/:id/chapters                                              # flat list across all volumes (navigation)
 GET    /api/v1/novels/:id/volumes/:volumeId/chapters
 POST   /api/v1/novels/:id/volumes/:volumeId/chapters
 GET    /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId          # returns ChapterWithCharacters
@@ -155,6 +154,8 @@ GET    /api/v1/novels/:id/search
 - **Data migration creates "Volume 1"** — all pre-existing chapters land in a generated Volume 1 per novel
 - **Web flow is Novel → Volume → Chapter** — novel page manages volumes; volume page manages chapters
 - **Route loading uses central skeleton component** — `PageLoadingState` in `app/novels/ui.tsx` powers segment `loading.tsx` files
+- **volume_id on ChapterSummary/Event** — propagated so web can build volume-scoped URLs without extra round-trips
+- **read_at is TIMESTAMPTZ** — migration 000012; API accepts RFC3339, ISO datetime, or date-only during rollout
 
 ## DB Conventions
 
@@ -179,6 +180,7 @@ GET    /api/v1/novels/:id/search
 | 000009 | add_search_vector | tsvector generated column on chapters for full-text search |
 | 000010 | create_volumes | volumes table (novel-scoped, UNIQUE(novel_id, number)) |
 | 000011 | add_volume_to_chapters | chapters get volume_id FK; novel_id dropped; data migration creates Volume 1 per novel |
+| 000012 | change_chapter_read_at_to_timestamptz | read_at DATE → TIMESTAMPTZ (UTC cast for existing rows) |
 
 ## ENV
 
@@ -213,6 +215,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | Volume web layer + loading skeletons |
-| Working on     | Docs sync / remaining route cleanup |
-| Blocked by     | —                                 |
+| Last completed | volume_id propagation + read_at TIMESTAMPTZ migration |
+| Working on     | — |
+| Blocked by     | — |

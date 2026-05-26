@@ -54,7 +54,8 @@ export default function SearchPalette() {
       ...results.chapters.map((chapter) => ({
         section: 'chapters' as const,
         id: chapter.id,
-        href: `/novels/${novelId}/chapters/${chapter.id}`,
+        // Search results now carry volume_id so we can open the canonical editor route directly.
+        href: `/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapter.id}`,
         data: chapter,
       })),
       ...results.characters.map((character) => ({

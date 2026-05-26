@@ -24,6 +24,7 @@ interface NovelEvent {
   id: string
   novel_id: string
   chapter_id: string | null
+  chapter_volume_id?: string | null
   chapter_title: string
   chapter_number: number | null
   title: string
@@ -35,6 +36,7 @@ interface NovelEvent {
 
 interface ChapterOption {
   id: string
+  volume_id: string
   number: number
   title: string
 }
@@ -409,13 +411,21 @@ export default function TimelinePage({
 
                       {ev.chapter_id && (
                         <div className="mb-3">
-                          <Link
-                            href={`/novels/${novelId}/chapters/${ev.chapter_id}`}
-                            className={tagClassName}
-                          >
-                            Ch.{String(ev.chapter_number ?? '').padStart(2, '0')} ·{' '}
-                            {ev.chapter_title}
-                          </Link>
+                          {ev.chapter_volume_id ? (
+                            <Link
+                              href={`/novels/${novelId}/volumes/${ev.chapter_volume_id}/chapters/${ev.chapter_id}`}
+                              className={tagClassName}
+                            >
+                              Ch.{String(ev.chapter_number ?? '').padStart(2, '0')} ·{' '}
+                              {ev.chapter_title}
+                            </Link>
+                          ) : (
+                            // Keep the label visible even if older event data is missing volume metadata.
+                            <span className={tagClassName}>
+                              Ch.{String(ev.chapter_number ?? '').padStart(2, '0')} ·{' '}
+                              {ev.chapter_title}
+                            </span>
+                          )}
                         </div>
                       )}
 

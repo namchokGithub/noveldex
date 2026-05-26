@@ -17,6 +17,7 @@ import (
 	"github.com/Namchok/noveldex/api/internal/handler"
 	"github.com/Namchok/noveldex/api/internal/repository"
 	"github.com/Namchok/noveldex/api/internal/usecase"
+	"github.com/go-chi/cors"
 )
 
 func main() {
@@ -60,6 +61,13 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
 	r.Use(corsMiddleware(cfg.CORSAllowedOrigins))
 
 	r.Get("/health", handler.Health)
@@ -77,6 +85,9 @@ func main() {
 		r.Patch("/novels/{novelID}/volumes/{volumeID}", volumeH.Update)
 		r.Delete("/novels/{novelID}/volumes/{volumeID}", volumeH.Delete)
 
+		// Keep a novel-level chapter list for features that need to navigate first,
+		// then resolve the exact volume-aware route without extra client-side joins.
+		r.Get("/novels/{novelID}/chapters", chapterH.ListByNovel)
 		r.Get("/novels/{novelID}/volumes/{volumeID}/chapters", chapterH.List)
 		r.Post("/novels/{novelID}/volumes/{volumeID}/chapters", chapterH.Create)
 		r.Get("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}", chapterH.GetByID)

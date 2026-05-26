@@ -74,7 +74,7 @@ export async function updateVolume(
   volumeId: string,
   payload: VolumePayload,
 ): Promise<Volume> {
-  const response = await apiClient.put<ApiResponse<Volume>>(
+  const response = await apiClient.patch<ApiResponse<Volume>>(
     `/api/v1/novels/${novelId}/volumes/${volumeId}`,
     {
       body: payload,
@@ -171,7 +171,7 @@ export async function updateChapter(
   chapterId: string,
   payload: ChapterPayload,
 ): Promise<void> {
-  await apiClient.put(
+  await apiClient.patch(
     `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapterId}`,
     {
       body: payload,

@@ -8,7 +8,7 @@ Novel indexing webapp. Monorepo: `apps/api` (Go) + `apps/web` (Next.js 16).
 
 ## Stack
 
-- **API:** Go 1.24, chi v5, lib/pq, godotenv. Module: `github.com/Namchok/noveldex/api`
+- **API:** Go 1.24, chi v5, pgx/v5, godotenv. Module: `github.com/Namchok/noveldex/api`
 - **Web:** Next.js 16, Tailwind v4, TypeScript, App Router
 - **DB:** PostgreSQL 16, migrations via golang-migrate in `apps/api/migrations/`
 - **Local infra:** Docker Compose (postgres:16, redis:7-alpine)
@@ -19,7 +19,7 @@ Novel indexing webapp. Monorepo: `apps/api` (Go) + `apps/web` (Next.js 16).
 
 ### Go
 
-- Package layout: `cmd/server/` (entry), `internal/config/`, `internal/handler/`, `internal/repository/` (future)
+- Package layout: `cmd/server/` (entry), `internal/config/`, `internal/handler/`, `internal/repository/`, `internal/usecase/`, `internal/domain/`, `internal/util/`
 - No global state. Pass deps (db, config) explicitly.
 - Errors: return up the call stack, log at the boundary (handler layer), never swallow silently
 - DB queries go in `internal/repository/`, never in handlers

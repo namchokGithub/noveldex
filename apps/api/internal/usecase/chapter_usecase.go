@@ -25,6 +25,18 @@ func (u *ChapterUsecase) List(ctx context.Context, volumeID string) ([]domain.Ch
 	if err != nil {
 		return nil, err
 	}
+	return u.attachTags(ctx, chapters)
+}
+
+func (u *ChapterUsecase) ListByNovel(ctx context.Context, novelID string) ([]domain.Chapter, error) {
+	chapters, err := u.repo.ListByNovel(ctx, novelID)
+	if err != nil {
+		return nil, err
+	}
+	return u.attachTags(ctx, chapters)
+}
+
+func (u *ChapterUsecase) attachTags(ctx context.Context, chapters []domain.Chapter) ([]domain.Chapter, error) {
 	for i := range chapters {
 		tags, err := u.tagRepo.ListByChapter(ctx, chapters[i].ID)
 		if err != nil {
