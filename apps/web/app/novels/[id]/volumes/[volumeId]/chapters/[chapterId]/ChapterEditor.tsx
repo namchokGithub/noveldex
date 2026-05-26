@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ChapterWithCharacters, Tag } from "@/app/types";
 import LinkedCharactersPanel from "./LinkedCharactersPanel";
@@ -9,6 +9,7 @@ import {
   inputClassName,
   normalizeDateTimeLocalToISOString,
   primaryButtonClassName,
+  Snackbar,
   secondaryButtonClassName,
   smallLabelClassName,
   tagClassName,
@@ -56,6 +57,20 @@ export default function ChapterEditor({
   const [tagLoading, setTagLoading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
   const [tagSaving, setTagSaving] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    tone: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!snackbar) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setSnackbar(null);
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [snackbar]);
 
   const filteredTagOptions = useMemo(() => {
     const linked = new Set(tags.map((tag) => tag.id));
@@ -180,11 +195,19 @@ export default function ChapterEditor({
     setSummarySaving(true);
     try {
       await updateChapter(novelId, volumeId, chapter.id, { summary });
+      setSnackbar({
+        tone: "success",
+        message: t("chapter.summarySaved"),
+      });
       router.refresh();
     } catch (error) {
-      setSummaryError(
-        error instanceof Error ? error.message : t("common.networkError"),
-      );
+      const message =
+        error instanceof Error ? error.message : t("common.networkError");
+      setSummaryError(message);
+      setSnackbar({
+        tone: "error",
+        message,
+      });
     } finally {
       setSummarySaving(false);
     }
@@ -197,11 +220,19 @@ export default function ChapterEditor({
       await updateChapter(novelId, volumeId, chapter.id, {
         read_at: normalizeDateTimeLocalToISOString(readAt),
       });
+      setSnackbar({
+        tone: "success",
+        message: t("chapter.dateSaved"),
+      });
       router.refresh();
     } catch (error) {
-      setReadAtError(
-        error instanceof Error ? error.message : t("common.networkError"),
-      );
+      const message =
+        error instanceof Error ? error.message : t("common.networkError");
+      setReadAtError(message);
+      setSnackbar({
+        tone: "error",
+        message,
+      });
     } finally {
       setReadAtSaving(false);
     }
@@ -383,6 +414,14 @@ export default function ChapterEditor({
         </div>
         {tagError && <p className="mt-2 text-sm text-rose-600">{tagError}</p>}
       </div>
+
+      <Snackbar
+        open={Boolean(snackbar)}
+        tone={snackbar?.tone}
+        message={snackbar?.message}
+        onClose={() => setSnackbar(null)}
+        closeLabel={t("common.ok")}
+      />
     </div>
   );
 }

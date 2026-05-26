@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import ExpandableDescription from "./ExpandableDescription";
 
 export const pageRootClassName =
   "min-h-screen bg-[linear-gradient(180deg,#f8f6f0_0%,#f3efe6_52%,#ece7db_100%)] px-4 py-6 text-stone-900 sm:px-6 sm:py-8";
@@ -65,7 +66,7 @@ export const emptyStateClassName =
   "flex min-h-[280px] flex-col items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center shadow-sm";
 
 export const modalBackdropClassName =
-  "fixed inset-0 z-50 flex items-center justify-center bg-stone-950/55 px-4 backdrop-blur-sm";
+  "fixed inset-3 z-50 flex items-center justify-center overflow-hidden rounded-[28px] bg-stone-950/42 px-4 backdrop-blur-md sm:inset-4 sm:rounded-[28px]";
 
 export const modalPanelClassName =
   "w-full max-w-md rounded-[28px] border border-stone-200 bg-[linear-gradient(180deg,#fffdf8_0%,#f6f0e7_100%)] p-6 shadow-[0_24px_80px_rgba(28,25,23,0.28)]";
@@ -126,9 +127,7 @@ export function SectionHeading({
             {title}
           </h1>
           {description ? (
-            <p className="max-w-2xl text-sm leading-6 text-stone-600 sm:text-base">
-              {description}
-            </p>
+            <ExpandableDescription>{description}</ExpandableDescription>
           ) : null}
         </div>
       </div>
@@ -178,6 +177,104 @@ export function normalizeDateTimeLocalToISOString(value: string) {
 
 export function LoadingBar({ className }: { className: string }) {
   return <div className={`${skeletonClassName} ${className}`} />;
+}
+
+export function ConfirmDialog({
+  open,
+  eyebrow,
+  title,
+  description,
+  confirmLabel,
+  cancelLabel,
+  onConfirm,
+  onCancel,
+  busy = false,
+  danger = false,
+}: {
+  open: boolean;
+  eyebrow: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+  confirmLabel: ReactNode;
+  cancelLabel: ReactNode;
+  onConfirm: () => void;
+  onCancel: () => void;
+  busy?: boolean;
+  danger?: boolean;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className={`${modalBackdropClassName} z-60`}>
+      <div className={`${modalPanelClassName} max-w-sm`}>
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+            {eyebrow}
+          </p>
+          <h3 className="text-lg font-semibold tracking-[-0.03em] text-stone-950">
+            {title}
+          </h3>
+          <p className="text-sm leading-6 text-stone-600">{description}</p>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onCancel}
+            className={secondaryButtonClassName}>
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onConfirm}
+            className={
+              danger
+                ? `${primaryButtonClassName} bg-rose-600 hover:bg-rose-500`
+                : primaryButtonClassName
+            }>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Snackbar({
+  open,
+  message,
+  onClose,
+  closeLabel = "OK",
+  tone = "success",
+}: {
+  open: boolean;
+  message: ReactNode;
+  onClose: () => void;
+  closeLabel?: ReactNode;
+  tone?: "success" | "error";
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-70 flex justify-center px-4">
+      <div
+        className={`pointer-events-auto flex min-w-70 max-w-md items-center justify-between gap-3 rounded-2xl border px-4 py-3 shadow-[0_16px_40px_rgba(28,25,23,0.18)] ${
+          tone === "success"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+            : "border-rose-200 bg-rose-50 text-rose-900"
+        }`}>
+        <p className="text-sm font-medium">{message}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full px-2 py-1 text-xs font-semibold text-current/70 transition hover:bg-black/5 hover:text-current">
+          {closeLabel}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function LoadingCard({ lines = 3 }: { lines?: number }) {

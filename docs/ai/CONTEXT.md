@@ -49,6 +49,7 @@ apps/
         loading.tsx                       # novels list loading
         page.tsx                          # novel list
         AddNovelForm.tsx
+        ExpandableDescription.tsx         # "use client" — ResizeObserver clamp/expand for long descriptions
         [id]/
           loading.tsx                     # novel detail loading
           page.tsx                        # novel detail + volume manager + Characters link
@@ -156,6 +157,7 @@ GET    /api/v1/novels/:id/search
 - **Route loading uses central skeleton component** — `PageLoadingState` in `app/novels/ui.tsx` powers segment `loading.tsx` files
 - **volume_id on ChapterSummary/Event** — propagated so web can build volume-scoped URLs without extra round-trips
 - **read_at is TIMESTAMPTZ** — migration 000012; API accepts RFC3339, ISO datetime, or date-only during rollout
+- **ConfirmDialog + Snackbar are standard mutation UI** — exported from `app/novels/ui.tsx`; all destructive actions use ConfirmDialog, all mutations surface Snackbar feedback
 
 ## DB Conventions
 
@@ -215,6 +217,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | volume_id propagation + read_at TIMESTAMPTZ migration |
+| Last completed | ConfirmDialog + Snackbar + ExpandableDescription across all mutation forms |
 | Working on     | — |
 | Blocked by     | — |

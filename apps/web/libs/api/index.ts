@@ -178,3 +178,13 @@ export async function updateChapter(
     },
   );
 }
+
+export async function deleteChapter(
+  novelId: string,
+  volumeId: string,
+  chapterId: string,
+): Promise<void> {
+  await apiClient.delete(
+    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapterId}`,
+  );
+}

@@ -5,12 +5,14 @@ import Link from 'next/link'
 import {
   backLinkClassName,
   cardClassName,
+  ConfirmDialog,
   DashboardPage,
   iconButtonClassName,
   inputClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
   SectionHeading,
+  Snackbar,
   smallLabelClassName,
   tagClassName,
   timelineDotClassName,
@@ -90,6 +92,8 @@ export default function TimelinePage({
   const [editSaving, setEditSaving] = useState(false)
 
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmDeleteEvent, setConfirmDeleteEvent] = useState<NovelEvent | null>(null)
+  const [snackbar, setSnackbar] = useState<{ tone: 'success' | 'error'; message: string } | null>(null)
 
   async function loadEvents() {
     try {
@@ -137,6 +141,16 @@ export default function TimelinePage({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  useEffect(() => {
+    if (!snackbar) return
+
+    const timeoutId = window.setTimeout(() => {
+      setSnackbar(null)
+    }, 3000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [snackbar])
+
   const displayed =
     filterChars.length === 0
       ? events
@@ -160,14 +174,19 @@ export default function TimelinePage({
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        setAddError(body.error ?? `Request failed: ${res.status}`)
+        const message = body.error ?? `Request failed: ${res.status}`
+        setAddError(message)
+        setSnackbar({ tone: 'error', message })
         return
       }
       setAddForm(EMPTY_FORM)
       setShowAddForm(false)
+      setSnackbar({ tone: 'success', message: t('timeline.addSuccess') })
       await loadEvents()
     } catch {
-      setAddError(t('common.networkError'))
+      const message = t('common.networkError')
+      setAddError(message)
+      setSnackbar({ tone: 'error', message })
     } finally {
       setAddSaving(false)
     }
@@ -204,26 +223,56 @@ export default function TimelinePage({
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        setEditError(body.error ?? `Request failed: ${res.status}`)
+        const message = body.error ?? `Request failed: ${res.status}`
+        setEditError(message)
+        setSnackbar({ tone: 'error', message })
         return
       }
       setEditingId(null)
+      setSnackbar({ tone: 'success', message: t('timeline.editSuccess') })
       await loadEvents()
     } catch {
-      setEditError(t('common.networkError'))
+      const message = t('common.networkError')
+      setEditError(message)
+      setSnackbar({ tone: 'error', message })
     } finally {
       setEditSaving(false)
     }
   }
 
-  async function handleDelete(eventId: string) {
-    if (!confirm(t('timeline.deleteConfirm'))) return
-    setDeletingId(eventId)
+  async function handleDelete() {
+    if (!confirmDeleteEvent) return
+
+    setDeletingId(confirmDeleteEvent.id)
     try {
-      await fetch(`${BASE}/api/v1/novels/${novelId}/events/${eventId}`, { method: 'DELETE' })
+      const res = await fetch(`${BASE}/api/v1/novels/${novelId}/events/${confirmDeleteEvent.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? `Request failed: ${res.status}`)
+      }
+      setConfirmDeleteEvent(null)
+      setSnackbar({ tone: 'success', message: t('timeline.deleteSuccess') })
       await loadEvents()
-    } catch {}
-    setDeletingId(null)
+    } catch (error) {
+      setSnackbar({
+        tone: 'error',
+        message: error instanceof Error ? error.message : t('common.networkError'),
+      })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  function requestDelete(eventId: string) {
+    const event = events.find((entry) => entry.id === eventId)
+    if (!event) {
+      setSnackbar({ tone: 'error', message: t('timeline.eventNotFound') })
+      return
+    }
+
+    setConfirmDeleteEvent(event)
   }
 
   function toggleFilterChar(name: string) {
@@ -393,7 +442,7 @@ export default function TimelinePage({
                             ✏
                           </button>
                           <button
-                            onClick={() => handleDelete(ev.id)}
+                            onClick={() => requestDelete(ev.id)}
                             disabled={deletingId === ev.id}
                             className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
                             aria-label={t('common.delete')}
@@ -459,6 +508,33 @@ export default function TimelinePage({
             </ul>
           </div>
         )}
+
+        <ConfirmDialog
+          open={Boolean(confirmDeleteEvent)}
+          eyebrow={t('timeline.confirmEyebrow')}
+          title={t('timeline.deleteConfirmTitle')}
+          description={t('timeline.deleteConfirmBody', {
+            title: confirmDeleteEvent?.title ?? '',
+          })}
+          confirmLabel={
+            deletingId
+              ? t('timeline.deleting')
+              : t('common.delete')
+          }
+          cancelLabel={t('common.cancel')}
+          onConfirm={() => void handleDelete()}
+          onCancel={() => setConfirmDeleteEvent(null)}
+          busy={deletingId !== null}
+          danger
+        />
+
+        <Snackbar
+          open={Boolean(snackbar)}
+          tone={snackbar?.tone}
+          message={snackbar?.message}
+          onClose={() => setSnackbar(null)}
+          closeLabel={t('common.ok')}
+        />
       </div>
     </DashboardPage>
   )

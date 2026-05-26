@@ -78,6 +78,7 @@
 - [ ] Empty states in remaining pages
 - [ ] Mobile-responsive layout
 - [ ] Rate limiting on API
+- [x] Confirm Dialog or Modal when Action Success/Fail
 
 ## Phase 7: AI
 

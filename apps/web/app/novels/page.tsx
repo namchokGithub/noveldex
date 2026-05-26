@@ -58,7 +58,7 @@ export default async function NovelsPage() {
                     <h1 className="text-3xl font-semibold tracking-[-0.04em] text-stone-950 sm:text-4xl">
                       <T k="novels.libraryTitle" />
                     </h1>
-                    <span className="rounded-full bg-stone-900 px-3 py-1 text-xs font-medium text-stone-50">
+                    {/* <span className="rounded-full bg-stone-900 px-3 py-1 text-xs font-medium text-stone-50">
                       <T
                         k={
                           totalNovels === 1
@@ -67,7 +67,7 @@ export default async function NovelsPage() {
                         }
                         values={{ count: totalNovels }}
                       />
-                    </span>
+                    </span> */}
                   </div>
                   <p className="max-w-2xl text-sm leading-6 text-stone-600 sm:text-base">
                     <T k="novels.heroDescription" />

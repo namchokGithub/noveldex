@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Character } from '../../../../types'
@@ -12,6 +12,7 @@ import {
   listRowClassName,
   primaryButtonClassName,
   roleColorClassNames,
+  Snackbar,
   secondaryButtonClassName,
   smallLabelClassName,
 } from '../../../ui'
@@ -33,11 +34,22 @@ export default function CharacterDetail({
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [snackbar, setSnackbar] = useState<{ tone: 'success' | 'error'; message: string } | null>(null)
 
   const [name, setName] = useState(character.name)
   const [role, setRole] = useState(character.role)
   const [description, setDescription] = useState(character.description)
   const [aliases, setAliases] = useState(character.aliases.join(', '))
+
+  useEffect(() => {
+    if (!snackbar) return
+
+    const timeoutId = window.setTimeout(() => {
+      setSnackbar(null)
+    }, 3000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [snackbar])
 
   async function save() {
     setSaving(true)
@@ -58,13 +70,18 @@ export default function CharacterDetail({
       )
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        setError(body.error ?? `Request failed: ${res.status}`)
+        const message = body.error ?? `Request failed: ${res.status}`
+        setError(message)
+        setSnackbar({ tone: 'error', message })
         return
       }
       setEditing(false)
+      setSnackbar({ tone: 'success', message: t('character.saveSuccess') })
       router.refresh()
     } catch {
-      setError(t('common.networkError'))
+      const message = t('common.networkError')
+      setError(message)
+      setSnackbar({ tone: 'error', message })
     } finally {
       setSaving(false)
     }
@@ -218,6 +235,14 @@ export default function CharacterDetail({
           </ul>
         </div>
       )}
+
+      <Snackbar
+        open={Boolean(snackbar)}
+        tone={snackbar?.tone}
+        message={snackbar?.message}
+        onClose={() => setSnackbar(null)}
+        closeLabel={t('common.ok')}
+      />
     </div>
   )
 }

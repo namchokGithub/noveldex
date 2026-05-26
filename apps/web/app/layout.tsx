@@ -45,8 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${googleSans.variable} ${notoSansThai.variable} ${geistMono.variable} h-full antialiased`}
-    >
+      className={`${googleSans.variable} ${notoSansThai.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <I18nProvider>
           <LanguageToggle />

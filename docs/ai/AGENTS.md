@@ -31,6 +31,8 @@ Novel indexing webapp. Monorepo: `apps/api` (Go) + `apps/web` (Next.js 16).
 - Server Components by default. `"use client"` only when needed (event handlers, browser APIs)
 - Fetch from API using `NEXT_PUBLIC_API_URL` env var
 - No client-side fetch for initial page data — use async Server Components
+- Destructive actions (delete, overwrite) must gate behind `ConfirmDialog` from `app/novels/ui.tsx`
+- Mutation success/error feedback via `Snackbar` from `app/novels/ui.tsx` — not alert() or inline flash
 
 ### Database
 
