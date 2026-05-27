@@ -49,6 +49,7 @@ apps/
         loading.tsx                       # novels list loading
         page.tsx                          # novel list
         AddNovelForm.tsx
+        NovelCover.tsx                    # "use client" — cover image with initials fallback on error/absent
         ExpandableDescription.tsx         # "use client" — ResizeObserver clamp/expand for long descriptions
         [id]/
           loading.tsx                     # novel detail loading
@@ -219,6 +220,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | GET /master/last-order-nos for form auto-suggest of next volume/chapter number |
+| Last completed | NovelCover component — cover image with initials fallback on novel list + detail pages |
 | Working on     | — |
 | Blocked by     | — |

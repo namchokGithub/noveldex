@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Novel } from "../types";
 import { T } from "@/components/i18n/I18nProvider";
 import { getNovels as getNovelsFromApi } from "@/libs/api";
+import NovelCover from "./NovelCover";
 
 const STATUS_COLORS: Record<Novel["status"], string> = {
   reading: "bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200",
@@ -161,6 +162,7 @@ export default async function NovelsPage() {
                 </div>
               </aside>
 
+              {/* Novels */}
               <div className="min-w-0">
                 {novels === null ? (
                   <div className="rounded-[22px] border border-rose-200 bg-rose-50 p-8 text-center shadow-sm">
@@ -196,11 +198,19 @@ export default async function NovelsPage() {
                       {/* content — z-10 ให้อยู่เหนือ gradient */}
                       <div className="relative z-10 flex h-full flex-col gap-8">
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                          <div className="flex min-w-0 items-start gap-4 sm:gap-5">
-                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] bg-stone-950 text-lg font-semibold text-stone-50 shadow-[0_16px_30px_rgba(41,37,36,0.24)]">
-                              {featuredNovel.title.slice(0, 2).toUpperCase()}
+                          <div className="flex min-w-0 flex-col gap-5 sm:gap-6 lg:flex-row lg:items-start">
+                            <div className="relative shrink-0">
+                              <NovelCover
+                                title={featuredNovel.title}
+                                coverUrl={featuredNovel.cover_url}
+                                alt={featuredNovel.title}
+                                className="h-56 w-40 rounded-[28px] object-cover shadow-[0_24px_50px_rgba(41,37,36,0.18)] sm:h-64 sm:w-44"
+                                fallbackClassName="relative shadow-[0_24px_50px_rgba(41,37,36,0.22)]"
+                                titleClassName="text-3xl"
+                              />
+                              <div className="pointer-events-none absolute -inset-2 -z-10 rounded-4xl bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_56%),radial-gradient(circle_at_bottom,rgba(245,158,11,0.18),transparent_60%)] blur-2xl" />
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 pt-1">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-400">
                                 {featuredNovel.author || (
                                   <T k="novels.unknownAuthor" />
@@ -280,9 +290,14 @@ export default async function NovelsPage() {
                         <div className="relative flex h-full flex-col gap-5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex min-w-0 items-start gap-3">
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-sm">
-                                {novel.title.slice(0, 2).toUpperCase()}
-                              </div>
+                              <NovelCover
+                                title={novel.title}
+                                coverUrl={novel.cover_url}
+                                alt={novel.title}
+                                className="h-16 w-12 shrink-0 rounded-2xl object-cover shadow-sm"
+                                fallbackClassName="relative shadow-sm"
+                                titleClassName="text-sm"
+                              />
                               <div className="min-w-0">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
                                   {novel.author || (

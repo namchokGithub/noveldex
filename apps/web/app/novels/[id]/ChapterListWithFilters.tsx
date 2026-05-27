@@ -146,12 +146,12 @@ export default function ChapterListWithFilters({
           {filteredChapters.map((chapter) => (
             <li key={chapter.id}>
               <div className={listRowClassName}>
-                <div className="min-w-0">
-                  <Link
-                    href={`/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapter.id}`}
-                    className="text-sm font-medium text-stone-900 hover:text-stone-700">
+                <Link
+                  href={`/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapter.id}`}
+                  className="min-w-0 flex-1 rounded-2xl outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
+                  <div className="text-sm font-medium text-stone-900 transition hover:text-stone-700">
                     Ch. {chapter.number} — {chapter.title}
-                  </Link>
+                  </div>
                   {chapter.tags.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {chapter.tags.map((tag) => (
@@ -161,7 +161,7 @@ export default function ChapterListWithFilters({
                       ))}
                     </div>
                   )}
-                </div>
+                </Link>
                 <div className="flex shrink-0 items-center gap-2">
                   {chapter.read_at ? (
                     <span className="text-xs text-stone-500">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Character } from "../../types";
 import AddVolumeForm from "./AddVolumeForm";
+import NovelCover from "../NovelCover";
 import VolumeManager from "./VolumeManager";
 import { T } from "@/components/i18n/I18nProvider";
 import {
@@ -75,9 +76,9 @@ export default async function NovelPage({
         </Link>
 
         <SectionHeading
-          eyebrow={<T k="novel.eyebrow" />}
-          title={novel.title}
-          description={novel.description || <T k="novel.workspaceFallback" />}
+          eyebrow=""
+          title=""
+          description=""
           action={<AddVolumeForm novelId={id} />}
         />
 
@@ -163,17 +164,36 @@ export default async function NovelPage({
           </aside>
 
           <div className="space-y-4">
-            <div className={cardClassName}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                Structure
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                Novel → Volume → Chapter
-              </h2>
-              <p className="mt-2 text-sm text-stone-500">
-                Create volume first. Add chapters from correct volume row or
-                volume page.
-              </p>
+            <div
+              className={`${cardClassName} overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(246,241,232,0.9))]`}>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="relative shrink-0 self-start">
+                  <NovelCover
+                    title={novel.title}
+                    coverUrl={novel.cover_url}
+                    alt={novel.title}
+                    className="h-40 w-28 rounded-3xl object-cover shadow-[0_18px_36px_rgba(41,37,36,0.18)] sm:h-44 sm:w-32"
+                    fallbackClassName="relative shadow-[0_18px_36px_rgba(41,37,36,0.22)]"
+                    titleClassName="text-2xl"
+                  />
+                  <div className="pointer-events-none absolute -inset-2 -z-10 rounded-[28px] bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.16),transparent_56%),radial-gradient(circle_at_bottom,rgba(245,158,11,0.18),transparent_60%)] blur-xl" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                    Cover
+                  </p>
+                  <h2 className="mt-2 line-clamp-2 text-xl font-semibold tracking-[-0.03em] text-stone-950 sm:text-2xl">
+                    {novel.title}
+                  </h2>
+                  <p className="mt-2 text-sm text-stone-500">
+                    {novel.author || <T k="novels.unknownAuthor" />}
+                  </p>
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-stone-600">
+                    {novel.description || <T k="novel.workspaceFallback" />}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <VolumeManager

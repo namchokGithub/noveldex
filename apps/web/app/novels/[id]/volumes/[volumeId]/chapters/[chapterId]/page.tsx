@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ChapterEditor from "./ChapterEditor";
-import LinkedCharactersPanel from "./LinkedCharactersPanel";
 import SummaryRenderer from "./SummaryRenderer";
 import {
   backLinkClassName,
@@ -55,9 +54,9 @@ export default async function ChapterPage({
           />
         </div>
 
-        <div className={cardClassName}>
+        {/* <div className={cardClassName}>
           <LinkedCharactersPanel characters={chapter.characters} novelId={id} />
-        </div>
+        </div> */}
 
         <ChapterEditor chapter={chapter} novelId={id} volumeId={volumeId} />
       </div>
