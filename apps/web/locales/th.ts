@@ -1,6 +1,10 @@
 import type en from "./en";
 
-const th: typeof en = {
+type Messages = {
+  [K in keyof typeof en]: string;
+};
+
+const th = {
   "language.english": "อังกฤษ",
   "language.thai": "ไทย",
   "language.switchToEnglish": "เปลี่ยนเป็นภาษาอังกฤษ",
@@ -232,6 +236,6 @@ const th: typeof en = {
   "timeline.field.storyDatePlaceholder": "เช่น ปี 1349",
   "timeline.field.optionalDescription": "คำอธิบายเพิ่มเติม (ถ้ามี)",
   "timeline.field.noneOption": "— ไม่มี —",
-} as const;
+} as const satisfies Messages;
 
 export default th;

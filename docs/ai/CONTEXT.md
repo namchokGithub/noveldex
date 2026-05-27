@@ -222,6 +222,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | Chapter reorder in volume page — drag-and-drop, bulk reorder API, number mutation strategy |
+| Last completed | novels page layout simplification — remove stats sidebar, full-width list, featured card as direct Link |
 | Working on     | — |
 | Blocked by     | — |

@@ -11,7 +11,6 @@ import {
   chipClassName,
   DashboardPage,
   mutedCardClassName,
-  SectionHeading,
   statusColorClassNames,
 } from "../ui";
 import { getChaptersByVolume, getNovel, getVolumes } from "@/libs/api";
@@ -71,16 +70,12 @@ export default async function NovelPage({
   return (
     <DashboardPage maxWidth="max-w-6xl">
       <div className="space-y-5">
-        <Link href="/novels" className={backLinkClassName}>
-          ← <T k="nav.allNovels" />
-        </Link>
-
-        <SectionHeading
-          eyebrow=""
-          title=""
-          description=""
-          action={<AddVolumeForm novelId={id} />}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link href="/novels" className={backLinkClassName}>
+            ← <T k="nav.allNovels" />
+          </Link>
+          <AddVolumeForm novelId={id} />
+        </div>
 
         <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className={mutedCardClassName}>
