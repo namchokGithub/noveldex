@@ -49,6 +49,7 @@ func main() {
 	chapterRepo := repository.NewChapterRepository(pool)
 	chapterUC := usecase.NewChapterUsecase(chapterRepo, characterRepo, tagRepo)
 	chapterH := handler.NewChapterHandler(chapterUC, volumeUC)
+	masterH := handler.NewMasterHandler(chapterUC, volumeUC, novelUC)
 
 	eventRepo := repository.NewEventRepository(pool)
 	eventUC := usecase.NewEventUsecase(eventRepo)
@@ -73,6 +74,8 @@ func main() {
 	r.Get("/health", handler.Health)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/master/last-order-nos", masterH.GetLastOrderNos)
+
 		r.Get("/novels", novelH.List)
 		r.Post("/novels", novelH.Create)
 		r.Get("/novels/{id}", novelH.GetByID)

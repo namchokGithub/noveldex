@@ -65,6 +65,20 @@ func (r *pgxChapterRepo) ListByNovel(ctx context.Context, novelID string) ([]dom
 	return chapters, rows.Err()
 }
 
+func (r *pgxChapterRepo) GetLastNumber(ctx context.Context, volumeID string) (int, error) {
+	var last int
+	err := r.pool.QueryRow(ctx,
+		`SELECT COALESCE(MAX(number), 0)
+		 FROM chapters
+		 WHERE volume_id = $1`,
+		volumeID,
+	).Scan(&last)
+	if err != nil {
+		return 0, err
+	}
+	return last, nil
+}
+
 func (r *pgxChapterRepo) Create(ctx context.Context, ch *domain.Chapter) error {
 	return r.pool.QueryRow(ctx,
 		`INSERT INTO chapters (volume_id, number, title, summary, read_at, created_at, updated_at)

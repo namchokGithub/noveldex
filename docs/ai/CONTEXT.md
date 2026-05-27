@@ -30,7 +30,7 @@ apps/
     internal/domain/                      # structs + repository interfaces
       novel.go, volume.go, chapter.go, character.go, event.go
     internal/handler/                     # HTTP handlers (one file per domain)
-      health.go, novel_handler.go, volume_handler.go, chapter_handler.go, character_handler.go, event_handler.go
+      health.go, novel_handler.go, volume_handler.go, chapter_handler.go, character_handler.go, event_handler.go, master_handler.go
     internal/repository/                  # pgx implementations
       novel_repo.go, volume_repo.go, chapter_repo.go, character_repo.go, event_repo.go
     internal/usecase/                     # business logic
@@ -95,6 +95,8 @@ docs/
 
 ```
 GET    /health
+GET    /api/v1/master/last-order-nos          # ?novel_id=&volume_id= → {volume, chapter} last numbers
+
 GET    /api/v1/novels
 POST   /api/v1/novels
 GET    /api/v1/novels/:id
@@ -217,6 +219,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | ConfirmDialog + Snackbar + ExpandableDescription across all mutation forms |
+| Last completed | GET /master/last-order-nos for form auto-suggest of next volume/chapter number |
 | Working on     | — |
 | Blocked by     | — |

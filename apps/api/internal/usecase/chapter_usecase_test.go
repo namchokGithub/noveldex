@@ -20,6 +20,9 @@ func (m *mockChapterRepo) List(_ context.Context, _ string) ([]domain.Chapter, e
 func (m *mockChapterRepo) ListByNovel(_ context.Context, _ string) ([]domain.Chapter, error) {
 	return nil, nil
 }
+func (m *mockChapterRepo) GetLastNumber(_ context.Context, _ string) (int, error) {
+	return 0, nil
+}
 func (m *mockChapterRepo) Create(_ context.Context, ch *domain.Chapter) error {
 	ch.ID = "test-id"
 	return m.createErr

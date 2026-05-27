@@ -131,3 +131,7 @@ func (u *ChapterUsecase) Update(ctx context.Context, novelID string, ch *domain.
 func (u *ChapterUsecase) Delete(ctx context.Context, volumeID, id string) error {
 	return u.repo.Delete(ctx, volumeID, id)
 }
+
+func (u *ChapterUsecase) GetLastNumber(ctx context.Context, volumeID string) (int, error) {
+	return u.repo.GetLastNumber(ctx, volumeID)
+}

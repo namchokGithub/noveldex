@@ -57,3 +57,7 @@ func (u *VolumeUsecase) Update(ctx context.Context, v *domain.Volume) error {
 func (u *VolumeUsecase) Delete(ctx context.Context, novelID, id string) error {
 	return u.repo.Delete(ctx, novelID, id)
 }
+
+func (u *VolumeUsecase) GetLastNumber(ctx context.Context, novelID string) (int, error) {
+	return u.repo.GetLastNumber(ctx, novelID)
+}

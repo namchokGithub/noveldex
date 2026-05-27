@@ -40,6 +40,20 @@ func (r *pgxVolumeRepo) List(ctx context.Context, novelID string) ([]domain.Volu
 	return volumes, rows.Err()
 }
 
+func (r *pgxVolumeRepo) GetLastNumber(ctx context.Context, novelID string) (int, error) {
+	var last int
+	err := r.pool.QueryRow(ctx,
+		`SELECT COALESCE(MAX(number), 0)
+		 FROM volumes
+		 WHERE novel_id=$1`,
+		novelID,
+	).Scan(&last)
+	if err != nil {
+		return 0, err
+	}
+	return last, nil
+}
+
 func (r *pgxVolumeRepo) Create(ctx context.Context, v *domain.Volume) error {
 	return r.pool.QueryRow(ctx,
 		`INSERT INTO volumes (novel_id, number, title, created_at, updated_at)

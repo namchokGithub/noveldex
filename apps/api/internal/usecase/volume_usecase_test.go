@@ -15,7 +15,8 @@ type mockVolumeRepo struct {
 func (m *mockVolumeRepo) List(_ context.Context, _ string) ([]domain.Volume, error) {
 	return nil, nil
 }
-func (m *mockVolumeRepo) Create(_ context.Context, _ *domain.Volume) error { return m.createErr }
+func (m *mockVolumeRepo) GetLastNumber(_ context.Context, _ string) (int, error) { return 0, nil }
+func (m *mockVolumeRepo) Create(_ context.Context, _ *domain.Volume) error       { return m.createErr }
 func (m *mockVolumeRepo) GetByID(_ context.Context, _, _ string) (*domain.Volume, error) {
 	return nil, domain.ErrNotFound
 }

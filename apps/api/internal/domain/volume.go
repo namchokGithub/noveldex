@@ -16,6 +16,7 @@ type Volume struct {
 
 type VolumeRepository interface {
 	List(ctx context.Context, novelID string) ([]Volume, error)
+	GetLastNumber(ctx context.Context, novelID string) (int, error)
 	Create(ctx context.Context, v *Volume) error
 	GetByID(ctx context.Context, novelID, id string) (*Volume, error)
 	Update(ctx context.Context, v *Volume) error
