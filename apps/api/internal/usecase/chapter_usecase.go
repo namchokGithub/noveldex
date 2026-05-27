@@ -132,6 +132,23 @@ func (u *ChapterUsecase) Delete(ctx context.Context, volumeID, id string) error 
 	return u.repo.Delete(ctx, volumeID, id)
 }
 
+func (u *ChapterUsecase) ReorderChapters(ctx context.Context, volumeID string, entries []domain.ChapterOrderEntry) error {
+	if len(entries) == 0 {
+		return errors.New("chapters list is required")
+	}
+	seen := make(map[int]struct{}, len(entries))
+	for _, e := range entries {
+		if e.Number <= 0 {
+			return errors.New("chapter numbers must be greater than 0")
+		}
+		if _, ok := seen[e.Number]; ok {
+			return errors.New("duplicate chapter numbers in reorder request")
+		}
+		seen[e.Number] = struct{}{}
+	}
+	return u.repo.BulkReorder(ctx, volumeID, entries)
+}
+
 func (u *ChapterUsecase) GetLastNumber(ctx context.Context, volumeID string) (int, error) {
 	return u.repo.GetLastNumber(ctx, volumeID)
 }

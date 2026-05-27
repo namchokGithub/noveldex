@@ -174,6 +174,10 @@ const th: typeof en = {
   "chapter.deleteSuccess": "ลบตอนสำเร็จ",
   "chapter.summarySaved": "บันทึกสรุปสำเร็จ",
   "chapter.dateSaved": "บันทึกวันที่อ่านสำเร็จ",
+  "chapter.reorder": "เรียงลำดับ",
+  "chapter.saveOrder": "บันทึกลำดับ",
+  "chapter.reorderSuccess": "บันทึกลำดับตอนสำเร็จ",
+  "chapter.dragHint": "ลากแถวเพื่อเรียงลำดับ",
 
   "characters.eyebrow": "ตัวละคร",
   "characters.directoryTitle": "สารบบตัวละคร",

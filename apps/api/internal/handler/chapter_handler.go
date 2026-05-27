@@ -36,6 +36,10 @@ type chapterUpdateRequest struct {
 	ReadAt  *string `json:"read_at"`
 }
 
+type chapterReorderRequest struct {
+	Chapters []domain.ChapterOrderEntry `json:"chapters"`
+}
+
 func parseReadAt(s string) (*time.Time, error) {
 	if s == "" {
 		return nil, nil
@@ -200,6 +204,24 @@ func (h *ChapterHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": ch})
+}
+
+func (h *ChapterHandler) Reorder(w http.ResponseWriter, r *http.Request) {
+	novelID := chi.URLParam(r, "novelID")
+	volumeID := chi.URLParam(r, "volumeID")
+	if !h.resolveVolume(r.Context(), w, novelID, volumeID) {
+		return
+	}
+	var req chapterReorderRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if err := h.uc.ReorderChapters(r.Context(), volumeID, req.Chapters); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *ChapterHandler) Delete(w http.ResponseWriter, r *http.Request) {

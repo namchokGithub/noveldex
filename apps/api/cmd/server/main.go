@@ -93,6 +93,7 @@ func main() {
 		r.Get("/novels/{novelID}/chapters", chapterH.ListByNovel)
 		r.Get("/novels/{novelID}/volumes/{volumeID}/chapters", chapterH.List)
 		r.Post("/novels/{novelID}/volumes/{volumeID}/chapters", chapterH.Create)
+		r.Patch("/novels/{novelID}/volumes/{volumeID}/chapters/reorder", chapterH.Reorder)
 		r.Get("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}", chapterH.GetByID)
 		r.Patch("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}", chapterH.Update)
 		r.Delete("/novels/{novelID}/volumes/{volumeID}/chapters/{chapterID}", chapterH.Delete)

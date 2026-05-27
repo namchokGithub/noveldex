@@ -22,6 +22,11 @@ type ChapterWithCharacters struct {
 	Characters []Character `json:"characters"`
 }
 
+type ChapterOrderEntry struct {
+	ID     string `json:"id"`
+	Number int    `json:"number"`
+}
+
 type ChapterRepository interface {
 	List(ctx context.Context, volumeID string) ([]Chapter, error)
 	ListByNovel(ctx context.Context, novelID string) ([]Chapter, error)
@@ -33,4 +38,6 @@ type ChapterRepository interface {
 	// NumberExistsInNovel checks across all volumes of a novel to enforce novel-scoped uniqueness.
 	// Pass excludeID="" when creating (no existing chapter to exclude).
 	NumberExistsInNovel(ctx context.Context, novelID string, number int, excludeID string) (bool, error)
+	// BulkReorder reassigns chapter numbers in a single statement to avoid mid-update uniqueness violations.
+	BulkReorder(ctx context.Context, volumeID string, entries []ChapterOrderEntry) error
 }

@@ -130,6 +130,49 @@ func (r *pgxChapterRepo) Delete(ctx context.Context, volumeID, id string) error 
 	return nil
 }
 
+func (r *pgxChapterRepo) BulkReorder(ctx context.Context, volumeID string, entries []domain.ChapterOrderEntry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+	ids := make([]string, len(entries))
+	numbers := make([]int, len(entries))
+	for i, e := range entries {
+		ids[i] = e.ID
+		numbers[i] = e.Number
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	// Step 1: move to negatives to vacate all target number slots.
+	// Non-deferred UNIQUE is checked row-by-row, so a direct swap would collide.
+	// Negatives never conflict with valid positive chapter numbers.
+	if _, err = tx.Exec(ctx,
+		`UPDATE chapters SET number = -number
+		 FROM (SELECT unnest($1::uuid[]) AS id) v
+		 WHERE chapters.id = v.id AND chapters.volume_id = $2`,
+		ids, volumeID,
+	); err != nil {
+		return err
+	}
+
+	// Step 2: assign final numbers now that slots are free.
+	if _, err = tx.Exec(ctx,
+		`UPDATE chapters
+		 SET number = v.number, updated_at = NOW()
+		 FROM (SELECT unnest($1::uuid[]) AS id, unnest($2::integer[]) AS number) v
+		 WHERE chapters.id = v.id AND chapters.volume_id = $3`,
+		ids, numbers, volumeID,
+	); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
 func (r *pgxChapterRepo) NumberExistsInNovel(ctx context.Context, novelID string, number int, excludeID string) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx,

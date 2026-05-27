@@ -175,6 +175,10 @@ const en = {
   "chapter.deleteSuccess": "Chapter deleted successfully.",
   "chapter.summarySaved": "Summary saved successfully.",
   "chapter.dateSaved": "Read date saved successfully.",
+  "chapter.reorder": "Reorder",
+  "chapter.saveOrder": "Save order",
+  "chapter.reorderSuccess": "Chapter order saved.",
+  "chapter.dragHint": "Drag rows to reorder",
 
   "characters.eyebrow": "Characters",
   "characters.directoryTitle": "Cast directory",

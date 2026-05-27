@@ -113,6 +113,7 @@ DELETE /api/v1/novels/:id/volumes/:volumeId
 GET    /api/v1/novels/:id/chapters                                              # flat list across all volumes (navigation)
 GET    /api/v1/novels/:id/volumes/:volumeId/chapters
 POST   /api/v1/novels/:id/volumes/:volumeId/chapters
+PATCH  /api/v1/novels/:id/volumes/:volumeId/chapters/reorder             # bulk reorder; body: {chapters:[{id,number}]}
 GET    /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId          # returns ChapterWithCharacters
 PATCH  /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId          # triggers [[Name]] auto-link
 DELETE /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId
@@ -161,6 +162,7 @@ GET    /api/v1/novels/:id/search
 - **volume_id on ChapterSummary/Event** — propagated so web can build volume-scoped URLs without extra round-trips
 - **read_at is TIMESTAMPTZ** — migration 000012; API accepts RFC3339, ISO datetime, or date-only during rollout
 - **ConfirmDialog + Snackbar are standard mutation UI** — exported from `app/novels/ui.tsx`; all destructive actions use ConfirmDialog, all mutations surface Snackbar feedback
+- **Chapter reorder uses number mutation** — `PATCH .../chapters/reorder` redistributes existing numbers (sorted asc) among chapters in new drag order; no separate position field; BulkReorder uses single UPDATE…unnest statement for atomicity
 
 ## DB Conventions
 
@@ -220,6 +222,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | inline title edit on chapter detail page + generateMetadata for browser tab title |
+| Last completed | Chapter reorder in volume page — drag-and-drop, bulk reorder API, number mutation strategy |
 | Working on     | — |
 | Blocked by     | — |
