@@ -12,7 +12,19 @@ interface ApiResponse<T> {
   data: T;
 }
 
+export interface LastOrderNos {
+  volume: number;
+  chapter: number;
+}
+
 interface ChapterPayload {
+  summary?: string;
+  read_at?: string | null;
+}
+
+interface ChapterCreatePayload {
+  number: number;
+  title: string;
   summary?: string;
   read_at?: string | null;
 }
@@ -187,4 +199,31 @@ export async function deleteChapter(
   await apiClient.delete(
     `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapterId}`,
   );
+}
+
+export async function getLastOrderNos(params: {
+  novel_id?: string;
+  volume_id?: string;
+}): Promise<LastOrderNos> {
+  const response = await apiClient.get<ApiResponse<LastOrderNos>>(
+    "/api/v1/master/last-order-nos",
+    params,
+  );
+
+  return response.data;
+}
+
+export async function createChapter(
+  novelId: string,
+  volumeId: string,
+  payload: ChapterCreatePayload,
+): Promise<Chapter> {
+  const response = await apiClient.post<ApiResponse<Chapter>>(
+    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters`,
+    {
+      body: payload,
+    },
+  );
+
+  return response.data;
 }

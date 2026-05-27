@@ -13,8 +13,7 @@ import {
   smallLabelClassName,
 } from '../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+import { createChapter, getLastOrderNos } from '@/libs/api'
 
 export default function AddChapterForm({
   novelId,
@@ -29,6 +28,8 @@ export default function AddChapterForm({
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [snackbar, setSnackbar] = useState<{ tone: 'success' | 'error'; message: string } | null>(null)
+  const [nextNumber, setNextNumber] = useState<number | null>(null)
+  const [fetchingNumber, setFetchingNumber] = useState(false)
 
   useEffect(() => {
     if (!snackbar) return
@@ -39,6 +40,19 @@ export default function AddChapterForm({
 
     return () => window.clearTimeout(timeoutId)
   }, [snackbar])
+
+  async function handleOpenForm() {
+    setFetchingNumber(true)
+    try {
+      const nos = await getLastOrderNos({ volume_id: volumeId })
+      setNextNumber(nos.chapter + 1)
+    } catch {
+      setNextNumber(null) // silent fallback — user types manually
+    } finally {
+      setFetchingNumber(false)
+      setOpen(true)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -55,29 +69,14 @@ export default function AddChapterForm({
     }
 
     try {
-      const res = await fetch(
-        `${BASE}/api/v1/novels/${novelId}/volumes/${volumeId}/chapters`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      )
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        const message = body.error ?? `Request failed: ${res.status}`
-        setError(message)
-        setSnackbar({ tone: 'error', message })
-        return
-      }
-
+      await createChapter(novelId, volumeId, data)
       form.reset()
+      setNextNumber(null)
       setOpen(false)
       setSnackbar({ tone: 'success', message: t('addChapter.success') })
       router.refresh()
-    } catch {
-      const message = t('common.networkError')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('common.networkError')
       setError(message)
       setSnackbar({ tone: 'error', message })
     } finally {
@@ -88,8 +87,12 @@ export default function AddChapterForm({
   return (
     <>
       {!open ? (
-        <button onClick={() => setOpen(true)} className={primaryButtonClassName}>
-          {t('addChapter.button')}
+        <button
+          onClick={handleOpenForm}
+          disabled={fetchingNumber}
+          className={primaryButtonClassName}
+        >
+          {fetchingNumber ? t('common.loading') : t('addChapter.button')}
         </button>
       ) : (
         <div className={modalBackdropClassName}>
@@ -111,6 +114,7 @@ export default function AddChapterForm({
                   min={1}
                   required
                   className={inputClassName}
+                  defaultValue={nextNumber ?? undefined}
                   placeholder="1"
                 />
               </div>
@@ -148,6 +152,7 @@ export default function AddChapterForm({
                   onClick={() => {
                     setOpen(false)
                     setError(null)
+                    setNextNumber(null)
                   }}
                   className={ghostButtonClassName}
                 >

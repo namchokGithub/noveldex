@@ -81,9 +81,10 @@ async function request<T>(path: string, options?: RequestOptions): Promise<T> {
   const body = await parseResponseBody<unknown>(response);
 
   if (!response.ok) {
+    const b = body as Record<string, unknown>;
     const message =
-      typeof body === "object" && body !== null && "message" in body
-        ? String(body.message)
+      typeof body === "object" && body !== null
+        ? String(b.error ?? b.message ?? "Request failed.")
         : "Request failed.";
 
     throw new Error(message);

@@ -67,7 +67,6 @@
 - [ ] users table + migration
 - [ ] JWT-based login/register
 - [ ] Protected routes (middleware)
-- [ ] Per-user novel ownership
 - [ ] Session handling (refresh tokens)
 
 ## Phase 6: Polish

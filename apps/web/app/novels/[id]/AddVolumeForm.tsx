@@ -11,7 +11,7 @@ import {
   secondaryButtonClassName,
   smallLabelClassName,
 } from "../ui";
-import { createVolume } from "@/libs/api";
+import { createVolume, getLastOrderNos } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
 
 interface VolumeDraft {
@@ -34,6 +34,8 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [nextNumber, setNextNumber] = useState<number | null>(null);
+  const [fetchingNumber, setFetchingNumber] = useState(false);
 
   useEffect(() => {
     if (!snackbar) return;
@@ -98,15 +100,30 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
     setConfirmOpen(false);
     setDraft(null);
     setError(null);
+    setNextNumber(null);
+  }
+
+  async function handleOpenForm() {
+    setFetchingNumber(true);
+    try {
+      const nos = await getLastOrderNos({ novel_id: novelId });
+      setNextNumber(nos.volume + 1);
+    } catch {
+      setNextNumber(null); // silent fallback — user types manually
+    } finally {
+      setFetchingNumber(false);
+      setOpen(true);
+    }
   }
 
   return (
     <>
       {!open ? (
         <button
-          onClick={() => setOpen(true)}
+          onClick={handleOpenForm}
+          disabled={fetchingNumber}
           className={primaryButtonClassName}>
-          {t("addVolume.button")}
+          {fetchingNumber ? t("common.loading") : t("addVolume.button")}
         </button>
       ) : (
         <div className={modalBackdropClassName}>
@@ -134,6 +151,7 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
                   min={1}
                   required
                   className={inputClassName}
+                  defaultValue={nextNumber ?? undefined}
                   placeholder="1"
                 />
               </div>
