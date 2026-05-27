@@ -37,6 +37,10 @@ export default function ChapterEditor({
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [title, setTitle] = useState(chapter.title ?? "");
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [titleSaving, setTitleSaving] = useState(false);
+
   const [summary, setSummary] = useState(chapter.summary ?? "");
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [summarySaving, setSummarySaving] = useState(false);
@@ -213,6 +217,38 @@ export default function ChapterEditor({
     }
   }
 
+  async function saveTitle() {
+    const normalizedTitle = title.trim();
+    if (!normalizedTitle) {
+      setTitleError(t("addChapter.chapterTitlePlaceholder"));
+      return;
+    }
+
+    setTitleError(null);
+    setTitleSaving(true);
+    try {
+      await updateChapter(novelId, volumeId, chapter.id, {
+        title: normalizedTitle,
+      });
+      setTitle(normalizedTitle);
+      setSnackbar({
+        tone: "success",
+        message: t("chapter.titleSaved"),
+      });
+      router.refresh();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : t("common.networkError");
+      setTitleError(message);
+      setSnackbar({
+        tone: "error",
+        message,
+      });
+    } finally {
+      setTitleSaving(false);
+    }
+  }
+
   async function saveReadAt() {
     setReadAtError(null);
     setReadAtSaving(true);
@@ -240,6 +276,25 @@ export default function ChapterEditor({
 
   return (
     <div className="flex flex-col gap-8">
+      <div className={cardClassName}>
+        <label className={smallLabelClassName}>{t("addChapter.title")}</label>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={inputClassName}
+          placeholder={t("addChapter.chapterTitlePlaceholder")}
+        />
+        {titleError && <p className="mt-2 text-sm text-rose-600">{titleError}</p>}
+        <div className="mt-2 flex justify-end">
+          <button
+            onClick={saveTitle}
+            disabled={titleSaving}
+            className={primaryButtonClassName}>
+            {titleSaving ? t("common.saving") : t("chapter.saveTitle")}
+          </button>
+        </div>
+      </div>
+
       <div className={cardClassName}>
         <label className={smallLabelClassName}>{t("addChapter.summary")}</label>
         <div className="relative">

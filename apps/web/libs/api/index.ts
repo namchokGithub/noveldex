@@ -18,6 +18,7 @@ export interface LastOrderNos {
 }
 
 interface ChapterPayload {
+  title?: string;
   summary?: string;
   read_at?: string | null;
 }

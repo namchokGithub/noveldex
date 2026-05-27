@@ -151,7 +151,9 @@ const th: typeof en = {
   "chapter.filters.noMatch": "ไม่มีตอนที่ตรงกับแท็กที่เลือก",
   "chapter.pageEyebrow": "ตอนที่ {number}",
   "chapter.pageDescription":
-    "แก้ไขสรุปตอน วันที่อ่าน ตัวละครที่เชื่อมไว้ และแท็ก",
+    "แก้ไขชื่อตอน สรุปตอน วันที่อ่าน ตัวละครที่เชื่อมไว้ และแท็ก",
+  "chapter.saveTitle": "บันทึกชื่อ",
+  "chapter.titleSaved": "บันทึกชื่อตอนสำเร็จ",
   "chapter.saveSummary": "บันทึกสรุป",
   "chapter.saveDate": "บันทึกวันที่",
   "chapter.characters": "ตัวละคร",

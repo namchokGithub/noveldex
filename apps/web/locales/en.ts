@@ -151,7 +151,9 @@ const en = {
   "chapter.filters.noMatch": "No chapters match selected tags.",
   "chapter.pageEyebrow": "Chapter {number}",
   "chapter.pageDescription":
-    "Edit chapter summary, reading date, linked cast, and tags.",
+    "Edit chapter title, summary, reading date, linked cast, and tags.",
+  "chapter.saveTitle": "Save title",
+  "chapter.titleSaved": "Title saved",
   "chapter.saveSummary": "Save summary",
   "chapter.saveDate": "Save date",
   "chapter.characters": "Characters",

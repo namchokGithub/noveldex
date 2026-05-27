@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ChapterEditor from "./ChapterEditor";
@@ -10,6 +11,27 @@ import {
 } from "@/app/novels/ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { getChapter } from "@/libs/api";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string; volumeId: string; chapterId: string }>;
+}): Promise<Metadata> {
+  const { id, volumeId, chapterId } = await params;
+
+  try {
+    const chapter = await getChapter(id, volumeId, chapterId);
+
+    return {
+      title: chapter.title,
+      description: chapter.summary || undefined,
+    };
+  } catch {
+    return {
+      title: "Chapter",
+    };
+  }
+}
 
 export default async function ChapterPage({
   params,

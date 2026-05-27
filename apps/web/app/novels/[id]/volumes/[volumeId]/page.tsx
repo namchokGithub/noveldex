@@ -67,7 +67,6 @@ export default async function VolumePage({
                 {chapters.length} chapter{chapters.length === 1 ? "" : "s"}
               </h2>
             </div>
-            <p className="text-sm text-stone-500">Novel → Volume → Chapter</p>
           </div>
         </div>
 

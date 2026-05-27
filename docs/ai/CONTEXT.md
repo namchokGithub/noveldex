@@ -72,7 +72,7 @@ apps/
               chapters/[chapterId]/
                 loading.tsx               # chapter detail loading
                 page.tsx                  # chapter detail (fetches ChapterWithCharacters)
-                ChapterEditor.tsx         # summary edit + [[Name]] autocomplete + tags
+                ChapterEditor.tsx         # title + summary edit, [[Name]] autocomplete, tags, read_at
                 SummaryRenderer.tsx       # renders [[Name]] as character links
                 LinkedCharactersPanel.tsx # character chips
       libs/api/
@@ -220,6 +220,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | NovelCover component — cover image with initials fallback on novel list + detail pages |
+| Last completed | inline title edit on chapter detail page + generateMetadata for browser tab title |
 | Working on     | — |
 | Blocked by     | — |
