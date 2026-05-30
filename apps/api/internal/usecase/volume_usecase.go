@@ -16,13 +16,20 @@ func NewVolumeUsecase(repo domain.VolumeRepository) *VolumeUsecase {
 	return &VolumeUsecase{repo: repo}
 }
 
-func (u *VolumeUsecase) List(ctx context.Context, novelID string) ([]domain.Volume, error) {
-	volumes, err := u.repo.List(ctx, novelID)
+func (u *VolumeUsecase) List(ctx context.Context, novelID string, page, perPage int) (*domain.VolumePage, error) {
+	volumes, err := u.repo.List(ctx, novelID, page, perPage)
 	if err != nil {
 		return nil, err
 	}
 	if volumes == nil {
-		volumes = []domain.Volume{}
+		volumes = &domain.VolumePage{
+			Items: []domain.Volume{},
+			Pagination: domain.Pagination{
+				Page:       1,
+				PerPage:    perPage,
+				TotalPages: 1,
+			},
+		}
 	}
 	return volumes, nil
 }

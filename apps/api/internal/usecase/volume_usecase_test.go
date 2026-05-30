@@ -12,8 +12,15 @@ type mockVolumeRepo struct {
 	createErr error
 }
 
-func (m *mockVolumeRepo) List(_ context.Context, _ string) ([]domain.Volume, error) {
-	return nil, nil
+func (m *mockVolumeRepo) List(_ context.Context, _ string, page, perPage int) (*domain.VolumePage, error) {
+	return &domain.VolumePage{
+		Items: []domain.Volume{},
+		Pagination: domain.Pagination{
+			Page:       page,
+			PerPage:    perPage,
+			TotalPages: 1,
+		},
+	}, nil
 }
 func (m *mockVolumeRepo) GetLastNumber(_ context.Context, _ string) (int, error) { return 0, nil }
 func (m *mockVolumeRepo) Create(_ context.Context, _ *domain.Volume) error       { return m.createErr }

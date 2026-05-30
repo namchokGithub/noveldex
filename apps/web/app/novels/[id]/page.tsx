@@ -13,9 +13,10 @@ import {
   mutedCardClassName,
   statusColorClassNames,
 } from "../ui";
-import { getChaptersByVolume, getNovel, getVolumes } from "@/libs/api";
+import { getNovel, getVolumes } from "@/libs/api";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
 
 async function getCharacters(id: string): Promise<Character[]> {
   try {
@@ -32,10 +33,18 @@ async function getCharacters(id: string): Promise<Character[]> {
 
 export default async function NovelPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ page?: string; per_page?: string }>;
 }) {
   const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  const page = parsePositiveInt(resolvedSearchParams.page, 1);
+  const requestedPerPage = parsePositiveInt(resolvedSearchParams.per_page, 5);
+  const perPage = ALLOWED_PAGE_SIZES.has(requestedPerPage)
+    ? requestedPerPage
+    : 5;
   let novel;
   let volumes;
   let characters;
@@ -43,29 +52,15 @@ export default async function NovelPage({
   try {
     [novel, volumes, characters] = await Promise.all([
       getNovel(id),
-      getVolumes(id),
+      getVolumes(id, { page, perPage }),
       getCharacters(id),
     ]);
   } catch {
     notFound();
   }
 
-  const chaptersByVolume = await Promise.all(
-    volumes.map(async (volume) => ({
-      ...volume,
-      chapters: await getChaptersByVolume(id, volume.id),
-    })),
-  );
-
-  const totalChapters = chaptersByVolume.reduce(
-    (sum, volume) => sum + volume.chapters.length,
-    0,
-  );
-  const readCount = chaptersByVolume.reduce(
-    (sum, volume) =>
-      sum + volume.chapters.filter((chapter) => chapter.read_at).length,
-    0,
-  );
+  const totalChapters = volumes.summary.total_chapters;
+  const readCount = volumes.summary.read_count;
 
   return (
     <DashboardPage maxWidth="max-w-6xl">
@@ -101,7 +96,7 @@ export default async function NovelPage({
                         Volumes
                       </p>
                       <p className="mt-2 text-2xl font-semibold text-stone-900">
-                        {volumes.length}
+                        {volumes.summary.total_volumes}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200/70">
@@ -193,19 +188,27 @@ export default async function NovelPage({
 
             <VolumeManager
               novelId={id}
-              volumes={chaptersByVolume.map((volume) => ({
+              volumes={volumes.items.map((volume) => ({
                 id: volume.id,
                 novel_id: volume.novel_id,
                 number: volume.number,
                 title: volume.title,
+                chapter_count: volume.chapter_count,
+                read_count: volume.read_count,
                 created_at: volume.created_at,
                 updated_at: volume.updated_at,
-                chapterCount: volume.chapters.length,
+                chapterCount: volume.chapter_count,
               }))}
+              pagination={volumes.pagination}
             />
           </div>
         </div>
       </div>
     </DashboardPage>
   );
+}
+
+function parsePositiveInt(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }

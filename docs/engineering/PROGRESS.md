@@ -62,6 +62,11 @@
 - [x] Chapter editor uses central API helpers
 - [x] Shared route loading skeleton component (`PageLoadingState`)
 
+## Phase 4.6: My Polish
+
+- [x] paginator
+- [ ] Pagination on all list endpoints
+
 ## Phase 5: Auth
 
 - [ ] users table + migration
@@ -71,7 +76,6 @@
 
 ## Phase 6: Polish
 
-- [ ] Pagination on all list endpoints
 - [ ] Error handling + user-facing messages
 - [x] Loading states in UI for major novel/volume/chapter routes
 - [ ] Empty states in remaining pages
@@ -86,3 +90,7 @@
 - [ ] Timeline inference from prose
 - [ ] Search-by-theme / semantic search
 - [ ] AI-generated wiki stubs
+
+## Fix & Issue
+
+- [ ] Unit test

@@ -31,8 +31,10 @@ Novel indexing webapp. Monorepo: `apps/api` (Go) + `apps/web` (Next.js 16).
 - Server Components by default. `"use client"` only when needed (event handlers, browser APIs)
 - Fetch from API using `NEXT_PUBLIC_API_URL` env var
 - No client-side fetch for initial page data — use async Server Components
+- Keep server-driven list state in URL query params when it affects the initial render (`page`, `per_page`, filters)
 - Destructive actions (delete, overwrite) must gate behind `ConfirmDialog` from `app/novels/ui.tsx`
 - Mutation success/error feedback via `Snackbar` from `app/novels/ui.tsx` — not alert() or inline flash
+- Disable `Link` prefetch on dense volume lists when it would eagerly trigger per-row detail fetches
 
 ### Database
 
@@ -80,3 +82,21 @@ See `docs/ai/CONTEXT.md` for current working state (update it each session).
 - Don't containerize `apps/api` or `apps/web` (they run natively)
 - Don't use `any` in TypeScript without a comment explaining why
 - Don't add dependencies without updating `docs/engineering/DECISIONS.md` if non-obvious
+
+## Current Volume Listing Contract
+
+- `GET /api/v1/novels/:novelID/volumes` is paginated
+- Query params: `page`, `per_page`
+- Defaults: `page=1`, `per_page=5`
+- Allowed page sizes: `5`, `10`, `20`, `50`
+- Response shape: `data: { items, pagination, summary }`
+- Each volume row includes `chapter_count` and `read_count`
+- `summary` includes `total_volumes`, `total_chapters`, `read_count`
+- Do not fan out `getChaptersByVolume` from the novel page just to compute counts
+
+## Current Volume Manager UI
+
+- `app/novels/[id]/page.tsx` reads `searchParams.page` and `searchParams.per_page` on the server
+- `VolumeManager.tsx` is a paginated data-table style panel, not a plain list
+- Only the volume rows scroll; the top toolbar and bottom pager stay fixed within the card
+- Volume detail links in this panel must stay `prefetch={false}`

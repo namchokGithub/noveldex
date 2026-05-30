@@ -35,6 +35,9 @@ func (m *mockChapterRepo) Delete(_ context.Context, _, _ string) error       { r
 func (m *mockChapterRepo) NumberExistsInNovel(_ context.Context, _ string, _ int, _ string) (bool, error) {
 	return m.numberExists, m.numberErr
 }
+func (m *mockChapterRepo) BulkReorder(_ context.Context, _ string, _ []domain.ChapterOrderEntry) error {
+	return nil
+}
 
 type mockCharRepoStub struct{}
 

@@ -2,6 +2,7 @@ import type {
   Chapter,
   ChapterWithCharacters,
   Novel,
+  PaginatedVolumes,
   Tag,
   Volume,
 } from "@/app/types";
@@ -54,12 +55,32 @@ export async function getNovel(novelId: string): Promise<Novel> {
   return response.data;
 }
 
-export async function getVolumes(novelId: string): Promise<Volume[]> {
-  const response = await apiClient.get<ApiResponse<Volume[]>>(
-    `/api/v1/novels/${novelId}/volumes`,
+export async function getVolumes(
+  novelId: string,
+  options?: { page?: number; perPage?: number },
+): Promise<PaginatedVolumes> {
+  const page = options?.page ?? 1;
+  const perPage = options?.perPage ?? 5;
+  const response = await apiClient.get<ApiResponse<PaginatedVolumes>>(
+    `/api/v1/novels/${novelId}/volumes?page=${page}&per_page=${perPage}`,
   );
 
-  return response.data ?? [];
+  return (
+    response.data ?? {
+      items: [],
+      pagination: {
+        page,
+        per_page: perPage,
+        total_items: 0,
+        total_pages: 1,
+      },
+      summary: {
+        total_volumes: 0,
+        total_chapters: 0,
+        read_count: 0,
+      },
+    }
+  );
 }
 
 export async function getVolume(

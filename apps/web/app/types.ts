@@ -14,8 +14,29 @@ export interface Volume {
   novel_id: string
   number: number
   title: string
+  chapter_count: number
+  read_count: number
   created_at: string
   updated_at: string
+}
+
+export interface PaginationMeta {
+  page: number
+  per_page: number
+  total_items: number
+  total_pages: number
+}
+
+export interface VolumeListSummary {
+  total_volumes: number
+  total_chapters: number
+  read_count: number
+}
+
+export interface PaginatedVolumes {
+  items: Volume[]
+  pagination: PaginationMeta
+  summary: VolumeListSummary
 }
 
 export interface Tag {

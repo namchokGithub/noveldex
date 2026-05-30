@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
@@ -29,9 +30,22 @@ type volumeUpdateRequest struct {
 	Title  *string `json:"title"`
 }
 
+var allowedVolumePageSizes = map[int]struct{}{
+	5:  {},
+	10: {},
+	20: {},
+	50: {},
+}
+
 func (h *VolumeHandler) List(w http.ResponseWriter, r *http.Request) {
 	novelID := chi.URLParam(r, "novelID")
-	volumes, err := h.uc.List(r.Context(), novelID)
+	page := parsePositiveInt(r.URL.Query().Get("page"), 1)
+	perPage := parsePositiveInt(r.URL.Query().Get("per_page"), 5)
+	if _, ok := allowedVolumePageSizes[perPage]; !ok {
+		perPage = 5
+	}
+
+	volumes, err := h.uc.List(r.Context(), novelID, page, perPage)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -123,4 +137,12 @@ func (h *VolumeHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func parsePositiveInt(raw string, fallback int) int {
+	value, err := strconv.Atoi(raw)
+	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
 }

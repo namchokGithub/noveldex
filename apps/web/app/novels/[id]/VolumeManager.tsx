@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import type { Volume } from "@/app/types";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { PaginationMeta, Volume } from "@/app/types";
 
 import {
   cardClassName,
@@ -11,7 +11,6 @@ import {
   iconButtonClassName,
   inputClassName,
   listClassName,
-  listRowClassName,
   modalBackdropClassName,
   modalPanelClassName,
   primaryButtonClassName,
@@ -40,12 +39,16 @@ interface SnackbarState {
 export default function VolumeManager({
   novelId,
   volumes,
+  pagination,
 }: {
   novelId: string;
   volumes: VolumeItem[];
+  pagination: PaginationMeta;
 }) {
   const { t } = useI18n();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [number, setNumber] = useState("");
   const [title, setTitle] = useState("");
@@ -54,6 +57,20 @@ export default function VolumeManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+
+  function buildPageHref(page: number, perPage = pagination.per_page) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    params.set("per_page", String(perPage));
+    return `${pathname}?${params.toString()}`;
+  }
+
+  function handlePerPageChange(nextPerPage: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+    params.set("per_page", String(nextPerPage));
+    router.push(`${pathname}?${params.toString()}`);
+  }
 
   useEffect(() => {
     if (!snackbar) return;
@@ -189,102 +206,170 @@ export default function VolumeManager({
 
   return (
     <div className={listClassName}>
-      <ul className="divide-y divide-stone-200">
-        {volumes.map((volume) => (
-          <li key={volume.id} className="px-4 py-4">
-            {editingId === volume.id ? (
-              <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className={smallLabelClassName}>
-                      {t("addVolume.numberRequired")}
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={number}
-                      onChange={(event) => setNumber(event.target.value)}
-                      className={inputClassName}
-                    />
-                  </div>
-                  <div>
-                    <label className={smallLabelClassName}>
-                      {t("common.titleRequired")}
-                    </label>
-                    <input
-                      value={title}
-                      onChange={(event) => setTitle(event.target.value)}
-                      className={inputClassName}
-                    />
-                  </div>
-                </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
+        <p className="text-sm text-stone-500">
+          Showing {(pagination.page - 1) * pagination.per_page + 1}-
+          {Math.min(
+            pagination.page * pagination.per_page,
+            pagination.total_items,
+          )}{" "}
+          of {pagination.total_items}
+        </p>
+        <label className="flex items-center gap-2 text-sm text-stone-500">
+          Per page
+          <select
+            value={pagination.per_page}
+            onChange={(event) =>
+              handlePerPageChange(Number(event.target.value))
+            }
+            className={`${inputClassName} min-w-20 py-2`}>
+            {[5, 10, 20, 50].map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-                {error ? (
-                  <p className="text-sm text-rose-600">{error}</p>
-                ) : null}
+      <div className="border-b border-stone-200 bg-stone-50/70 px-4 py-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_220px] gap-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+          <p>Volume</p>
+          <p className="text-right">Actions</p>
+        </div>
+      </div>
 
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditingId(null)}
-                    className={secondaryButtonClassName}>
-                    {t("common.cancel")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => requestSave(volume)}
-                    disabled={saving}
-                    className={primaryButtonClassName}>
-                    {saving ? t("common.saving") : t("common.save")}
-                  </button>
+      <div className="max-h-105 overflow-y-auto">
+        <ul className="divide-y divide-stone-200">
+          {volumes.map((volume) => (
+            <li key={volume.id} className="px-4 py-4">
+              {editingId === volume.id ? (
+                <div className="space-y-3 rounded-2xl bg-stone-50/70 p-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className={smallLabelClassName}>
+                        {t("addVolume.numberRequired")}
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={number}
+                        onChange={(event) => setNumber(event.target.value)}
+                        className={inputClassName}
+                      />
+                    </div>
+                    <div>
+                      <label className={smallLabelClassName}>
+                        {t("common.titleRequired")}
+                      </label>
+                      <input
+                        value={title}
+                        onChange={(event) => setTitle(event.target.value)}
+                        className={inputClassName}
+                      />
+                    </div>
+                  </div>
+
+                  {error ? (
+                    <p className="text-sm text-rose-600">{error}</p>
+                  ) : null}
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className={secondaryButtonClassName}>
+                      {t("common.cancel")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestSave(volume)}
+                      disabled={saving}
+                      className={primaryButtonClassName}>
+                      {saving ? t("common.saving") : t("common.save")}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className={`${listRowClassName} px-0 py-0`}>
-                <div className="min-w-0">
-                  <Link
-                    href={`/novels/${novelId}/volumes/${volume.id}`}
-                    className="text-base font-semibold text-stone-900 hover:text-stone-700">
-                    {t("volumeManager.volumeLabel", { number: volume.number })}{" "}
-                    · {volume.title}
-                  </Link>
-                  <p className="mt-1 text-sm text-stone-500">
-                    {t(
-                      volume.chapterCount === 1
-                        ? "volumeManager.chapter.one"
-                        : "volumeManager.chapter.other",
-                      { count: volume.chapterCount },
-                    )}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-[minmax(0,1fr)_220px] items-center gap-4">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/novels/${novelId}/volumes/${volume.id}`}
+                      prefetch={false}
+                      className="text-base font-semibold text-stone-900 hover:text-stone-700">
+                      {t("volumeManager.volumeLabel", {
+                        number: volume.number,
+                      })}{" "}
+                      · {volume.title}
+                    </Link>
+                    <p className="mt-1 text-sm text-stone-500">
+                      {t(
+                        volume.chapterCount === 1
+                          ? "volumeManager.chapter.one"
+                          : "volumeManager.chapter.other",
+                        { count: volume.chapterCount },
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-end gap-1">
+                    <Link
+                      href={`/novels/${novelId}/volumes/${volume.id}`}
+                      prefetch={false}
+                      className={ghostButtonClassName}>
+                      {t("volumeManager.open")}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => startEdit(volume)}
+                      className={ghostButtonClassName}
+                      aria-label={t("volumeManager.editAria")}>
+                      {t("volumeManager.edit")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestDelete(volume)}
+                      disabled={deletingId === volume.id}
+                      className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
+                      aria-label={t("volumeManager.deleteAria")}>
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  {/* <AddChapterForm novelId={novelId} volumeId={volume.id} /> */}
-                  <Link
-                    href={`/novels/${novelId}/volumes/${volume.id}`}
-                    className={ghostButtonClassName}>
-                    {t("volumeManager.open")}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => startEdit(volume)}
-                    className={ghostButtonClassName}
-                    aria-label={t("volumeManager.editAria")}>
-                    {t("volumeManager.edit")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => requestDelete(volume)}
-                    disabled={deletingId === volume.id}
-                    className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
-                    aria-label={t("volumeManager.deleteAria")}>
-                    🗑️
-                  </button>
-                </div>
-              </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 px-4 py-3">
+        <p className="text-sm text-stone-500">
+          Page {pagination.page} of {pagination.total_pages}
+        </p>
+        <div className="flex items-center gap-2">
+          <Link
+            href={buildPageHref(Math.max(1, pagination.page - 1))}
+            prefetch={false}
+            aria-disabled={pagination.page <= 1}
+            className={`${secondaryButtonClassName} ${
+              pagination.page <= 1 ? "pointer-events-none opacity-50" : ""
+            }`}>
+            Prev
+          </Link>
+          <Link
+            href={buildPageHref(
+              Math.min(pagination.total_pages, pagination.page + 1),
             )}
-          </li>
-        ))}
-      </ul>
+            prefetch={false}
+            aria-disabled={pagination.page >= pagination.total_pages}
+            className={`${secondaryButtonClassName} ${
+              pagination.page >= pagination.total_pages
+                ? "pointer-events-none opacity-50"
+                : ""
+            }`}>
+            Next
+          </Link>
+        </div>
+      </div>
 
       {confirmState ? (
         <div className={`${modalBackdropClassName} z-60`}>

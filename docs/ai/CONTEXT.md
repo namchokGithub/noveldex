@@ -53,9 +53,9 @@ apps/
         ExpandableDescription.tsx         # "use client" — ResizeObserver clamp/expand for long descriptions
         [id]/
           loading.tsx                     # novel detail loading
-          page.tsx                        # novel detail + volume manager + Characters link
+          page.tsx                        # novel detail + paginated volume manager + Characters link
           AddVolumeForm.tsx
-          VolumeManager.tsx
+          VolumeManager.tsx               # scrollable data-table style volume list with URL-driven pagination
           AddChapterForm.tsx
           characters/
             page.tsx                      # characters list (role badges, chapter counts)
@@ -104,7 +104,7 @@ GET    /api/v1/novels/:id
 PATCH  /api/v1/novels/:id
 DELETE /api/v1/novels/:id
 
-GET    /api/v1/novels/:id/volumes
+GET    /api/v1/novels/:id/volumes                                       # paginated; query: page, per_page; returns items+pagination+summary
 POST   /api/v1/novels/:id/volumes
 GET    /api/v1/novels/:id/volumes/:volumeId
 PATCH  /api/v1/novels/:id/volumes/:volumeId
@@ -163,6 +163,10 @@ GET    /api/v1/novels/:id/search
 - **read_at is TIMESTAMPTZ** — migration 000012; API accepts RFC3339, ISO datetime, or date-only during rollout
 - **ConfirmDialog + Snackbar are standard mutation UI** — exported from `app/novels/ui.tsx`; all destructive actions use ConfirmDialog, all mutations surface Snackbar feedback
 - **Chapter reorder uses number mutation** — `PATCH .../chapters/reorder` redistributes existing numbers (sorted asc) among chapters in new drag order; no separate position field; BulkReorder uses single UPDATE…unnest statement for atomicity
+- **Novel volume list is paginated at the API layer** — `GET /novels/:id/volumes` accepts `page` and `per_page`, defaults to `1/5`, and only allows `5|10|20|50`
+- **Volume list response is aggregate-aware** — rows already include `chapter_count` and `read_count`; response `summary` carries cross-page totals so the novel page does not fan out chapter-list calls
+- **Volume manager is a scrollable table panel** — only the row area scrolls; table controls and pagination remain fixed in the card
+- **Volume list links disable prefetch** — prevents Next.js from eagerly loading each volume page and triggering `getVolume` / `getChaptersByVolume` across the whole list
 
 ## DB Conventions
 
@@ -222,6 +226,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | novels page layout simplification — remove stats sidebar, full-width list, featured card as direct Link |
+| Last completed | paginated volume listing with aggregate counts and scrollable data-table volume manager |
 | Working on     | — |
 | Blocked by     | — |

@@ -18,11 +18,47 @@ func NewVolumeRepository(pool *pgxpool.Pool) domain.VolumeRepository {
 	return &pgxVolumeRepo{pool: pool}
 }
 
-func (r *pgxVolumeRepo) List(ctx context.Context, novelID string) ([]domain.Volume, error) {
-	rows, err := r.pool.Query(ctx,
-		`SELECT id, novel_id, number, title, created_at, updated_at
-		 FROM volumes WHERE novel_id=$1 ORDER BY number ASC`,
+func (r *pgxVolumeRepo) List(ctx context.Context, novelID string, page, perPage int) (*domain.VolumePage, error) {
+	var summary domain.VolumeListSummary
+	err := r.pool.QueryRow(ctx,
+		`SELECT COUNT(DISTINCT v.id) AS total_volumes,
+		        COUNT(c.id) AS total_chapters,
+		        COUNT(c.read_at) AS read_count
+		 FROM volumes v
+		 LEFT JOIN chapters c ON c.volume_id = v.id
+		 WHERE v.novel_id=$1`,
 		novelID,
+	).Scan(&summary.TotalVolumes, &summary.TotalChapters, &summary.ReadCount)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := 1
+	if summary.TotalVolumes > 0 {
+		totalPages = (summary.TotalVolumes + perPage - 1) / perPage
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+
+	rows, err := r.pool.Query(ctx,
+		`SELECT v.id,
+		        v.novel_id,
+		        v.number,
+		        v.title,
+		        COUNT(c.id) AS chapter_count,
+		        COUNT(c.read_at) AS read_count,
+		        v.created_at,
+		        v.updated_at
+		 FROM volumes v
+		 LEFT JOIN chapters c ON c.volume_id = v.id
+		 WHERE v.novel_id=$1
+		 GROUP BY v.id, v.novel_id, v.number, v.title, v.created_at, v.updated_at
+		 ORDER BY v.number ASC
+		 LIMIT $2 OFFSET $3`,
+		novelID,
+		perPage,
+		(page-1)*perPage,
 	)
 	if err != nil {
 		return nil, err
@@ -32,12 +68,37 @@ func (r *pgxVolumeRepo) List(ctx context.Context, novelID string) ([]domain.Volu
 	var volumes []domain.Volume
 	for rows.Next() {
 		var v domain.Volume
-		if err := rows.Scan(&v.ID, &v.NovelID, &v.Number, &v.Title, &v.CreatedAt, &v.UpdatedAt); err != nil {
+		if err := rows.Scan(
+			&v.ID,
+			&v.NovelID,
+			&v.Number,
+			&v.Title,
+			&v.ChapterCount,
+			&v.ReadCount,
+			&v.CreatedAt,
+			&v.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
 		volumes = append(volumes, v)
 	}
-	return volumes, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if volumes == nil {
+		volumes = []domain.Volume{}
+	}
+
+	return &domain.VolumePage{
+		Items: volumes,
+		Pagination: domain.Pagination{
+			Page:       page,
+			PerPage:    perPage,
+			TotalItems: summary.TotalVolumes,
+			TotalPages: totalPages,
+		},
+		Summary: summary,
+	}, nil
 }
 
 func (r *pgxVolumeRepo) GetLastNumber(ctx context.Context, novelID string) (int, error) {
@@ -66,10 +127,20 @@ func (r *pgxVolumeRepo) Create(ctx context.Context, v *domain.Volume) error {
 func (r *pgxVolumeRepo) GetByID(ctx context.Context, novelID, id string) (*domain.Volume, error) {
 	var v domain.Volume
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, novel_id, number, title, created_at, updated_at
-		 FROM volumes WHERE id=$1 AND novel_id=$2`,
+		`SELECT v.id,
+		        v.novel_id,
+		        v.number,
+		        v.title,
+		        COUNT(c.id) AS chapter_count,
+		        COUNT(c.read_at) AS read_count,
+		        v.created_at,
+		        v.updated_at
+		 FROM volumes v
+		 LEFT JOIN chapters c ON c.volume_id = v.id
+		 WHERE v.id=$1 AND v.novel_id=$2
+		 GROUP BY v.id, v.novel_id, v.number, v.title, v.created_at, v.updated_at`,
 		id, novelID,
-	).Scan(&v.ID, &v.NovelID, &v.Number, &v.Title, &v.CreatedAt, &v.UpdatedAt)
+	).Scan(&v.ID, &v.NovelID, &v.Number, &v.Title, &v.ChapterCount, &v.ReadCount, &v.CreatedAt, &v.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
