@@ -20,6 +20,25 @@ func (u *CharacterUsecase) List(ctx context.Context, novelID string) ([]domain.C
 	return u.repo.List(ctx, novelID)
 }
 
+func (u *CharacterUsecase) ListPaginated(ctx context.Context, novelID string, page, perPage int) (*domain.CharacterPage, error) {
+	chars, err := u.repo.ListPaginated(ctx, novelID, page, perPage)
+	if err != nil {
+		return nil, err
+	}
+	if chars == nil {
+		chars = &domain.CharacterPage{
+			Items: []domain.Character{},
+			Pagination: domain.Pagination{
+				Page:       1,
+				PerPage:    perPage,
+				TotalPages: 1,
+			},
+			Summary: domain.CharacterListSummary{},
+		}
+	}
+	return chars, nil
+}
+
 func (u *CharacterUsecase) Create(ctx context.Context, c *domain.Character) error {
 	if c.NovelID == "" {
 		return errors.New("novel_id is required")

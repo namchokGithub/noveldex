@@ -105,6 +105,16 @@ export interface SearchEventResult {
   story_date: string
 }
 
+export interface CharacterListSummary {
+  total_characters: number
+}
+
+export interface PaginatedCharacters {
+  items: Character[]
+  pagination: PaginationMeta
+  summary: CharacterListSummary
+}
+
 export interface SearchResult {
   chapters: SearchChapterResult[]
   characters: SearchCharacterResult[]

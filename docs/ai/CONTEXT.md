@@ -58,7 +58,8 @@ apps/
           VolumeManager.tsx               # scrollable data-table style volume list with URL-driven pagination
           AddChapterForm.tsx
           characters/
-            page.tsx                      # characters list (role badges, chapter counts)
+            page.tsx                      # characters list — paginated, URL-driven
+            CharacterList.tsx             # "use client" — paginated list with prev/next, per-page select
             AddCharacterForm.tsx
             [characterId]/
               page.tsx                    # character profile
@@ -118,7 +119,7 @@ GET    /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId          # retur
 PATCH  /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId          # triggers [[Name]] auto-link
 DELETE /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId
 
-GET    /api/v1/novels/:id/characters
+GET    /api/v1/novels/:id/characters                                       # dual mode: no params → legacy array; page+per_page → {items,pagination,summary}
 POST   /api/v1/novels/:id/characters
 GET    /api/v1/novels/:id/characters/:characterId      # returns chapters appeared in
 PATCH  /api/v1/novels/:id/characters/:characterId
@@ -167,6 +168,7 @@ GET    /api/v1/novels/:id/search
 - **Volume list response is aggregate-aware** — rows already include `chapter_count` and `read_count`; response `summary` carries cross-page totals so the novel page does not fan out chapter-list calls
 - **Volume manager is a scrollable table panel** — only the row area scrolls; table controls and pagination remain fixed in the card
 - **Volume list links disable prefetch** — prevents Next.js from eagerly loading each volume page and triggering `getVolume` / `getChaptersByVolume` across the whole list
+- **Character list uses backward-compat dual mode** — no query params returns legacy `Character[]`; adding `page`/`per_page` opts in to `{items, pagination, summary}` — callers like LinkMentions must not pass pagination params
 
 ## DB Conventions
 
@@ -226,6 +228,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | paginated volume listing with aggregate counts and scrollable data-table volume manager |
+| Last completed | paginated character list with backward-compat dual-mode API and URL-driven CharacterList client component |
 | Working on     | — |
 | Blocked by     | — |

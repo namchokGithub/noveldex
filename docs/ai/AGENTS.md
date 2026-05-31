@@ -34,7 +34,7 @@ Novel indexing webapp. Monorepo: `apps/api` (Go) + `apps/web` (Next.js 16).
 - Keep server-driven list state in URL query params when it affects the initial render (`page`, `per_page`, filters)
 - Destructive actions (delete, overwrite) must gate behind `ConfirmDialog` from `app/novels/ui.tsx`
 - Mutation success/error feedback via `Snackbar` from `app/novels/ui.tsx` — not alert() or inline flash
-- Disable `Link` prefetch on dense volume lists when it would eagerly trigger per-row detail fetches
+- Disable `Link` prefetch on dense lists (volumes, characters) when it would eagerly trigger per-row detail fetches
 
 ### Database
 
@@ -100,3 +100,18 @@ See `docs/ai/CONTEXT.md` for current working state (update it each session).
 - `VolumeManager.tsx` is a paginated data-table style panel, not a plain list
 - Only the volume rows scroll; the top toolbar and bottom pager stay fixed within the card
 - Volume detail links in this panel must stay `prefetch={false}`
+
+## Current Character Listing Contract
+
+- `GET /api/v1/novels/:novelID/characters` has backward-compat dual mode
+- No `page`/`per_page` → legacy `data: Character[]` (used by mention linking, character detail)
+- With `page`/`per_page` → paginated `data: { items, pagination, summary }`
+- Defaults: `page=1`, `per_page=10`; allowed sizes: `5|10|20|50`
+- `summary` includes `total_characters`
+- Do NOT add pagination params to calls that expect the legacy array (e.g. LinkMentions, GetByID callers)
+
+## Current Character List UI
+
+- `app/novels/[id]/characters/page.tsx` reads `searchParams.page`/`per_page` on the server
+- `CharacterList.tsx` is a "use client" paginated list — URL-driven prev/next, per-page select
+- Character links in the list must stay `prefetch={false}`

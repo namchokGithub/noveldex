@@ -27,8 +27,19 @@ type ChapterSummary struct {
 	ReadAt   *time.Time `json:"read_at"`
 }
 
+type CharacterListSummary struct {
+	TotalCharacters int `json:"total_characters"`
+}
+
+type CharacterPage struct {
+	Items      []Character          `json:"items"`
+	Pagination Pagination           `json:"pagination"`
+	Summary    CharacterListSummary `json:"summary"`
+}
+
 type CharacterRepository interface {
 	List(ctx context.Context, novelID string) ([]Character, error)
+	ListPaginated(ctx context.Context, novelID string, page, perPage int) (*CharacterPage, error)
 	Create(ctx context.Context, c *Character) error
 	GetByID(ctx context.Context, novelID, id string) (*Character, error)
 	Update(ctx context.Context, c *Character) error

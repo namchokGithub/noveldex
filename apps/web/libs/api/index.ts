@@ -2,6 +2,7 @@ import type {
   Chapter,
   ChapterWithCharacters,
   Novel,
+  PaginatedCharacters,
   PaginatedVolumes,
   Tag,
   Volume,
@@ -236,6 +237,25 @@ export async function reorderChapters(
   await apiClient.patch(
     `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/reorder`,
     { body: { chapters } },
+  );
+}
+
+export async function getCharacters(
+  novelId: string,
+  options?: { page?: number; perPage?: number },
+): Promise<PaginatedCharacters> {
+  const page = options?.page ?? 1;
+  const perPage = options?.perPage ?? 10;
+  const response = await apiClient.get<{ data: PaginatedCharacters }>(
+    `/api/v1/novels/${novelId}/characters?page=${page}&per_page=${perPage}`,
+  );
+
+  return (
+    response.data ?? {
+      items: [],
+      pagination: { page, per_page: perPage, total_items: 0, total_pages: 1 },
+      summary: { total_characters: 0 },
+    }
   );
 }
 

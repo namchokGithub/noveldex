@@ -34,21 +34,66 @@ func (r *pgxCharacterRepo) List(ctx context.Context, novelID string) ([]domain.C
 	}
 	defer rows.Close()
 
-	var chars []domain.Character
-	for rows.Next() {
-		var c domain.Character
-		if err := rows.Scan(
-			&c.ID, &c.NovelID, &c.Name, &c.Aliases, &c.Role, &c.Description,
-			&c.FirstAppearanceChapterID, &c.CreatedAt, &c.UpdatedAt, &c.ChapterCount,
-		); err != nil {
-			return nil, err
-		}
-		if c.Aliases == nil {
-			c.Aliases = []string{}
-		}
-		chars = append(chars, c)
+	return scanCharacterRows(rows)
+}
+
+func (r *pgxCharacterRepo) ListPaginated(
+	ctx context.Context,
+	novelID string,
+	page, perPage int,
+) (*domain.CharacterPage, error) {
+	var summary domain.CharacterListSummary
+	err := r.pool.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM characters
+		WHERE novel_id = $1
+	`, novelID).Scan(&summary.TotalCharacters)
+	if err != nil {
+		return nil, err
 	}
-	return chars, rows.Err()
+
+	totalPages := 1
+	if summary.TotalCharacters > 0 {
+		totalPages = (summary.TotalCharacters + perPage - 1) / perPage
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+
+	// Keep the aggregate count query separate from the page query.
+	// This makes the API response stable for future filters/sorts and keeps
+	// pagination metadata easy to reason about.
+	rows, err := r.pool.Query(ctx, `
+		SELECT c.id, c.novel_id, c.name, c.aliases, c.role, c.description,
+		       c.first_appearance_chapter_id, c.created_at, c.updated_at,
+		       COUNT(cc.chapter_id) AS chapter_count
+		FROM characters c
+		LEFT JOIN chapter_characters cc ON cc.character_id = c.id
+		WHERE c.novel_id = $1
+		GROUP BY c.id
+		ORDER BY c.role, c.name
+		LIMIT $2 OFFSET $3
+	`, novelID, perPage, (page-1)*perPage)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	chars, err := scanCharacterRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.CharacterPage{
+		Items: chars,
+		Pagination: domain.Pagination{
+			Page:       page,
+			PerPage:    perPage,
+			TotalItems: summary.TotalCharacters,
+			TotalPages: totalPages,
+		},
+		Summary: summary,
+	}, nil
 }
 
 func (r *pgxCharacterRepo) Create(ctx context.Context, c *domain.Character) error {
@@ -199,4 +244,28 @@ func (r *pgxCharacterRepo) LinkMentions(ctx context.Context, chapterID, novelID 
 		ON CONFLICT DO NOTHING
 	`, chapterID, novelID, names)
 	return err
+}
+
+func scanCharacterRows(rows pgx.Rows) ([]domain.Character, error) {
+	var chars []domain.Character
+	for rows.Next() {
+		var c domain.Character
+		if err := rows.Scan(
+			&c.ID, &c.NovelID, &c.Name, &c.Aliases, &c.Role, &c.Description,
+			&c.FirstAppearanceChapterID, &c.CreatedAt, &c.UpdatedAt, &c.ChapterCount,
+		); err != nil {
+			return nil, err
+		}
+		if c.Aliases == nil {
+			c.Aliases = []string{}
+		}
+		chars = append(chars, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if chars == nil {
+		chars = []domain.Character{}
+	}
+	return chars, nil
 }

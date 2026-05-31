@@ -44,6 +44,16 @@ type mockCharRepoStub struct{}
 func (m *mockCharRepoStub) List(_ context.Context, _ string) ([]domain.Character, error) {
 	return nil, nil
 }
+func (m *mockCharRepoStub) ListPaginated(_ context.Context, _ string, page, perPage int) (*domain.CharacterPage, error) {
+	return &domain.CharacterPage{
+		Items: []domain.Character{},
+		Pagination: domain.Pagination{
+			Page:       page,
+			PerPage:    perPage,
+			TotalPages: 1,
+		},
+	}, nil
+}
 func (m *mockCharRepoStub) Create(_ context.Context, _ *domain.Character) error { return nil }
 func (m *mockCharRepoStub) GetByID(_ context.Context, _, _ string) (*domain.Character, error) {
 	return nil, nil

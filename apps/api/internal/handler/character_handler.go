@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
@@ -37,17 +38,57 @@ type characterLinkRequest struct {
 	CharacterID string `json:"character_id"`
 }
 
+var allowedCharacterPageSizes = map[int]struct{}{
+	5:  {},
+	10: {},
+	20: {},
+	50: {},
+}
+
 func (h *CharacterHandler) List(w http.ResponseWriter, r *http.Request) {
 	novelID := chi.URLParam(r, "novelID")
-	chars, err := h.uc.List(r.Context(), novelID)
+
+	// Keep the legacy array response when pagination is not requested.
+	// This lets existing clients continue working while newer clients can opt in
+	// to the richer paginated contract.
+	if !hasCharacterPaginationRequest(r) {
+		chars, err := h.uc.List(r.Context(), novelID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if chars == nil {
+			chars = []domain.Character{}
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"data": chars})
+		return
+	}
+
+	page := parsePositiveCharacterInt(r.URL.Query().Get("page"), 1)
+	perPage := parsePositiveCharacterInt(r.URL.Query().Get("per_page"), 5)
+	if _, ok := allowedCharacterPageSizes[perPage]; !ok {
+		perPage = 5
+	}
+
+	chars, err := h.uc.ListPaginated(r.Context(), novelID, page, perPage)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if chars == nil {
-		chars = []domain.Character{}
-	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": chars})
+}
+
+func hasCharacterPaginationRequest(r *http.Request) bool {
+	query := r.URL.Query()
+	return query.Has("page") || query.Has("per_page")
+}
+
+func parsePositiveCharacterInt(raw string, fallback int) int {
+	value, err := strconv.Atoi(raw)
+	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
 }
 
 func (h *CharacterHandler) Create(w http.ResponseWriter, r *http.Request) {
