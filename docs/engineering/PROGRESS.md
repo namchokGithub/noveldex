@@ -65,7 +65,8 @@
 ## Phase 4.6: My Polish
 
 - [x] paginator
-- [ ] Pagination on all list endpoints
+- [ ] ~~Pagination on all list endpoints~~ Charactors Paginator
+- [ ] Update Role + Charactor
 
 ## Phase 5: Auth
 

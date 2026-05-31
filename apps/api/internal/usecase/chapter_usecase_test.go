@@ -69,6 +69,18 @@ func (m *mockCharRepoStub) LinkMentions(_ context.Context, _, _ string, _ []stri
 	return nil
 }
 
+type mockCharacterRoleRepoStub struct{}
+
+func (m *mockCharacterRoleRepoStub) List(_ context.Context) ([]domain.CharacterRole, error) {
+	return nil, nil
+}
+func (m *mockCharacterRoleRepoStub) GetByID(_ context.Context, _ string) (*domain.CharacterRole, error) {
+	return nil, domain.ErrNotFound
+}
+func (m *mockCharacterRoleRepoStub) GetByCode(_ context.Context, _ string) (*domain.CharacterRole, error) {
+	return nil, domain.ErrNotFound
+}
+
 type mockTagRepoStub struct{}
 
 func (m *mockTagRepoStub) ListByNovel(_ context.Context, _ string) ([]domain.Tag, error) {

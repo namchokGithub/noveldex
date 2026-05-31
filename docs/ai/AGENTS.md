@@ -106,9 +106,17 @@ See `docs/ai/CONTEXT.md` for current working state (update it each session).
 - `GET /api/v1/novels/:novelID/characters` has backward-compat dual mode
 - No `page`/`per_page` → legacy `data: Character[]` (used by mention linking, character detail)
 - With `page`/`per_page` → paginated `data: { items, pagination, summary }`
-- Defaults: `page=1`, `per_page=10`; allowed sizes: `5|10|20|50`
+- Defaults: `page=1`, `per_page=5`; allowed sizes: `5|10|20|50`
 - `summary` includes `total_characters`
 - Do NOT add pagination params to calls that expect the legacy array (e.g. LinkMentions, GetByID callers)
+- Character payload now includes `role_id`, `role` (master code), `role_name`, `profile_image_url`
+- Character create/update accepts either `role_id` or `role`; backend resolves to active role master, default `minor`
+
+## Current Character Role Master Contract
+
+- `GET /api/v1/master/character-roles` returns active role master list for dropdowns/forms
+- Character role is master-data backed in DB; do not reintroduce free-text role persistence in `characters`
+- Old clients may still read `role`, but value is now normalized role code, not arbitrary text
 
 ## Current Character List UI
 

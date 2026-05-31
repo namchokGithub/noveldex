@@ -20,6 +20,7 @@ type CharacterSnippet struct {
 	ID                 string `json:"id"`
 	Name               string `json:"name"`
 	Role               string `json:"role"`
+	RoleName           string `json:"role_name,omitempty"`
 	DescriptionSnippet string `json:"description_snippet"`
 }
 

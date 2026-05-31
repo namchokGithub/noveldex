@@ -10,7 +10,10 @@ type Character struct {
 	NovelID                  string           `json:"novel_id"`
 	Name                     string           `json:"name"`
 	Aliases                  []string         `json:"aliases"`
+	RoleID                   string           `json:"role_id"`
 	Role                     string           `json:"role"`
+	RoleName                 string           `json:"role_name,omitempty"`
+	ProfileImageURL          *string          `json:"profile_image_url"`
 	Description              string           `json:"description"`
 	FirstAppearanceChapterID *string          `json:"first_appearance_chapter_id"`
 	ChapterCount             int              `json:"chapter_count"`
@@ -48,4 +51,21 @@ type CharacterRepository interface {
 	LinkToChapter(ctx context.Context, chapterID, characterID string) error
 	UnlinkFromChapter(ctx context.Context, chapterID, characterID string) error
 	LinkMentions(ctx context.Context, chapterID, novelID string, names []string) error
+}
+
+type CharacterRole struct {
+	ID          string    `json:"id"`
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	SortOrder   int       `json:"sort_order"`
+	IsActive    bool      `json:"is_active"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type CharacterRoleRepository interface {
+	List(ctx context.Context) ([]CharacterRole, error)
+	GetByID(ctx context.Context, id string) (*CharacterRole, error)
+	GetByCode(ctx context.Context, code string) (*CharacterRole, error)
 }

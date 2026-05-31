@@ -21,17 +21,21 @@ func NewCharacterHandler(uc *usecase.CharacterUsecase) *CharacterHandler {
 }
 
 type characterCreateRequest struct {
-	Name        string   `json:"name"`
-	Role        string   `json:"role"`
-	Description string   `json:"description"`
-	Aliases     []string `json:"aliases"`
+	Name            string   `json:"name"`
+	RoleID          string   `json:"role_id"`
+	Role            string   `json:"role"`
+	ProfileImageURL *string  `json:"profile_image_url"`
+	Description     string   `json:"description"`
+	Aliases         []string `json:"aliases"`
 }
 
 type characterUpdateRequest struct {
-	Name        *string   `json:"name"`
-	Role        *string   `json:"role"`
-	Description *string   `json:"description"`
-	Aliases     *[]string `json:"aliases"`
+	Name            *string   `json:"name"`
+	RoleID          *string   `json:"role_id"`
+	Role            *string   `json:"role"`
+	ProfileImageURL **string  `json:"profile_image_url"`
+	Description     *string   `json:"description"`
+	Aliases         *[]string `json:"aliases"`
 }
 
 type characterLinkRequest struct {
@@ -99,11 +103,13 @@ func (h *CharacterHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := &domain.Character{
-		NovelID:     novelID,
-		Name:        req.Name,
-		Role:        req.Role,
-		Description: req.Description,
-		Aliases:     req.Aliases,
+		NovelID:         novelID,
+		Name:            req.Name,
+		RoleID:          req.RoleID,
+		Role:            req.Role,
+		ProfileImageURL: req.ProfileImageURL,
+		Description:     req.Description,
+		Aliases:         req.Aliases,
 	}
 	if err := h.uc.Create(r.Context(), c); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -152,6 +158,14 @@ func (h *CharacterHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Role != nil {
 		c.Role = *req.Role
+		c.RoleID = ""
+	}
+	if req.RoleID != nil {
+		c.RoleID = *req.RoleID
+		c.Role = ""
+	}
+	if req.ProfileImageURL != nil {
+		c.ProfileImageURL = *req.ProfileImageURL
 	}
 	if req.Description != nil {
 		c.Description = *req.Description

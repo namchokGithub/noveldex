@@ -50,14 +50,16 @@ func (r *pgxSearchRepo) SearchChapters(ctx context.Context, novelID, tsQuery str
 
 func (r *pgxSearchRepo) SearchCharacters(ctx context.Context, novelID, tsQuery string) ([]domain.CharacterSnippet, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT id, name, role,
+		SELECT c.id, c.name, cr.code, cr.name,
 		  ts_headline('simple', coalesce(description,''), query,
 		    'MaxWords=15, MinWords=8, StartSel=<mark>, StopSel=</mark>'
 		  ) AS description_snippet
-		FROM characters, to_tsquery('simple', $1 || ':*') query
-		WHERE novel_id = $2
-		  AND search_vector @@ query
-		ORDER BY ts_rank(search_vector, query) DESC
+		FROM characters c
+		JOIN character_roles cr ON cr.id = c.role_id,
+		to_tsquery('simple', $1 || ':*') query
+		WHERE c.novel_id = $2
+		  AND c.search_vector @@ query
+		ORDER BY ts_rank(c.search_vector, query) DESC
 		LIMIT 10
 	`, tsQuery, novelID)
 	if err != nil {
@@ -67,7 +69,7 @@ func (r *pgxSearchRepo) SearchCharacters(ctx context.Context, novelID, tsQuery s
 	var results []domain.CharacterSnippet
 	for rows.Next() {
 		var s domain.CharacterSnippet
-		if err := rows.Scan(&s.ID, &s.Name, &s.Role, &s.DescriptionSnippet); err != nil {
+		if err := rows.Scan(&s.ID, &s.Name, &s.Role, &s.RoleName, &s.DescriptionSnippet); err != nil {
 			return nil, err
 		}
 		results = append(results, s)

@@ -10,10 +10,16 @@ type MasterHandler struct {
 	c *usecase.ChapterUsecase
 	v *usecase.VolumeUsecase
 	n *usecase.NovelUsecase
+	r *usecase.CharacterRoleUsecase
 }
 
-func NewMasterHandler(chapterUsecase *usecase.ChapterUsecase, volumeUsecase *usecase.VolumeUsecase, novelUsecase *usecase.NovelUsecase) *MasterHandler {
-	return &MasterHandler{c: chapterUsecase, v: volumeUsecase, n: novelUsecase}
+func NewMasterHandler(
+	chapterUsecase *usecase.ChapterUsecase,
+	volumeUsecase *usecase.VolumeUsecase,
+	novelUsecase *usecase.NovelUsecase,
+	roleUsecase *usecase.CharacterRoleUsecase,
+) *MasterHandler {
+	return &MasterHandler{c: chapterUsecase, v: volumeUsecase, n: novelUsecase, r: roleUsecase}
 }
 
 func (h *MasterHandler) GetLastOrderNos(w http.ResponseWriter, r *http.Request) {
@@ -55,4 +61,13 @@ func (h *MasterHandler) GetLastOrderNos(w http.ResponseWriter, r *http.Request) 
 			"chapter": lastChapterNo,
 		},
 	})
+}
+
+func (h *MasterHandler) ListCharacterRoles(w http.ResponseWriter, r *http.Request) {
+	roles, err := h.r.List(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": roles})
 }

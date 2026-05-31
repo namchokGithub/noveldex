@@ -20,14 +20,16 @@ func NewCharacterRepository(pool *pgxpool.Pool) domain.CharacterRepository {
 
 func (r *pgxCharacterRepo) List(ctx context.Context, novelID string) ([]domain.Character, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT c.id, c.novel_id, c.name, c.aliases, c.role, c.description,
-		       c.first_appearance_chapter_id, c.created_at, c.updated_at,
+		SELECT c.id, c.novel_id, c.name, c.aliases, c.role_id, cr.code, cr.name,
+		       c.profile_image_url, c.description, c.first_appearance_chapter_id,
+		       c.created_at, c.updated_at,
 		       COUNT(cc.chapter_id) AS chapter_count
 		FROM characters c
+		JOIN character_roles cr ON cr.id = c.role_id
 		LEFT JOIN chapter_characters cc ON cc.character_id = c.id
 		WHERE c.novel_id = $1
-		GROUP BY c.id
-		ORDER BY c.role, c.name
+		GROUP BY c.id, cr.id
+		ORDER BY cr.sort_order, c.name
 	`, novelID)
 	if err != nil {
 		return nil, err
@@ -64,14 +66,16 @@ func (r *pgxCharacterRepo) ListPaginated(
 	// This makes the API response stable for future filters/sorts and keeps
 	// pagination metadata easy to reason about.
 	rows, err := r.pool.Query(ctx, `
-		SELECT c.id, c.novel_id, c.name, c.aliases, c.role, c.description,
-		       c.first_appearance_chapter_id, c.created_at, c.updated_at,
+		SELECT c.id, c.novel_id, c.name, c.aliases, c.role_id, cr.code, cr.name,
+		       c.profile_image_url, c.description, c.first_appearance_chapter_id,
+		       c.created_at, c.updated_at,
 		       COUNT(cc.chapter_id) AS chapter_count
 		FROM characters c
+		JOIN character_roles cr ON cr.id = c.role_id
 		LEFT JOIN chapter_characters cc ON cc.character_id = c.id
 		WHERE c.novel_id = $1
-		GROUP BY c.id
-		ORDER BY c.role, c.name
+		GROUP BY c.id, cr.id
+		ORDER BY cr.sort_order, c.name
 		LIMIT $2 OFFSET $3
 	`, novelID, perPage, (page-1)*perPage)
 	if err != nil {
@@ -99,10 +103,10 @@ func (r *pgxCharacterRepo) ListPaginated(
 func (r *pgxCharacterRepo) Create(ctx context.Context, c *domain.Character) error {
 	return r.pool.QueryRow(ctx, `
 		INSERT INTO characters
-		  (novel_id, name, aliases, role, description, first_appearance_chapter_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		  (novel_id, name, aliases, role_id, profile_image_url, description, first_appearance_chapter_id, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id
-	`, c.NovelID, c.Name, c.Aliases, c.Role, c.Description,
+	`, c.NovelID, c.Name, c.Aliases, c.RoleID, c.ProfileImageURL, c.Description,
 		c.FirstAppearanceChapterID, c.CreatedAt, c.UpdatedAt,
 	).Scan(&c.ID)
 }
@@ -110,12 +114,15 @@ func (r *pgxCharacterRepo) Create(ctx context.Context, c *domain.Character) erro
 func (r *pgxCharacterRepo) GetByID(ctx context.Context, novelID, id string) (*domain.Character, error) {
 	var c domain.Character
 	err := r.pool.QueryRow(ctx, `
-		SELECT id, novel_id, name, aliases, role, description,
-		       first_appearance_chapter_id, created_at, updated_at
-		FROM characters WHERE id = $1 AND novel_id = $2
+		SELECT c.id, c.novel_id, c.name, c.aliases, c.role_id, cr.code, cr.name,
+		       c.profile_image_url, c.description, c.first_appearance_chapter_id,
+		       c.created_at, c.updated_at
+		FROM characters c
+		JOIN character_roles cr ON cr.id = c.role_id
+		WHERE c.id = $1 AND c.novel_id = $2
 	`, id, novelID).Scan(
-		&c.ID, &c.NovelID, &c.Name, &c.Aliases, &c.Role, &c.Description,
-		&c.FirstAppearanceChapterID, &c.CreatedAt, &c.UpdatedAt,
+		&c.ID, &c.NovelID, &c.Name, &c.Aliases, &c.RoleID, &c.Role, &c.RoleName,
+		&c.ProfileImageURL, &c.Description, &c.FirstAppearanceChapterID, &c.CreatedAt, &c.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -154,11 +161,11 @@ func (r *pgxCharacterRepo) GetByID(ctx context.Context, novelID, id string) (*do
 func (r *pgxCharacterRepo) Update(ctx context.Context, c *domain.Character) error {
 	err := r.pool.QueryRow(ctx, `
 		UPDATE characters
-		SET name = $3, aliases = $4, role = $5, description = $6,
-		    first_appearance_chapter_id = $7, updated_at = NOW()
+		SET name = $3, aliases = $4, role_id = $5, profile_image_url = $6, description = $7,
+		    first_appearance_chapter_id = $8, updated_at = NOW()
 		WHERE id = $1 AND novel_id = $2
 		RETURNING updated_at
-	`, c.ID, c.NovelID, c.Name, c.Aliases, c.Role, c.Description,
+	`, c.ID, c.NovelID, c.Name, c.Aliases, c.RoleID, c.ProfileImageURL, c.Description,
 		c.FirstAppearanceChapterID,
 	).Scan(&c.UpdatedAt)
 	if err != nil {
@@ -184,9 +191,11 @@ func (r *pgxCharacterRepo) Delete(ctx context.Context, novelID, id string) error
 
 func (r *pgxCharacterRepo) ListByChapter(ctx context.Context, chapterID string) ([]domain.Character, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT c.id, c.novel_id, c.name, c.aliases, c.role, c.description,
-		       c.first_appearance_chapter_id, c.created_at, c.updated_at
+		SELECT c.id, c.novel_id, c.name, c.aliases, c.role_id, cr.code, cr.name,
+		       c.profile_image_url, c.description, c.first_appearance_chapter_id,
+		       c.created_at, c.updated_at
 		FROM characters c
+		JOIN character_roles cr ON cr.id = c.role_id
 		JOIN chapter_characters cc ON cc.character_id = c.id
 		WHERE cc.chapter_id = $1
 		ORDER BY c.name
@@ -200,8 +209,8 @@ func (r *pgxCharacterRepo) ListByChapter(ctx context.Context, chapterID string) 
 	for rows.Next() {
 		var c domain.Character
 		if err := rows.Scan(
-			&c.ID, &c.NovelID, &c.Name, &c.Aliases, &c.Role, &c.Description,
-			&c.FirstAppearanceChapterID, &c.CreatedAt, &c.UpdatedAt,
+			&c.ID, &c.NovelID, &c.Name, &c.Aliases, &c.RoleID, &c.Role, &c.RoleName,
+			&c.ProfileImageURL, &c.Description, &c.FirstAppearanceChapterID, &c.CreatedAt, &c.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -251,8 +260,9 @@ func scanCharacterRows(rows pgx.Rows) ([]domain.Character, error) {
 	for rows.Next() {
 		var c domain.Character
 		if err := rows.Scan(
-			&c.ID, &c.NovelID, &c.Name, &c.Aliases, &c.Role, &c.Description,
-			&c.FirstAppearanceChapterID, &c.CreatedAt, &c.UpdatedAt, &c.ChapterCount,
+			&c.ID, &c.NovelID, &c.Name, &c.Aliases, &c.RoleID, &c.Role, &c.RoleName,
+			&c.ProfileImageURL, &c.Description, &c.FirstAppearanceChapterID,
+			&c.CreatedAt, &c.UpdatedAt, &c.ChapterCount,
 		); err != nil {
 			return nil, err
 		}

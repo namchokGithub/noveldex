@@ -34,8 +34,11 @@ func main() {
 	novelUC := usecase.NewNovelUsecase(novelRepo)
 	novelH := handler.NewNovelHandler(novelUC)
 
+	roleRepo := repository.NewCharacterRoleRepository(pool)
+	roleUC := usecase.NewCharacterRoleUsecase(roleRepo)
+
 	characterRepo := repository.NewCharacterRepository(pool)
-	characterUC := usecase.NewCharacterUsecase(characterRepo)
+	characterUC := usecase.NewCharacterUsecase(characterRepo, roleRepo)
 	characterH := handler.NewCharacterHandler(characterUC)
 
 	tagRepo := repository.NewTagRepository(pool)
@@ -49,7 +52,7 @@ func main() {
 	chapterRepo := repository.NewChapterRepository(pool)
 	chapterUC := usecase.NewChapterUsecase(chapterRepo, characterRepo, tagRepo)
 	chapterH := handler.NewChapterHandler(chapterUC, volumeUC)
-	masterH := handler.NewMasterHandler(chapterUC, volumeUC, novelUC)
+	masterH := handler.NewMasterHandler(chapterUC, volumeUC, novelUC, roleUC)
 
 	eventRepo := repository.NewEventRepository(pool)
 	eventUC := usecase.NewEventUsecase(eventRepo)
@@ -75,6 +78,7 @@ func main() {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/master/last-order-nos", masterH.GetLastOrderNos)
+		r.Get("/master/character-roles", masterH.ListCharacterRoles)
 
 		r.Get("/novels", novelH.List)
 		r.Post("/novels", novelH.Create)

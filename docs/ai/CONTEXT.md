@@ -32,9 +32,9 @@ apps/
     internal/handler/                     # HTTP handlers (one file per domain)
       health.go, novel_handler.go, volume_handler.go, chapter_handler.go, character_handler.go, event_handler.go, master_handler.go
     internal/repository/                  # pgx implementations
-      novel_repo.go, volume_repo.go, chapter_repo.go, character_repo.go, event_repo.go
+      novel_repo.go, volume_repo.go, chapter_repo.go, character_repo.go, character_role_repo.go, event_repo.go
     internal/usecase/                     # business logic
-      novel_usecase.go, volume_usecase.go, chapter_usecase.go, character_usecase.go, event_usecase.go
+      novel_usecase.go, volume_usecase.go, chapter_usecase.go, character_usecase.go, character_role_usecase.go, event_usecase.go
     internal/util/
       mention.go                          # [[Name]] regex extraction
     migrations/                           # golang-migrate SQL files (000001–000012)
@@ -98,6 +98,7 @@ docs/
 ```
 GET    /health
 GET    /api/v1/master/last-order-nos          # ?novel_id=&volume_id= → {volume, chapter} last numbers
+GET    /api/v1/master/character-roles         # active character role master list
 
 GET    /api/v1/novels
 POST   /api/v1/novels
@@ -120,9 +121,9 @@ PATCH  /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId          # trigg
 DELETE /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId
 
 GET    /api/v1/novels/:id/characters                                       # dual mode: no params → legacy array; page+per_page → {items,pagination,summary}
-POST   /api/v1/novels/:id/characters
-GET    /api/v1/novels/:id/characters/:characterId      # returns chapters appeared in
-PATCH  /api/v1/novels/:id/characters/:characterId
+POST   /api/v1/novels/:id/characters                                       # body accepts role_id or role, plus profile_image_url
+GET    /api/v1/novels/:id/characters/:characterId      # returns chapters appeared in + role master fields
+PATCH  /api/v1/novels/:id/characters/:characterId      # body accepts role_id or role, plus nullable profile_image_url
 DELETE /api/v1/novels/:id/characters/:characterId
 
 GET    /api/v1/novels/:id/volumes/:volumeId/chapters/:chapterId/characters
@@ -169,6 +170,8 @@ GET    /api/v1/novels/:id/search
 - **Volume manager is a scrollable table panel** — only the row area scrolls; table controls and pagination remain fixed in the card
 - **Volume list links disable prefetch** — prevents Next.js from eagerly loading each volume page and triggering `getVolume` / `getChaptersByVolume` across the whole list
 - **Character list uses backward-compat dual mode** — no query params returns legacy `Character[]`; adding `page`/`per_page` opts in to `{items, pagination, summary}` — callers like LinkMentions must not pass pagination params
+- **Character role is master-data backed** — `characters` store `role_id`; API still returns `role` as normalized role code for compatibility, plus `role_name`
+- **Character profile image is URL-based for now** — backend persists nullable `profile_image_url`; no asset table/storage abstraction yet
 
 ## DB Conventions
 
@@ -177,6 +180,7 @@ GET    /api/v1/novels/:id/search
 - Soft deletes via `deleted_at` nullable timestamp
 - `story_date` stored as TEXT (fictional/non-standard eras)
 - `aliases` stored as `TEXT[]` on characters; normalized to `[]string{}` (never nil) in Go
+- `character_roles` is master table; active roles served via `/api/v1/master/character-roles`
 
 ## Migrations
 
@@ -184,16 +188,17 @@ GET    /api/v1/novels/:id/search
 |---|------|-------------|
 | 000001 | create_novels | novels table |
 | 000002 | create_chapters | chapters table |
-| 000003 | create_characters | characters table (TEXT[] aliases, role DEFAULT 'minor') |
+| 000003 | create_characters | characters table (TEXT[] aliases, legacy TEXT role before role master migration) |
 | 000004 | create_chapter_characters | join table (composite PK) |
 | 000005 | create_events | events table (novel-scoped, optional chapter FK, story_date TEXT, sort_order INT) |
 | 000006 | create_event_characters | event↔character join table (composite PK) |
 | 000007 | create_tags | tags table (novel-scoped) |
 | 000008 | create_chapter_tags | chapter↔tag join table |
-| 000009 | add_search_vector | tsvector generated column on chapters for full-text search |
+| 000009 | add_search_vector | tsvector generated columns on chapters and characters for full-text search |
 | 000010 | create_volumes | volumes table (novel-scoped, UNIQUE(novel_id, number)) |
 | 000011 | add_volume_to_chapters | chapters get volume_id FK; novel_id dropped; data migration creates Volume 1 per novel |
 | 000012 | change_chapter_read_at_to_timestamptz | read_at DATE → TIMESTAMPTZ (UTC cast for existing rows) |
+| 000013 | add_character_role_master | create `character_roles`, migrate `characters.role` → `role_id`, add `profile_image_url` |
 
 ## ENV
 
@@ -228,6 +233,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | paginated character list with backward-compat dual-mode API and URL-driven CharacterList client component |
+| Last completed | backend character role master + `profile_image_url` migration and API wiring |
 | Working on     | — |
 | Blocked by     | — |
