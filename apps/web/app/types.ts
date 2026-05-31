@@ -65,12 +65,22 @@ export interface ChapterSummary {
   read_at: string | null
 }
 
+export interface CharacterRole {
+  id: string
+  code: string
+  name: string
+  is_active: boolean
+}
+
 export interface Character {
   id: string
   novel_id: string
   name: string
   aliases: string[]
+  role_id: string
   role: string
+  role_name: string
+  profile_image_url: string | null
   description: string
   first_appearance_chapter_id: string | null
   chapter_count: number

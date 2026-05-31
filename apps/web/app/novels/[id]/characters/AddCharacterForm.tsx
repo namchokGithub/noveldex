@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { CharacterRole } from '@/app/types'
 import {
   ghostButtonClassName,
   inputClassName,
@@ -15,7 +16,13 @@ import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
-export default function AddCharacterForm({ novelId }: { novelId: string }) {
+export default function AddCharacterForm({
+  novelId,
+  roles,
+}: {
+  novelId: string
+  roles: CharacterRole[]
+}) {
   const { t } = useI18n()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -25,13 +32,11 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
 
   useEffect(() => {
     if (!snackbar) return
-
-    const timeoutId = window.setTimeout(() => {
-      setSnackbar(null)
-    }, 3000)
-
+    const timeoutId = window.setTimeout(() => setSnackbar(null), 3000)
     return () => window.clearTimeout(timeoutId)
   }, [snackbar])
+
+  const defaultRoleId = roles[0]?.id ?? ''
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -40,11 +45,13 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
 
     const form = e.currentTarget
     const aliasesRaw = (form.elements.namedItem('aliases') as HTMLInputElement).value
+    const profileImageUrl = (form.elements.namedItem('profile_image_url') as HTMLInputElement).value.trim()
     const data = {
       name: (form.elements.namedItem('name') as HTMLInputElement).value,
-      role: (form.elements.namedItem('role') as HTMLSelectElement).value,
+      role_id: (form.elements.namedItem('role_id') as HTMLSelectElement).value,
       description: (form.elements.namedItem('description') as HTMLTextAreaElement).value,
       aliases: aliasesRaw ? aliasesRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+      ...(profileImageUrl ? { profile_image_url: profileImageUrl } : {}),
     }
 
     try {
@@ -78,10 +85,7 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
   return (
     <>
       {!open ? (
-        <button
-          onClick={() => setOpen(true)}
-          className={primaryButtonClassName}
-        >
+        <button onClick={() => setOpen(true)} className={primaryButtonClassName}>
           {t('addCharacter.button')}
         </button>
       ) : (
@@ -108,14 +112,13 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
               <div>
                 <label className={smallLabelClassName}>{t('addCharacter.role')}</label>
                 <select
-                  name="role"
-                  defaultValue="minor"
+                  name="role_id"
+                  defaultValue={defaultRoleId}
                   className={inputClassName}
                 >
-                  <option value="protagonist">{t('role.protagonist')}</option>
-                  <option value="antagonist">{t('role.antagonist')}</option>
-                  <option value="supporting">{t('role.supporting')}</option>
-                  <option value="minor">{t('role.minor')}</option>
+                  {roles.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -124,6 +127,15 @@ export default function AddCharacterForm({ novelId }: { novelId: string }) {
                   name="aliases"
                   className={inputClassName}
                   placeholder={t('addCharacter.aliasesPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className={smallLabelClassName}>{t('addCharacter.profileImageUrl')}</label>
+                <input
+                  name="profile_image_url"
+                  type="url"
+                  className={inputClassName}
+                  placeholder="https://example.com/image.jpg"
                 />
               </div>
               <div>

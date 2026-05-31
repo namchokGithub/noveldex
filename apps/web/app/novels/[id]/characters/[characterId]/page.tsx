@@ -4,6 +4,7 @@ import type { Novel, Character } from '../../../../types'
 import CharacterDetail from './CharacterDetail'
 import { backLinkClassName, DashboardPage } from '../../../ui'
 import { T } from '@/components/i18n/I18nProvider'
+import { getCharacterRoles } from '@/libs/api'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
@@ -41,7 +42,11 @@ export default async function CharacterPage({
 }) {
   const { id, characterId } = await params
 
-  const [novel, character] = await Promise.all([getNovel(id), getCharacter(id, characterId)])
+  const [novel, character, roles] = await Promise.all([
+    getNovel(id),
+    getCharacter(id, characterId),
+    getCharacterRoles(),
+  ])
 
   if (!novel || !character) notFound()
 
@@ -55,7 +60,7 @@ export default async function CharacterPage({
           ← <T k="nav.characters" />
         </Link>
 
-        <CharacterDetail character={character} novelId={id} />
+        <CharacterDetail character={character} novelId={id} roles={roles} />
       </div>
     </DashboardPage>
   )

@@ -196,6 +196,7 @@ const en = {
   "addCharacter.role": "Role",
   "addCharacter.aliases": "Aliases (comma-separated)",
   "addCharacter.aliasesPlaceholder": "Alias 1, Alias 2",
+  "addCharacter.profileImageUrl": "Profile image URL",
   "addCharacter.descriptionPlaceholder": "Character description",
   "addCharacter.success": "Character created successfully.",
 

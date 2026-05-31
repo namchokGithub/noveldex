@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 type NovelCoverProps = {
@@ -50,11 +51,14 @@ export default function NovelCover({
   }
 
   return (
-    <img
+    <Image
       src={coverUrl ?? undefined}
       alt={alt ?? title}
+      width={320}
+      height={480}
       className={className}
       onError={() => setFailed(true)}
+      unoptimized
     />
   );
 }

@@ -1,12 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import type { Character, PaginationMeta } from "@/app/types";
 import {
   inputClassName,
   listClassName,
   listRowClassName,
+  roleColorClassNames,
   secondaryButtonClassName,
 } from "../../ui";
 import { T } from "@/components/i18n/I18nProvider";
@@ -81,9 +84,7 @@ export default function CharacterList({
               href={`/novels/${novelId}/characters/${char.id}`}
               className={listRowClassName}>
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50">
-                  {char.name.slice(0, 2).toUpperCase()}
-                </div>
+                <CharacterAvatar char={char} />
                 <div className="min-w-0">
                   <span className="block truncate text-sm font-medium text-stone-900">
                     {char.name}
@@ -95,16 +96,22 @@ export default function CharacterList({
                   ) : null}
                 </div>
               </div>
-              <span className="text-xs text-stone-500">
-                <T
-                  k={
-                    char.chapter_count === 1
-                      ? "characters.chapter.one"
-                      : "characters.chapter.other"
-                  }
-                  values={{ count: char.chapter_count }}
-                />
-              </span>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${roleColorClassNames[char.role] ?? roleColorClassNames.minor}`}>
+                  {char.role_name ?? char.role}
+                </span>
+                <span className="text-xs text-stone-500">
+                  <T
+                    k={
+                      char.chapter_count === 1
+                        ? "characters.chapter.one"
+                        : "characters.chapter.other"
+                    }
+                    values={{ count: char.chapter_count }}
+                  />
+                </span>
+              </div>
             </Link>
           </li>
         ))}
@@ -139,6 +146,30 @@ export default function CharacterList({
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CharacterAvatar({ char }: { char: Character }) {
+  const [failed, setFailed] = useState(false);
+
+  if (char.profile_image_url && !failed) {
+    return (
+      <Image
+        src={char.profile_image_url}
+        alt={char.name}
+        width={44}
+        height={44}
+        onError={() => setFailed(true)}
+        className="h-11 w-11 shrink-0 rounded-2xl object-cover"
+        unoptimized
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50">
+      {char.name.slice(0, 2).toUpperCase()}
     </div>
   );
 }

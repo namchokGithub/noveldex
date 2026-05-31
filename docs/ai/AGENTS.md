@@ -120,6 +120,9 @@ See `docs/ai/CONTEXT.md` for current working state (update it each session).
 
 ## Current Character List UI
 
-- `app/novels/[id]/characters/page.tsx` reads `searchParams.page`/`per_page` on the server
+- `app/novels/[id]/characters/page.tsx` reads `searchParams.page`/`per_page` on the server; fetches role master in parallel
 - `CharacterList.tsx` is a "use client" paginated list — URL-driven prev/next, per-page select
+- Each row shows `CharacterAvatar` (profile image → initials fallback) + role badge using `roleColorClassNames[char.role]`
 - Character links in the list must stay `prefetch={false}`
+- `AddCharacterForm` and `CharacterDetail` both receive `roles: CharacterRole[]` as a prop — fetched server-side by the page, not client-fetched
+- `CharacterAvatar` component: `next/image` with `unoptimized`, `onError` state to fall back to initials; supports `size` prop (`md`=44px, `lg`=64px)

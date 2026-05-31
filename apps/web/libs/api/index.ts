@@ -1,5 +1,6 @@
 import type {
   Chapter,
+  CharacterRole,
   ChapterWithCharacters,
   Novel,
   PaginatedCharacters,
@@ -257,6 +258,13 @@ export async function getCharacters(
       summary: { total_characters: 0 },
     }
   );
+}
+
+export async function getCharacterRoles(): Promise<CharacterRole[]> {
+  const response = await apiClient.get<ApiResponse<CharacterRole[]>>(
+    "/api/v1/master/character-roles",
+  );
+  return response.data ?? [];
 }
 
 export async function getLastOrderNos(params: {

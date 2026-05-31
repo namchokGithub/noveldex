@@ -199,6 +199,7 @@ const th = {
   "addCharacter.role": "บทบาท",
   "addCharacter.aliases": "ชื่อเรียกอื่น (คั่นด้วย comma)",
   "addCharacter.aliasesPlaceholder": "ชื่อเล่น 1, ชื่อเล่น 2",
+  "addCharacter.profileImageUrl": "URL รูปโปรไฟล์",
   "addCharacter.descriptionPlaceholder": "คำอธิบายตัวละคร",
   "addCharacter.success": "เพิ่มตัวละครสำเร็จ",
 

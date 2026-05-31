@@ -1,9 +1,10 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { Character } from '../../../../types'
+import type { Character, CharacterRole } from '../../../../types'
 import {
   cardClassName,
   ghostButtonClassName,
@@ -20,14 +21,14 @@ import { useI18n } from '@/components/i18n/I18nProvider'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
-const ROLE_OPTIONS = ['protagonist', 'antagonist', 'supporting', 'minor']
-
 export default function CharacterDetail({
   character,
   novelId,
+  roles,
 }: {
   character: Character
   novelId: string
+  roles: CharacterRole[]
 }) {
   const { t } = useI18n()
   const router = useRouter()
@@ -37,17 +38,14 @@ export default function CharacterDetail({
   const [snackbar, setSnackbar] = useState<{ tone: 'success' | 'error'; message: string } | null>(null)
 
   const [name, setName] = useState(character.name)
-  const [role, setRole] = useState(character.role)
+  const [roleId, setRoleId] = useState(character.role_id)
+  const [profileImageUrl, setProfileImageUrl] = useState(character.profile_image_url ?? '')
   const [description, setDescription] = useState(character.description)
   const [aliases, setAliases] = useState(character.aliases.join(', '))
 
   useEffect(() => {
     if (!snackbar) return
-
-    const timeoutId = window.setTimeout(() => {
-      setSnackbar(null)
-    }, 3000)
-
+    const timeoutId = window.setTimeout(() => setSnackbar(null), 3000)
     return () => window.clearTimeout(timeoutId)
   }, [snackbar])
 
@@ -62,7 +60,8 @@ export default function CharacterDetail({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name,
-            role,
+            role_id: roleId,
+            profile_image_url: profileImageUrl.trim() || null,
             description,
             aliases: aliases ? aliases.split(',').map(s => s.trim()).filter(Boolean) : [],
           }),
@@ -89,54 +88,54 @@ export default function CharacterDetail({
 
   function cancel() {
     setName(character.name)
-    setRole(character.role)
+    setRoleId(character.role_id)
+    setProfileImageUrl(character.profile_image_url ?? '')
     setDescription(character.description)
     setAliases(character.aliases.join(', '))
     setEditing(false)
     setError(null)
   }
 
+  const displayRole = character.role_name ?? character.role
+
   return (
     <div className="flex flex-col gap-6">
       <div className={cardClassName}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-              {t('character.profile')}
+          <div className="flex items-center gap-4">
+            <CharacterAvatar
+              name={character.name}
+              profileImageUrl={character.profile_image_url}
+              size="lg"
+            />
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                {t('character.profile')}
+              </div>
+              {editing ? (
+                <input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className={`${inputClassName} text-2xl font-semibold tracking-[-0.04em]`}
+                />
+              ) : (
+                <h1 className="text-3xl font-semibold tracking-[-0.04em] text-stone-950">
+                  {character.name}
+                </h1>
+              )}
             </div>
-            {editing ? (
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className={`${inputClassName} text-2xl font-semibold tracking-[-0.04em]`}
-              />
-            ) : (
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-stone-950">
-                {character.name}
-              </h1>
-            )}
           </div>
           {editing ? (
             <div className="flex gap-2">
-              <button
-                onClick={cancel}
-                className={ghostButtonClassName}
-              >
+              <button onClick={cancel} className={ghostButtonClassName}>
                 {t('common.cancel')}
               </button>
-              <button
-                onClick={save}
-                disabled={saving}
-                className={primaryButtonClassName}
-              >
+              <button onClick={save} disabled={saving} className={primaryButtonClassName}>
                 {saving ? t('common.saving') : t('common.save')}
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className={secondaryButtonClassName}
-            >
+            <button onClick={() => setEditing(true)} className={secondaryButtonClassName}>
               {t('common.edit')}
             </button>
           )}
@@ -150,31 +149,44 @@ export default function CharacterDetail({
           <p className={smallLabelClassName}>{t('character.role')}</p>
           {editing ? (
             <select
-              value={role}
-              onChange={e => setRole(e.target.value)}
+              value={roleId}
+              onChange={e => setRoleId(e.target.value)}
               className={inputClassName}
             >
-              {ROLE_OPTIONS.map(r => (
-                <option key={r} value={r}>{t(`role.${r}` as const)}</option>
+              {roles.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
           ) : (
             <span
               className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleColorClassNames[character.role] ?? roleColorClassNames.minor}`}
             >
-              {t(`role.${character.role}` as const)}
+              {displayRole}
             </span>
           )}
 
           <div className="mt-6 border-t border-stone-200 pt-5">
             <p className={smallLabelClassName}>{t('character.chapterAppearances')}</p>
-            <p className="text-3xl font-semibold tracking-[-0.05em] text-stone-950">
+            <p className="text-3xl font-semibold tracking-tighter text-stone-950">
               {character.chapter_count}
             </p>
           </div>
         </div>
 
         <div className={`${cardClassName} space-y-5`}>
+          {editing && (
+            <div>
+              <label className={smallLabelClassName}>{t('addCharacter.profileImageUrl')}</label>
+              <input
+                value={profileImageUrl}
+                onChange={e => setProfileImageUrl(e.target.value)}
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                className={inputClassName}
+              />
+            </div>
+          )}
+
           <div>
             <p className={smallLabelClassName}>{t('character.aliases')}</p>
             {editing ? (
@@ -186,7 +198,9 @@ export default function CharacterDetail({
               />
             ) : (
               <p className="text-sm leading-6 text-stone-600">
-                {character.aliases.length > 0 ? character.aliases.join(', ') : <span className="text-stone-400">{t('common.none')}</span>}
+                {character.aliases.length > 0
+                  ? character.aliases.join(', ')
+                  : <span className="text-stone-400">{t('common.none')}</span>}
               </p>
             )}
           </div>
@@ -219,7 +233,6 @@ export default function CharacterDetail({
             {character.chapters.map(ch => (
               <li key={ch.id}>
                 <Link
-                  // Characters can appear across many volumes, so each chapter row needs volume_id.
                   href={`/novels/${novelId}/volumes/${ch.volume_id}/chapters/${ch.id}`}
                   className={listRowClassName}
                 >
@@ -243,6 +256,41 @@ export default function CharacterDetail({
         onClose={() => setSnackbar(null)}
         closeLabel={t('common.ok')}
       />
+    </div>
+  )
+}
+
+function CharacterAvatar({
+  name,
+  profileImageUrl,
+  size = 'md',
+}: {
+  name: string
+  profileImageUrl: string | null
+  size?: 'md' | 'lg'
+}) {
+  const [failed, setFailed] = useState(false)
+  const sizeClass = size === 'lg'
+    ? 'h-16 w-16 rounded-3xl text-base'
+    : 'h-11 w-11 rounded-2xl text-sm'
+
+  if (profileImageUrl && !failed) {
+    return (
+      <Image
+        src={profileImageUrl}
+        alt={name}
+        width={size === 'lg' ? 64 : 44}
+        height={size === 'lg' ? 64 : 44}
+        onError={() => setFailed(true)}
+        className={`shrink-0 object-cover ${sizeClass}`}
+        unoptimized
+      />
+    )
+  }
+
+  return (
+    <div className={`flex shrink-0 items-center justify-center bg-stone-900 font-semibold text-stone-50 ${sizeClass}`}>
+      {name.slice(0, 2).toUpperCase()}
     </div>
   )
 }

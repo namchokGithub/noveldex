@@ -37,7 +37,7 @@ apps/
       novel_usecase.go, volume_usecase.go, chapter_usecase.go, character_usecase.go, character_role_usecase.go, event_usecase.go
     internal/util/
       mention.go                          # [[Name]] regex extraction
-    migrations/                           # golang-migrate SQL files (000001–000012)
+    migrations/                           # golang-migrate SQL files (000001–000013)
     Dockerfile
     fly.toml
   web/
@@ -49,7 +49,7 @@ apps/
         loading.tsx                       # novels list loading
         page.tsx                          # novel list
         AddNovelForm.tsx
-        NovelCover.tsx                    # "use client" — cover image with initials fallback on error/absent
+        NovelCover.tsx                    # "use client" — next/image with initials fallback on error/absent
         ExpandableDescription.tsx         # "use client" — ResizeObserver clamp/expand for long descriptions
         [id]/
           loading.tsx                     # novel detail loading
@@ -59,11 +59,11 @@ apps/
           AddChapterForm.tsx
           characters/
             page.tsx                      # characters list — paginated, URL-driven
-            CharacterList.tsx             # "use client" — paginated list with prev/next, per-page select
+            CharacterList.tsx             # "use client" — paginated list with prev/next, per-page select; CharacterAvatar + role badge per row
             AddCharacterForm.tsx
             [characterId]/
               page.tsx                    # character profile
-              CharacterDetail.tsx         # inline edit + appears-in chapter list
+              CharacterDetail.tsx         # inline edit + appears-in chapter list; CharacterAvatar (lg); role dropdown from master
           timeline/
             page.tsx                      # vertical rail timeline, add/edit/delete, character filter
           volumes/
@@ -172,6 +172,7 @@ GET    /api/v1/novels/:id/search
 - **Character list uses backward-compat dual mode** — no query params returns legacy `Character[]`; adding `page`/`per_page` opts in to `{items, pagination, summary}` — callers like LinkMentions must not pass pagination params
 - **Character role is master-data backed** — `characters` store `role_id`; API still returns `role` as normalized role code for compatibility, plus `role_name`
 - **Character profile image is URL-based for now** — backend persists nullable `profile_image_url`; no asset table/storage abstraction yet
+- **next/image uses wildcard remotePatterns** — `next.config.ts` allows `https://**` and `http://**`; required for user-supplied image URLs; all character/cover images use `unoptimized` to avoid Vercel image optimization costs for arbitrary hosts
 
 ## DB Conventions
 
@@ -233,6 +234,6 @@ make migrate-up
 | Field          | Value                          |
 |----------------|--------------------------------|
 | Current phase  | Phase 4 — Search + Tags / Volume web layer |
-| Last completed | backend character role master + `profile_image_url` migration and API wiring |
+| Last completed | web character UI: role master dropdown, CharacterAvatar with image/initials fallback, profile_image_url field |
 | Working on     | — |
 | Blocked by     | — |

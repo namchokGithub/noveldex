@@ -9,7 +9,7 @@ import {
   DashboardPage,
   SectionHeading,
 } from "../../ui";
-import { getCharacters } from "@/libs/api";
+import { getCharacters, getCharacterRoles } from "@/libs/api";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
@@ -48,9 +48,10 @@ export default async function CharactersPage({
     ? requestedPerPage
     : 10;
 
-  const [novel, characters] = await Promise.all([
+  const [novel, characters, roles] = await Promise.all([
     getNovel(id),
     getCharacters(id, { page, perPage }),
+    getCharacterRoles(),
   ]);
 
   if (!novel) notFound();
@@ -66,7 +67,7 @@ export default async function CharactersPage({
           eyebrow={<T k="characters.eyebrow" />}
           title={<T k="characters.directoryTitle" />}
           description={<T k="characters.directoryDescription" />}
-          action={<AddCharacterForm novelId={id} />}
+          action={<AddCharacterForm novelId={id} roles={roles} />}
         />
 
         <CharacterList
