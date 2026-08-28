@@ -1,4 +1,4 @@
-.PHONY: dev api web migrate-up migrate-down migrate-create db db-backup db-restore db-backups logs
+.PHONY: dev api web migrate-up migrate-down migrate-create db db-backup db-restore db-backups logs firebase-emulators
 
 BACKUP_DIR ?= backups/postgres
 BACKUP_KEEP ?= 3
@@ -59,3 +59,6 @@ db-backups:
 
 logs:
 	docker compose logs -f
+
+firebase-emulators:
+	cd apps/web && pnpm run emulators
