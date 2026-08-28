@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
-import SearchPalette from "@/components/SearchPalette";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import LanguageToggle from "@/components/i18n/LanguageToggle";
 
@@ -50,7 +49,6 @@ export default function RootLayout({
         <I18nProvider>
           <LanguageToggle />
           {children}
-          <SearchPalette />
         </I18nProvider>
       </body>
     </html>

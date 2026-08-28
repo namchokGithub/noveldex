@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "emulators": "firebase emulators:start --only firestore --project demo-noveldex"
+    "emulators": "firebase emulators:start --only firestore --project demo-noveldex",
+    "migrate:firestore": "tsx scripts/migrate-postgres-to-firestore.ts"
   },
   "dependencies": {
     "firebase": "^11.10.0",
@@ -20,14 +21,18 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "firebase-admin": "^14.3.0",
     "firebase-tools": "^13",
     "open-cli": "^8.0.0",
+    "pg": "^8.23.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5",
     "vitest": "^2",
     "wait-on": "^8.0.5"

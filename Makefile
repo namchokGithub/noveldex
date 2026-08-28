@@ -1,4 +1,4 @@
-.PHONY: dev api web migrate-up migrate-down migrate-create db db-backup db-restore db-backups logs firebase-emulators
+.PHONY: dev web migrate-up migrate-down migrate-create db db-backup db-restore db-backups logs firebase-emulators
 
 BACKUP_DIR ?= backups/postgres
 BACKUP_KEEP ?= 3
@@ -6,10 +6,7 @@ BACKUP_FILE ?=
 
 dev:
 	docker compose up -d
-	$(MAKE) -j2 api web
-
-api:
-	cd apps/api && go run cmd/server/main.go
+	$(MAKE) web
 
 web:
 	cd apps/web && pnpm dev
