@@ -1,6 +1,7 @@
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
+import { createCharacter } from "./characters";
 import { createTag } from "./tags";
 import {
   ChapterOrderEntry as ReorderEntry,
@@ -8,6 +9,7 @@ import {
   deleteChapter,
   getChapter,
   getChaptersByVolume,
+  getChaptersFlat,
   linkChapterTag,
   reorderChapters,
   unlinkChapterTag,
@@ -21,6 +23,11 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await clearFirestoreEmulator();
+  await setDoc(doc(db, "character_roles", "role-minor"), {
+    code: "minor",
+    name: "Minor",
+    is_active: true,
+  });
 });
 
 async function seedVolume(novelId: string, volumeId: string) {
@@ -76,7 +83,7 @@ describe("chapters", () => {
     expect(chapters.map((c) => c.number)).toEqual([1, 2]);
   });
 
-  it("gets a chapter with hydrated tags (characters hydration covered separately, hybrid, in Task 5)", async () => {
+  it("gets a chapter with hydrated tags and characters", async () => {
     await seedVolume("novel-1", "vol-1");
     const tag = await createTag("novel-1", "Flashback");
     const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
@@ -88,16 +95,17 @@ describe("chapters", () => {
     expect(fetched.characters).toEqual([]);
   });
 
-  it("getChapter resolves with characters: [] when character hydration fails (Go API unavailable)", async () => {
+  it("getChapter resolves with characters: [] when a character_id has no matching character document", async () => {
     await seedVolume("novel-1", "vol-1");
     const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
 
     // Seed character_ids directly via raw setDoc — createChapter always starts a
-    // chapter with character_ids: [], and only the (Go-API-backed) linkMentions
-    // helper would normally populate it. Bypassing that here lets us exercise
-    // getChapter's hydration path against a non-empty character_ids array without
-    // a running Go API, proving a failed fetchNovelCharacters call degrades to an
-    // empty characters array instead of rejecting getChapter's whole promise.
+    // chapter with character_ids: [], and only the linkMentions helper would
+    // normally populate it. Bypassing that here lets us exercise getChapter's
+    // hydration path against a non-empty character_ids array that references a
+    // character with no matching Firestore document, proving that case (and, by
+    // the same .catch(() => []) guard, a genuine Firestore query failure) degrades
+    // to an empty characters array instead of rejecting getChapter's whole promise.
     await setDoc(
       doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", chapter.id),
       { character_ids: ["some-character-id"] },
@@ -225,13 +233,34 @@ describe("reorderChapters", () => {
   });
 });
 
-describe("mention auto-link (temporary hybrid — reads characters from the Go API)", () => {
-  // Requires `make api` running against a Postgres instance with a character named
-  // "TestMentionCharacter" for novel "novel-1" — this hybrid is removed in Plan 3
-  // once characters move to Firestore, at which point this test moves to a plain
-  // emulator-backed test like the rest of this file.
-  it.skip("links a mentioned character's id into character_ids on chapter update", async () => {
+describe("getChaptersFlat", () => {
+  it("returns every chapter across all volumes in a novel, ordered by number", async () => {
     await seedVolume("novel-1", "vol-1");
+    await seedVolume("novel-1", "vol-2");
+    await createChapter("novel-1", "vol-2", { number: 3, title: "Three" });
+    await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
+    await createChapter("novel-1", "vol-1", { number: 2, title: "Two" });
+
+    const flat = await getChaptersFlat("novel-1");
+
+    expect(flat.map((c) => c.number)).toEqual([1, 2, 3]);
+    expect(flat[2].volume_id).toBe("vol-2");
+  });
+
+  it("returns an empty array for a novel with no chapters", async () => {
+    expect(await getChaptersFlat("no-such-novel")).toEqual([]);
+  });
+});
+
+describe("mention auto-link", () => {
+  it("links a mentioned character's id into character_ids on chapter update", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const character = await createCharacter("novel-1", {
+      name: "TestMentionCharacter",
+      role: "minor",
+      description: "",
+      aliases: [],
+    });
     const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
 
     await updateChapter("novel-1", "vol-1", chapter.id, {
@@ -239,7 +268,7 @@ describe("mention auto-link (temporary hybrid — reads characters from the Go A
     });
 
     const fetched = await getChapter("novel-1", "vol-1", chapter.id);
-    expect(fetched.characters.map((c) => c.name)).toContain("TestMentionCharacter");
+    expect(fetched.characters.map((c) => c.id)).toContain(character.id);
   });
 
   it("does not throw when no characters match, and is non-blocking on lookup failure", async () => {

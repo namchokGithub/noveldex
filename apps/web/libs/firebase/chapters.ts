@@ -2,6 +2,7 @@ import {
   arrayRemove,
   arrayUnion,
   collection,
+  collectionGroup,
   doc,
   getDoc,
   getDocs,
@@ -11,11 +12,12 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
+  where,
   writeBatch,
 } from "firebase/firestore";
-import type { Chapter, ChapterWithCharacters, Tag } from "@/app/types";
-import { apiClient } from "@/libs/api/client";
+import type { Chapter, ChapterSummary, ChapterWithCharacters, Tag } from "@/app/types";
 import { db } from "./app";
+import { getAllCharacters } from "./characters";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { extractMentions } from "./mentions";
 import { getTags } from "./tags";
@@ -69,23 +71,6 @@ async function tagsForChapter(novelId: string, tagIds: string[]): Promise<Tag[]>
   return resolveTags(tagIds, new Map(allTags.map((t) => [t.id, t])));
 }
 
-interface MinimalCharacter {
-  id: string;
-  name: string;
-}
-
-// TEMPORARY hybrid: characters still live in Postgres until Plan 3. Resolves [[Name]]
-// mentions and hydrates chapter.characters by calling the existing, unmodified Go
-// endpoint directly via apiClient (not the @/libs/api barrel, which would create a
-// circular import since it re-exports from this file). Remove this function and call
-// the Firestore-backed character lookup instead once Plan 3 lands.
-async function fetchNovelCharacters(novelId: string): Promise<MinimalCharacter[]> {
-  const response = await apiClient.get<{ data: MinimalCharacter[] }>(
-    `/api/v1/novels/${novelId}/characters`,
-  );
-  return Array.isArray(response.data) ? response.data : [];
-}
-
 async function linkMentions(
   novelId: string,
   volumeId: string,
@@ -96,7 +81,7 @@ async function linkMentions(
     const names = extractMentions(summary);
     if (names.length === 0) return;
 
-    const characters = await fetchNovelCharacters(novelId);
+    const characters = await getAllCharacters(novelId);
     const matchedIds = characters.filter((c) => names.includes(c.name)).map((c) => c.id);
     if (matchedIds.length === 0) return;
 
@@ -124,6 +109,31 @@ export async function getChaptersByVolume(
   });
 }
 
+export async function getChaptersFlat(novelId: string): Promise<ChapterSummary[]> {
+  const snapshot = await getDocs(
+    query(
+      collectionGroup(db, "chapters"),
+      where("novel_id", "==", novelId),
+      orderBy("number", "asc"),
+    ),
+  );
+  return snapshot.docs.map((d) => {
+    const data = d.data() as {
+      volume_id: string;
+      number: number;
+      title: string;
+      read_at: Timestamp | null;
+    };
+    return {
+      id: d.id,
+      volume_id: data.volume_id,
+      number: data.number,
+      title: data.title,
+      read_at: data.read_at ? tsToIso(data.read_at) : null,
+    };
+  });
+}
+
 export async function getChapter(
   novelId: string,
   volumeId: string,
@@ -139,10 +149,10 @@ export async function getChapter(
   const characters =
     (data.character_ids ?? []).length === 0
       ? []
-      : (await fetchNovelCharacters(novelId).catch(() => [])).filter((c) =>
+      : (await getAllCharacters(novelId).catch(() => [])).filter((c) =>
           (data.character_ids ?? []).includes(c.id),
         );
-  return { ...chapter, characters: characters as ChapterWithCharacters["characters"] };
+  return { ...chapter, characters };
 }
 
 export interface ChapterCreatePayload {
