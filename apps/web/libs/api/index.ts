@@ -2,7 +2,6 @@ import type {
   Chapter,
   CharacterRole,
   ChapterWithCharacters,
-  Novel,
   PaginatedCharacters,
   PaginatedVolumes,
   Tag,
@@ -10,6 +9,10 @@ import type {
 } from "@/app/types";
 
 import { apiClient } from "./client";
+
+// Novels domain via Firestore
+export { getNovels, getNovel, createNovel } from "@/libs/firebase/novels";
+export type { NovelCreatePayload } from "@/libs/firebase/novels";
 
 interface ApiResponse<T> {
   data: T;
@@ -41,20 +44,6 @@ interface ChapterCreatePayload {
 interface VolumePayload {
   number: number;
   title: string;
-}
-
-export async function getNovels(): Promise<Novel[]> {
-  const response = await apiClient.get<ApiResponse<Novel[]>>("/api/v1/novels");
-
-  return response.data;
-}
-
-export async function getNovel(novelId: string): Promise<Novel> {
-  const response = await apiClient.get<ApiResponse<Novel>>(
-    `/api/v1/novels/${novelId}`,
-  );
-
-  return response.data;
 }
 
 export async function getVolumes(
