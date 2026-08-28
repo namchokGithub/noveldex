@@ -54,8 +54,8 @@ export default function AddNovelForm() {
       setOpen(false)
       setSnackbar({ tone: 'success', message: t('addNovel.success') })
       router.refresh()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('common.networkError')
+    } catch {
+      const message = t('common.networkError')
       setError(message)
       setSnackbar({ tone: 'error', message })
     } finally {

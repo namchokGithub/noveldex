@@ -4,13 +4,13 @@ export function tsToIso(value: Timestamp | FieldValue | null | undefined): strin
   return value instanceof Timestamp ? value.toDate().toISOString() : "";
 }
 
-export function withCreateTimestamps<T extends Record<string, unknown>>(
+export function withCreateTimestamps<T extends object>(
   data: T,
 ): T & { created_at: FieldValue; updated_at: FieldValue } {
   return { ...data, created_at: serverTimestamp(), updated_at: serverTimestamp() };
 }
 
-export function withUpdateTimestamp<T extends Record<string, unknown>>(
+export function withUpdateTimestamp<T extends object>(
   data: T,
 ): T & { updated_at: FieldValue } {
   return { ...data, updated_at: serverTimestamp() };

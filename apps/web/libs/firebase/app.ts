@@ -1,10 +1,15 @@
 import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import { getFirestore, initializeFirestore, type Firestore } from "firebase/firestore";
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  initializeFirestore,
+  type Firestore,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "demo-noveldex",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "demo-noveldex",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
 };
 
@@ -15,17 +20,23 @@ function getFirebaseApp(): FirebaseApp {
 
 function initDb(): Firestore {
   const app = getFirebaseApp();
+  let firestore: Firestore;
   try {
     // Vercel's Node serverless runtime breaks Firestore's default gRPC-style
     // streaming transport; long polling is the documented workaround.
-    return initializeFirestore(app, {
+    firestore = initializeFirestore(app, {
       experimentalAutoDetectLongPolling: true,
-      useFetchStreams: false,
     });
   } catch {
     // Already initialized (e.g. Next.js dev server hot reload) — reuse it.
-    return getFirestore(app);
+    firestore = getFirestore(app);
   }
+
+  if (process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATOR === "1") {
+    connectFirestoreEmulator(firestore, "127.0.0.1", 8081);
+  }
+
+  return firestore;
 }
 
 export const db: Firestore = initDb();

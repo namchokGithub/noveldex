@@ -4,6 +4,8 @@ import { T } from "@/components/i18n/I18nProvider";
 import { getNovels as getNovelsFromApi } from "@/libs/api";
 import NovelCover from "./NovelCover";
 
+export const dynamic = "force-dynamic";
+
 const STATUS_COLORS: Record<Novel["status"], string> = {
   reading: "bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200",
   completed:
