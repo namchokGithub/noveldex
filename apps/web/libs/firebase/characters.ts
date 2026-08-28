@@ -78,6 +78,7 @@ async function toCharacter(
   id: string,
   data: CharacterDoc,
   hydrate: boolean,
+  chapterCount = 0,
 ): Promise<Character> {
   const base: Character = {
     id,
@@ -90,7 +91,7 @@ async function toCharacter(
     profile_image_url: data.profile_image_url,
     description: data.description,
     first_appearance_chapter_id: null,
-    chapter_count: 0,
+    chapter_count: chapterCount,
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
   };
@@ -104,6 +105,19 @@ async function toCharacter(
     chapters,
     first_appearance_chapter_id: chapters[0]?.id ?? null,
   };
+}
+
+async function chapterCountsByNovel(novelId: string): Promise<Map<string, number>> {
+  const q = query(collectionGroup(db, "chapters"), where("novel_id", "==", novelId));
+  const snapshot = await getDocs(q);
+  const counts = new Map<string, number>();
+  snapshot.docs.forEach((d) => {
+    const data = d.data() as { character_ids?: string[] };
+    (data.character_ids ?? []).forEach((characterId) => {
+      counts.set(characterId, (counts.get(characterId) ?? 0) + 1);
+    });
+  });
+  return counts;
 }
 
 async function resolveRole(
@@ -200,8 +214,17 @@ export async function getCharacter(novelId: string, characterId: string): Promis
 
 export async function getAllCharacters(novelId: string): Promise<Character[]> {
   const snapshot = await getDocs(query(charactersCol(novelId), orderBy("name")));
+  const chapterCounts = await chapterCountsByNovel(novelId);
   return Promise.all(
-    snapshot.docs.map((d) => toCharacter(novelId, d.id, d.data() as CharacterDoc, false)),
+    snapshot.docs.map((d) =>
+      toCharacter(
+        novelId,
+        d.id,
+        d.data() as CharacterDoc,
+        false,
+        chapterCounts.get(d.id) ?? 0,
+      ),
+    ),
   );
 }
 

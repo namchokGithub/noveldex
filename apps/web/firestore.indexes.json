@@ -20,6 +20,7 @@
       "collectionGroup": "chapters",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
+        { "fieldPath": "novel_id", "order": "ASCENDING" },
         { "fieldPath": "character_ids", "arrayConfig": "CONTAINS" },
         { "fieldPath": "number", "order": "ASCENDING" }
       ]

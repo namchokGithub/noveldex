@@ -115,6 +115,54 @@ describe("characters", () => {
     expect(fetched.chapters?.map((c) => c.number)).toEqual([1, 2]);
   });
 
+  it("scopes chapter hydration to the character's own novel via the novel_id filter", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Frank",
+      role: "minor",
+      description: "",
+      aliases: [],
+    });
+    // Seeded directly (not via app logic, which never lets a novel-2 chapter
+    // reference a novel-1 character) to prove the novel_id filter, not just
+    // the array-contains filter, is doing the scoping.
+    await seedChapterWithCharacter("novel-2", "ch-cross-novel", 1, character.id);
+
+    const fetched = await getCharacter("novel-1", character.id);
+
+    expect(fetched.chapter_count).toBe(0);
+    expect(fetched.chapters).toEqual([]);
+  });
+
+  it("falls back to the minor role when neither role_id nor role is provided", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Grace",
+      description: "",
+      aliases: [],
+    });
+
+    expect(character.role_id).toBe("role-minor");
+    expect(character.role).toBe("minor");
+    expect(character.role_name).toBe("Minor");
+  });
+
+  it("leaves role fields untouched when updating an unrelated field", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Heidi",
+      role: "protagonist",
+      description: "original description",
+      aliases: [],
+    });
+
+    const updated = await updateCharacter("novel-1", character.id, {
+      description: "updated description",
+    });
+
+    expect(updated.description).toBe("updated description");
+    expect(updated.role_id).toBe(character.role_id);
+    expect(updated.role).toBe(character.role);
+    expect(updated.role_name).toBe(character.role_name);
+  });
+
   it("getAllCharacters returns every character for a novel, unpaginated", async () => {
     await createCharacter("novel-1", { name: "A", role: "minor", description: "", aliases: [] });
     await createCharacter("novel-1", { name: "B", role: "minor", description: "", aliases: [] });
