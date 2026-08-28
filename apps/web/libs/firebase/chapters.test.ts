@@ -250,6 +250,18 @@ describe("getChaptersFlat", () => {
   it("returns an empty array for a novel with no chapters", async () => {
     expect(await getChaptersFlat("no-such-novel")).toEqual([]);
   });
+
+  it("scopes to the given novel_id, excluding chapters from other novels", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await seedVolume("novel-2", "vol-1");
+    await createChapter("novel-1", "vol-1", { number: 1, title: "Novel 1 Chapter" });
+    await createChapter("novel-2", "vol-1", { number: 1, title: "Novel 2 Chapter" });
+
+    const flat = await getChaptersFlat("novel-1");
+
+    expect(flat).toHaveLength(1);
+    expect(flat[0].title).toBe("Novel 1 Chapter");
+  });
 });
 
 describe("mention auto-link", () => {

@@ -214,17 +214,8 @@ export async function getCharacter(novelId: string, characterId: string): Promis
 
 export async function getAllCharacters(novelId: string): Promise<Character[]> {
   const snapshot = await getDocs(query(charactersCol(novelId), orderBy("name")));
-  const chapterCounts = await chapterCountsByNovel(novelId);
   return Promise.all(
-    snapshot.docs.map((d) =>
-      toCharacter(
-        novelId,
-        d.id,
-        d.data() as CharacterDoc,
-        false,
-        chapterCounts.get(d.id) ?? 0,
-      ),
-    ),
+    snapshot.docs.map((d) => toCharacter(novelId, d.id, d.data() as CharacterDoc, false)),
   );
 }
 
@@ -238,10 +229,15 @@ export async function getCharacters(
     : 5;
 
   const all = await getAllCharacters(novelId);
-  const totalItems = all.length;
+  const chapterCounts = await chapterCountsByNovel(novelId);
+  const withCounts = all.map((character) => ({
+    ...character,
+    chapter_count: chapterCounts.get(character.id) ?? 0,
+  }));
+  const totalItems = withCounts.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
   const start = (page - 1) * perPage;
-  const items = all.slice(start, start + perPage);
+  const items = withCounts.slice(start, start + perPage);
 
   return {
     items,
