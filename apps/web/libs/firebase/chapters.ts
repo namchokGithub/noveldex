@@ -83,7 +83,7 @@ async function fetchNovelCharacters(novelId: string): Promise<MinimalCharacter[]
   const response = await apiClient.get<{ data: MinimalCharacter[] }>(
     `/api/v1/novels/${novelId}/characters`,
   );
-  return response.data ?? [];
+  return Array.isArray(response.data) ? response.data : [];
 }
 
 async function linkMentions(
@@ -120,7 +120,7 @@ export async function getChaptersByVolume(
   const byId = new Map(allTags.map((t) => [t.id, t]));
   return snapshot.docs.map((d) => {
     const data = d.data() as ChapterDoc;
-    return toChapter(d.id, data, resolveTags(data.tag_ids, byId));
+    return toChapter(d.id, data, resolveTags(data.tag_ids ?? [], byId));
   });
 }
 
@@ -134,13 +134,13 @@ export async function getChapter(
     throw new Error("Request failed.");
   }
   const data = snapshot.data() as ChapterDoc;
-  const tags = await tagsForChapter(novelId, data.tag_ids);
+  const tags = await tagsForChapter(novelId, data.tag_ids ?? []);
   const chapter = toChapter(snapshot.id, data, tags);
   const characters =
-    data.character_ids.length === 0
+    (data.character_ids ?? []).length === 0
       ? []
       : (await fetchNovelCharacters(novelId).catch(() => [])).filter((c) =>
-          data.character_ids.includes(c.id),
+          (data.character_ids ?? []).includes(c.id),
         );
   return { ...chapter, characters: characters as ChapterWithCharacters["characters"] };
 }

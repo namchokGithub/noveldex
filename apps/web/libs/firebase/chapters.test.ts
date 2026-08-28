@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import { createTag } from "./tags";
@@ -107,6 +107,34 @@ describe("chapters", () => {
     const fetched = await getChapter("novel-1", "vol-1", chapter.id);
 
     expect(fetched.characters).toEqual([]);
+  });
+
+  it("getChapter and getChaptersByVolume resolve without throwing when a chapter document omits tag_ids/character_ids entirely (e.g. a Postgres-migrated chapter with no join-table rows)", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const chapterId = "migrated-chapter";
+
+    // Written via raw setDoc (not createChapter, which always sets tag_ids: []
+    // and character_ids: []) to simulate a future Plan 3 migration writing a
+    // chapter document that never sets these fields at all, rather than writing
+    // them as empty arrays.
+    await setDoc(doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", chapterId), {
+      number: 1,
+      title: "Migrated Chapter",
+      summary: "",
+      read_at: null,
+      novel_id: "novel-1",
+      volume_id: "vol-1",
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+      // tag_ids and character_ids intentionally omitted.
+    });
+
+    const fetched = await getChapter("novel-1", "vol-1", chapterId);
+    expect(fetched.tags).toEqual([]);
+    expect(fetched.characters).toEqual([]);
+
+    const listed = await getChaptersByVolume("novel-1", "vol-1");
+    expect(listed.find((c) => c.id === chapterId)?.tags).toEqual([]);
   });
 
   it("throws when getting a chapter that does not exist", async () => {
