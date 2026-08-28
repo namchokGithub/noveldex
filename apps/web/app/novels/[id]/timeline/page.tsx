@@ -173,7 +173,8 @@ export default function TimelinePage({
       sort_order: String(ev.sort_order),
       description: ev.description,
       chapter_id: ev.chapter_id ?? '',
-      chapter_volume_id: ev.chapter_volume_id ?? '',
+      chapter_volume_id:
+        ev.chapter_volume_id ?? chapters.find((c) => c.id === ev.chapter_id)?.volume_id ?? '',
     })
     setEditError(null)
   }
