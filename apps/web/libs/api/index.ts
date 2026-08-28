@@ -1,4 +1,4 @@
-import type { CharacterRole, PaginatedCharacters } from "@/app/types";
+import type { PaginatedCharacters } from "@/app/types";
 
 import { apiClient } from "./client";
 
@@ -26,13 +26,12 @@ export {
 } from "@/libs/firebase/chapters";
 export type { ChapterPayload, ChapterCreatePayload, ChapterOrderEntry } from "@/libs/firebase/chapters";
 
-interface ApiResponse<T> {
-  data: T;
-}
-
 // LastOrderNos domain via Firestore
 export { getLastOrderNos } from "@/libs/firebase/lastOrderNos";
 export type { LastOrderNos } from "@/libs/firebase/lastOrderNos";
+
+// Character roles domain via Firestore
+export { getCharacterRoles } from "@/libs/firebase/characterRoles";
 
 export async function getCharacters(
   novelId: string,
@@ -51,11 +50,4 @@ export async function getCharacters(
       summary: { total_characters: 0 },
     }
   );
-}
-
-export async function getCharacterRoles(): Promise<CharacterRole[]> {
-  const response = await apiClient.get<ApiResponse<CharacterRole[]>>(
-    "/api/v1/master/character-roles",
-  );
-  return response.data ?? [];
 }
