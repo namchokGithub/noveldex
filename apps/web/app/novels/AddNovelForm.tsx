@@ -12,8 +12,8 @@ import {
   smallLabelClassName,
 } from './ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+import { createNovel } from '@/libs/api'
+import type { Novel } from '@/app/types'
 
 export default function AddNovelForm() {
   const { t } = useI18n()
@@ -42,32 +42,20 @@ export default function AddNovelForm() {
     const data = {
       title: (form.elements.namedItem('title') as HTMLInputElement).value,
       author: (form.elements.namedItem('author') as HTMLInputElement).value,
-      status: (form.elements.namedItem('status') as HTMLSelectElement).value,
+      status: (form.elements.namedItem('status') as HTMLSelectElement).value as Novel['status'],
       description: (form.elements.namedItem('description') as HTMLTextAreaElement).value,
       cover_url: (form.elements.namedItem('cover_url') as HTMLInputElement).value,
     }
 
     try {
-      const res = await fetch(`${BASE}/api/v1/novels`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        const message = body.error ?? `Request failed: ${res.status}`
-        setError(message)
-        setSnackbar({ tone: 'error', message })
-        return
-      }
+      await createNovel(data)
 
       form.reset()
       setOpen(false)
       setSnackbar({ tone: 'success', message: t('addNovel.success') })
       router.refresh()
-    } catch {
-      const message = t('common.networkError')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('common.networkError')
       setError(message)
       setSnackbar({ tone: 'error', message })
     } finally {
