@@ -56,7 +56,7 @@ const th = {
   "search.section.events": "เหตุการณ์",
 
   "novels.dashboard": "แดชบอร์ด",
-  "novels.libraryTitle": "คลัง NovelDex",
+  "novels.libraryTitle": "NovelDex Library",
   "novels.heroDescription":
     "ติดตามความคืบหน้าการอ่าน กระโดดไปดูแผนผังตอน และรวมทุกเรื่องไว้ในแดชบอร์ดเดียว",
   "novels.count.one": "{count} เรื่อง",
