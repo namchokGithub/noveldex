@@ -88,6 +88,27 @@ describe("chapters", () => {
     expect(fetched.characters).toEqual([]);
   });
 
+  it("getChapter resolves with characters: [] when character hydration fails (Go API unavailable)", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
+
+    // Seed character_ids directly via raw setDoc — createChapter always starts a
+    // chapter with character_ids: [], and only the (Go-API-backed) linkMentions
+    // helper would normally populate it. Bypassing that here lets us exercise
+    // getChapter's hydration path against a non-empty character_ids array without
+    // a running Go API, proving a failed fetchNovelCharacters call degrades to an
+    // empty characters array instead of rejecting getChapter's whole promise.
+    await setDoc(
+      doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", chapter.id),
+      { character_ids: ["some-character-id"] },
+      { merge: true },
+    );
+
+    const fetched = await getChapter("novel-1", "vol-1", chapter.id);
+
+    expect(fetched.characters).toEqual([]);
+  });
+
   it("throws when getting a chapter that does not exist", async () => {
     await seedVolume("novel-1", "vol-1");
     await expect(getChapter("novel-1", "vol-1", "does-not-exist")).rejects.toThrow();

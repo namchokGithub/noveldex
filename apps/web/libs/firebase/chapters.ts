@@ -104,7 +104,6 @@ async function linkMentions(
       character_ids: arrayUnion(...matchedIds),
     });
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.warn("[linkMentions] non-blocking failure:", error);
   }
 }
@@ -140,7 +139,9 @@ export async function getChapter(
   const characters =
     data.character_ids.length === 0
       ? []
-      : (await fetchNovelCharacters(novelId)).filter((c) => data.character_ids.includes(c.id));
+      : (await fetchNovelCharacters(novelId).catch(() => [])).filter((c) =>
+          data.character_ids.includes(c.id),
+        );
   return { ...chapter, characters: characters as ChapterWithCharacters["characters"] };
 }
 
