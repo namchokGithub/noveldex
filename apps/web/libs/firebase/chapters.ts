@@ -41,7 +41,7 @@ function markerRef(novelId: string, number: number) {
   return doc(db, "novels", novelId, "chapterNumbers", String(number));
 }
 
-async function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Promise<Chapter> {
+function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
   return {
     id,
     volume_id: data.volume_id,
@@ -55,11 +55,14 @@ async function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Promise<Cha
   };
 }
 
+function resolveTags(tagIds: string[], byId: Map<string, Tag>): Tag[] {
+  return tagIds.map((id) => byId.get(id)).filter((t): t is Tag => Boolean(t));
+}
+
 async function tagsForChapter(novelId: string, tagIds: string[]): Promise<Tag[]> {
   if (tagIds.length === 0) return [];
   const allTags = await getTags(novelId);
-  const byId = new Map(allTags.map((t) => [t.id, t]));
-  return tagIds.map((id) => byId.get(id)).filter((t): t is Tag => Boolean(t));
+  return resolveTags(tagIds, new Map(allTags.map((t) => [t.id, t])));
 }
 
 export async function getChaptersByVolume(
@@ -69,12 +72,13 @@ export async function getChaptersByVolume(
   const snapshot = await getDocs(
     query(chaptersCol(novelId, volumeId), orderBy("number", "asc")),
   );
-  return Promise.all(
-    snapshot.docs.map(async (d) => {
-      const data = d.data() as ChapterDoc;
-      return toChapter(d.id, data, await tagsForChapter(novelId, data.tag_ids));
-    }),
-  );
+  // Fetch the novel's tags exactly once (not per chapter) to avoid N+1 reads.
+  const allTags = await getTags(novelId);
+  const byId = new Map(allTags.map((t) => [t.id, t]));
+  return snapshot.docs.map((d) => {
+    const data = d.data() as ChapterDoc;
+    return toChapter(d.id, data, resolveTags(data.tag_ids, byId));
+  });
 }
 
 export async function getChapter(
@@ -88,7 +92,7 @@ export async function getChapter(
   }
   const data = snapshot.data() as ChapterDoc;
   const tags = await tagsForChapter(novelId, data.tag_ids);
-  const chapter = await toChapter(snapshot.id, data, tags);
+  const chapter = toChapter(snapshot.id, data, tags);
   // Character hydration is added in Task 5 alongside mention auto-link (both need the
   // same temporary Go-API character lookup) — empty for now, matching a chapter with no
   // linked characters yet.

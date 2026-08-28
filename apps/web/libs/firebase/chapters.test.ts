@@ -45,6 +45,13 @@ describe("chapters", () => {
     const marker = await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "1"));
     expect(marker.exists()).toBe(true);
     expect(marker.data()).toEqual({ chapter_id: chapter.id });
+
+    const rawDoc = await getDoc(
+      doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", chapter.id),
+    );
+    const data = rawDoc.data();
+    expect(data?.novel_id).toBe("novel-1");
+    expect(data?.volume_id).toBe("vol-1");
   });
 
   it("rejects creating a chapter whose number is already used elsewhere in the novel", async () => {
