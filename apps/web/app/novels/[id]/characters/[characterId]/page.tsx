@@ -1,39 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import type { Novel, Character } from '../../../../types'
 import CharacterDetail from './CharacterDetail'
 import { backLinkClassName, DashboardPage } from '../../../ui'
 import { T } from '@/components/i18n/I18nProvider'
-import { getCharacterRoles } from '@/libs/api'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
-
-async function getNovel(id: string): Promise<Novel | null> {
-  try {
-    const res = await fetch(`${BASE}/api/v1/novels/${id}`, { cache: 'no-store' })
-    if (res.status === 404) return null
-    if (!res.ok) return null
-    const body = await res.json()
-    return body.data as Novel
-  } catch {
-    return null
-  }
-}
-
-async function getCharacter(novelId: string, characterId: string): Promise<Character | null> {
-  try {
-    const res = await fetch(
-      `${BASE}/api/v1/novels/${novelId}/characters/${characterId}`,
-      { cache: 'no-store' }
-    )
-    if (res.status === 404) return null
-    if (!res.ok) return null
-    const body = await res.json()
-    return body.data as Character
-  } catch {
-    return null
-  }
-}
+import { getCharacter, getCharacterRoles, getNovel } from '@/libs/api'
 
 export default async function CharacterPage({
   params,
@@ -42,13 +12,19 @@ export default async function CharacterPage({
 }) {
   const { id, characterId } = await params
 
-  const [novel, character, roles] = await Promise.all([
-    getNovel(id),
-    getCharacter(id, characterId),
-    getCharacterRoles(),
-  ])
+  let character: Awaited<ReturnType<typeof getCharacter>>
+  let roles: Awaited<ReturnType<typeof getCharacterRoles>>
 
-  if (!novel || !character) notFound()
+  try {
+    // getNovel is fetched (and awaited) solely to 404 when the parent novel is gone.
+    [, character, roles] = await Promise.all([
+      getNovel(id),
+      getCharacter(id, characterId),
+      getCharacterRoles(),
+    ])
+  } catch {
+    notFound()
+  }
 
   return (
     <DashboardPage maxWidth="max-w-4xl">

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Novel } from "../../../types";
 import AddCharacterForm from "./AddCharacterForm";
 import CharacterList from "./CharacterList";
 import { T } from "@/components/i18n/I18nProvider";
@@ -9,24 +8,9 @@ import {
   DashboardPage,
   SectionHeading,
 } from "../../ui";
-import { getCharacters, getCharacterRoles } from "@/libs/api";
+import { getCharacters, getCharacterRoles, getNovel } from "@/libs/api";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
-
-async function getNovel(id: string): Promise<Novel | null> {
-  try {
-    const res = await fetch(`${BASE}/api/v1/novels/${id}`, {
-      cache: "no-store",
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    const body = await res.json();
-    return body.data as Novel;
-  } catch {
-    return null;
-  }
-}
 
 function parsePositiveInt(value: string | undefined, fallback: number) {
   const parsed = Number(value);
@@ -48,13 +32,19 @@ export default async function CharactersPage({
     ? requestedPerPage
     : 10;
 
-  const [novel, characters, roles] = await Promise.all([
-    getNovel(id),
-    getCharacters(id, { page, perPage }),
-    getCharacterRoles(),
-  ]);
+  let novel: Awaited<ReturnType<typeof getNovel>>;
+  let characters: Awaited<ReturnType<typeof getCharacters>>;
+  let roles: Awaited<ReturnType<typeof getCharacterRoles>>;
 
-  if (!novel) notFound();
+  try {
+    [novel, characters, roles] = await Promise.all([
+      getNovel(id),
+      getCharacters(id, { page, perPage }),
+      getCharacterRoles(),
+    ]);
+  } catch {
+    notFound();
+  }
 
   return (
     <DashboardPage maxWidth="max-w-5xl">

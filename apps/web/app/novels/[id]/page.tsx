@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Character } from "../../types";
 import AddVolumeForm from "./AddVolumeForm";
 import NovelCover from "../NovelCover";
 import VolumeManager from "./VolumeManager";
@@ -13,23 +12,9 @@ import {
   mutedCardClassName,
   statusColorClassNames,
 } from "../ui";
-import { getNovel, getVolumes } from "@/libs/api";
+import { getAllCharacters, getNovel, getVolumes } from "@/libs/api";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
-
-async function getCharacters(id: string): Promise<Character[]> {
-  try {
-    const res = await fetch(`${BASE}/api/v1/novels/${id}/characters`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    const body = await res.json();
-    return (body.data as Character[]) ?? [];
-  } catch {
-    return [];
-  }
-}
 
 export default async function NovelPage({
   params,
@@ -53,7 +38,7 @@ export default async function NovelPage({
     [novel, volumes, characters] = await Promise.all([
       getNovel(id),
       getVolumes(id, { page, perPage }),
-      getCharacters(id),
+      getAllCharacters(id),
     ]);
   } catch {
     notFound();

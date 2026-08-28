@@ -13,8 +13,7 @@ import {
   smallLabelClassName,
 } from '../../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+import { createCharacter } from '@/libs/api'
 
 export default function AddCharacterForm({
   novelId,
@@ -55,19 +54,7 @@ export default function AddCharacterForm({
     }
 
     try {
-      const res = await fetch(`${BASE}/api/v1/novels/${novelId}/characters`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        const message = body.error ?? `Request failed: ${res.status}`
-        setError(message)
-        setSnackbar({ tone: 'error', message })
-        return
-      }
+      await createCharacter(novelId, data)
 
       form.reset()
       setOpen(false)

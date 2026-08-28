@@ -18,8 +18,7 @@ import {
   smallLabelClassName,
 } from '../../../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+import { updateCharacter } from '@/libs/api'
 
 export default function CharacterDetail({
   character,
@@ -53,27 +52,13 @@ export default function CharacterDetail({
     setSaving(true)
     setError(null)
     try {
-      const res = await fetch(
-        `${BASE}/api/v1/novels/${novelId}/characters/${character.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name,
-            role_id: roleId,
-            profile_image_url: profileImageUrl.trim() || null,
-            description,
-            aliases: aliases ? aliases.split(',').map(s => s.trim()).filter(Boolean) : [],
-          }),
-        }
-      )
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        const message = body.error ?? `Request failed: ${res.status}`
-        setError(message)
-        setSnackbar({ tone: 'error', message })
-        return
-      }
+      await updateCharacter(novelId, character.id, {
+        name,
+        role_id: roleId,
+        profile_image_url: profileImageUrl.trim() || null,
+        description,
+        aliases: aliases ? aliases.split(',').map(s => s.trim()).filter(Boolean) : [],
+      })
       setEditing(false)
       setSnackbar({ tone: 'success', message: t('character.saveSuccess') })
       router.refresh()
