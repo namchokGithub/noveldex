@@ -78,3 +78,10 @@ The approved migration design predates the implemented Firebase modules and docu
 - The web app has no runtime request to the Go API.
 - `make dev` starts only the supported local services and the web app; Redis is absent.
 - PostgreSQL data and legacy Go source remain intact as recovery material.
+
+## Execution status (2026-08-29)
+
+- Production data migration completed from `backups/postgres/noveldex-20260828-233248.sql` through a disposable PostgreSQL 16 restore.
+- The expanded `--verify-only` passed: all collection counts, event chapter-link backfills, and `chapterNumbers` markers match PostgreSQL.
+- The Firebase Admin service account lacks `firebaserules.rulesets.test` and `datastore.indexes.create/delete/update`, so it cannot deploy rules or indexes. Public rules were therefore deployed manually and `firestore.indexes.json` was deployed through the interactive Firebase CLI account. All composite indexes plus the `chapters.novel_id` COLLECTION_GROUP ascending field override are ready.
+- Read-only production browser smoke passed for migrated novel detail, characters, and timeline: 23 volumes, 4 chapters (1 read), Rimuru with 1 appearance, and 2 timeline events including the linked chapter.
