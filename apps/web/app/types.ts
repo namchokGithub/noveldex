@@ -65,6 +65,22 @@ export interface ChapterSummary {
   read_at: string | null
 }
 
+export interface NovelEvent {
+  id: string
+  novel_id: string
+  chapter_id: string | null
+  chapter_volume_id: string | null
+  chapter_title: string | null
+  chapter_number: number | null
+  title: string
+  description: string
+  story_date: string
+  sort_order: number
+  character_names: string[]
+  created_at: string
+  updated_at: string
+}
+
 export interface CharacterRole {
   id: string
   code: string
