@@ -175,3 +175,32 @@ describe("reorderChapters", () => {
     expect(chapters.map((ch) => ch.id)).toEqual([b.id, a.id]);
   });
 });
+
+describe("mention auto-link (temporary hybrid — reads characters from the Go API)", () => {
+  // Requires `make api` running against a Postgres instance with a character named
+  // "TestMentionCharacter" for novel "novel-1" — this hybrid is removed in Plan 3
+  // once characters move to Firestore, at which point this test moves to a plain
+  // emulator-backed test like the rest of this file.
+  it.skip("links a mentioned character's id into character_ids on chapter update", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
+
+    await updateChapter("novel-1", "vol-1", chapter.id, {
+      summary: "[[TestMentionCharacter]] appears.",
+    });
+
+    const fetched = await getChapter("novel-1", "vol-1", chapter.id);
+    expect(fetched.characters.map((c) => c.name)).toContain("TestMentionCharacter");
+  });
+
+  it("does not throw when no characters match, and is non-blocking on lookup failure", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
+
+    await expect(
+      updateChapter("novel-1", "vol-1", chapter.id, {
+        summary: "[[NobodyByThisName]] appears.",
+      }),
+    ).resolves.not.toThrow();
+  });
+});

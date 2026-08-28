@@ -14,8 +14,10 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import type { Chapter, ChapterWithCharacters, Tag } from "@/app/types";
+import { apiClient } from "@/libs/api/client";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
+import { extractMentions } from "./mentions";
 import { getTags } from "./tags";
 
 interface ChapterDoc {
@@ -67,6 +69,46 @@ async function tagsForChapter(novelId: string, tagIds: string[]): Promise<Tag[]>
   return resolveTags(tagIds, new Map(allTags.map((t) => [t.id, t])));
 }
 
+interface MinimalCharacter {
+  id: string;
+  name: string;
+}
+
+// TEMPORARY hybrid: characters still live in Postgres until Plan 3. Resolves [[Name]]
+// mentions and hydrates chapter.characters by calling the existing, unmodified Go
+// endpoint directly via apiClient (not the @/libs/api barrel, which would create a
+// circular import since it re-exports from this file). Remove this function and call
+// the Firestore-backed character lookup instead once Plan 3 lands.
+async function fetchNovelCharacters(novelId: string): Promise<MinimalCharacter[]> {
+  const response = await apiClient.get<{ data: MinimalCharacter[] }>(
+    `/api/v1/novels/${novelId}/characters`,
+  );
+  return response.data ?? [];
+}
+
+async function linkMentions(
+  novelId: string,
+  volumeId: string,
+  chapterId: string,
+  summary: string,
+): Promise<void> {
+  try {
+    const names = extractMentions(summary);
+    if (names.length === 0) return;
+
+    const characters = await fetchNovelCharacters(novelId);
+    const matchedIds = characters.filter((c) => names.includes(c.name)).map((c) => c.id);
+    if (matchedIds.length === 0) return;
+
+    await updateDoc(chapterRef(novelId, volumeId, chapterId), {
+      character_ids: arrayUnion(...matchedIds),
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn("[linkMentions] non-blocking failure:", error);
+  }
+}
+
 export async function getChaptersByVolume(
   novelId: string,
   volumeId: string,
@@ -95,10 +137,11 @@ export async function getChapter(
   const data = snapshot.data() as ChapterDoc;
   const tags = await tagsForChapter(novelId, data.tag_ids);
   const chapter = toChapter(snapshot.id, data, tags);
-  // Character hydration is added in Task 5 alongside mention auto-link (both need the
-  // same temporary Go-API character lookup) — empty for now, matching a chapter with no
-  // linked characters yet.
-  return { ...chapter, characters: [] };
+  const characters =
+    data.character_ids.length === 0
+      ? []
+      : (await fetchNovelCharacters(novelId)).filter((c) => data.character_ids.includes(c.id));
+  return { ...chapter, characters: characters as ChapterWithCharacters["characters"] };
 }
 
 export interface ChapterCreatePayload {
@@ -160,6 +203,10 @@ export async function updateChapter(
     update.read_at = payload.read_at ? Timestamp.fromDate(new Date(payload.read_at)) : null;
   }
   await updateDoc(chapterRef(novelId, volumeId, chapterId), withUpdateTimestamp(update));
+
+  if (payload.summary !== undefined && payload.summary !== "") {
+    await linkMentions(novelId, volumeId, chapterId, payload.summary);
+  }
 }
 
 export async function deleteChapter(
