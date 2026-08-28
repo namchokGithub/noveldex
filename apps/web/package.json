@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "emulators": "firebase emulators:start --only firestore --project demo-noveldex",
-    "migrate:firestore": "tsx scripts/migrate-postgres-to-firestore.ts"
+    "migrate:firestore": "tsx --env-file=.env.local scripts/migrate-postgres-to-firestore.ts"
   },
   "dependencies": {
     "firebase": "^11.10.0",

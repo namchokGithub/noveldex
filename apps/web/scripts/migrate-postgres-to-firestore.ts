@@ -8,7 +8,10 @@ type Row = Record<string, unknown>;
 function args(): Args {
   const values = process.argv.slice(2);
   const projectAt = values.indexOf("--project");
-  const projectId = projectAt >= 0 ? values[projectAt + 1] : process.env.FIREBASE_PROJECT_ID;
+  const projectId =
+    projectAt >= 0
+      ? values[projectAt + 1]
+      : (process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
   if (!projectId) throw new Error("Pass --project <id> or set FIREBASE_PROJECT_ID.");
   return { dryRun: values.includes("--dry-run"), verifyOnly: values.includes("--verify-only"), confirm: values.includes("--confirm"), projectId };
 }
@@ -64,9 +67,62 @@ async function main() {
   if (getApps().length === 0) initializeApp({ credential: applicationDefault(), projectId: options.projectId });
   const db = getFirestore();
   if (options.verifyOnly) {
-    const [roleDocs, novelDocs] = await Promise.all([db.collection("character_roles").count().get(), db.collection("novels").count().get()]);
-    console.log("Firestore destination counts:", { roles: roleDocs.data().count, novels: novelDocs.data().count });
-    if (roleDocs.data().count !== counts.roles || novelDocs.data().count !== counts.novels) throw new Error("Firestore verification failed.");
+    const [roleDocs, novelDocs, volumeDocs, chapterDocs, characterDocs, eventDocs, tagDocs, markerDocs] = await Promise.all([
+      db.collection("character_roles").count().get(),
+      db.collection("novels").count().get(),
+      db.collectionGroup("volumes").count().get(),
+      db.collectionGroup("chapters").count().get(),
+      db.collectionGroup("characters").count().get(),
+      db.collectionGroup("events").get(),
+      db.collectionGroup("tags").count().get(),
+      db.collectionGroup("chapterNumbers").get(),
+    ]);
+    const destinationCounts = {
+      roles: roleDocs.data().count,
+      novels: novelDocs.data().count,
+      volumes: volumeDocs.data().count,
+      chapters: chapterDocs.data().count,
+      characters: characterDocs.data().count,
+      events: eventDocs.size,
+      tags: tagDocs.data().count,
+      chapterNumbers: markerDocs.size,
+    };
+    const expectedCounts = { ...counts, chapterNumbers: chapters.length };
+    console.log("Firestore destination counts:", destinationCounts);
+    for (const key of Object.keys(expectedCounts) as Array<keyof typeof expectedCounts>) {
+      if (destinationCounts[key] !== expectedCounts[key]) {
+        throw new Error(`Firestore verification failed: ${key} expected ${expectedCounts[key]}, got ${destinationCounts[key]}.`);
+      }
+    }
+
+    const eventsById = new Map(eventDocs.docs.map((snapshot) => [snapshot.id, snapshot.data()]));
+    for (const event of events) {
+      if (!event.chapter_id) continue;
+      const migrated = eventsById.get(String(event.id));
+      if (
+        !migrated ||
+        migrated.chapter_id !== event.chapter_id ||
+        migrated.chapter_volume_id !== event.chapter_volume_id ||
+        migrated.chapter_title !== event.chapter_title ||
+        migrated.chapter_number !== event.chapter_number
+      ) {
+        throw new Error(`Firestore verification failed: event ${event.id} has an invalid chapter link backfill.`);
+      }
+    }
+
+    const markersByNovelAndNumber = new Map(
+      markerDocs.docs.map((snapshot) => [
+        `${snapshot.ref.parent.parent?.id}/${snapshot.id}`,
+        snapshot.data().chapter_id,
+      ]),
+    );
+    for (const chapter of chapters) {
+      const marker = markersByNovelAndNumber.get(`${chapter.novel_id}/${chapter.number}`);
+      if (marker !== chapter.id) {
+        throw new Error(`Firestore verification failed: chapter marker missing or incorrect for chapter ${chapter.id}.`);
+      }
+    }
+    console.log("Firestore nested collections, event chapter links, and chapterNumbers markers verified.");
     return;
   }
 
