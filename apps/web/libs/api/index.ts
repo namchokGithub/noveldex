@@ -1,7 +1,3 @@
-import type { PaginatedCharacters } from "@/app/types";
-
-import { apiClient } from "./client";
-
 // Novels domain via Firestore
 export { getNovels, getNovel, createNovel } from "@/libs/firebase/novels";
 export type { NovelCreatePayload } from "@/libs/firebase/novels";
@@ -33,21 +29,13 @@ export type { LastOrderNos } from "@/libs/firebase/lastOrderNos";
 // Character roles domain via Firestore
 export { getCharacterRoles } from "@/libs/firebase/characterRoles";
 
-export async function getCharacters(
-  novelId: string,
-  options?: { page?: number; perPage?: number },
-): Promise<PaginatedCharacters> {
-  const page = options?.page ?? 1;
-  const perPage = options?.perPage ?? 10;
-  const response = await apiClient.get<{ data: PaginatedCharacters }>(
-    `/api/v1/novels/${novelId}/characters?page=${page}&per_page=${perPage}`,
-  );
-
-  return (
-    response.data ?? {
-      items: [],
-      pagination: { page, per_page: perPage, total_items: 0, total_pages: 1 },
-      summary: { total_characters: 0 },
-    }
-  );
-}
+// Characters domain via Firestore
+export {
+  getCharacters,
+  getAllCharacters,
+  getCharacter,
+  createCharacter,
+  updateCharacter,
+  deleteCharacter,
+} from "@/libs/firebase/characters";
+export type { CharacterCreatePayload, CharacterUpdatePayload } from "@/libs/firebase/characters";
