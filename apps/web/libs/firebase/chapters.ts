@@ -8,8 +8,10 @@ import {
   orderBy,
   query,
   runTransaction,
+  serverTimestamp,
   Timestamp,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import type { Chapter, ChapterWithCharacters, Tag } from "@/app/types";
 import { db } from "./app";
@@ -195,4 +197,25 @@ export async function unlinkChapterTag(
   await updateDoc(chapterRef(novelId, volumeId, chapterId), {
     tag_ids: arrayRemove(tagId),
   });
+}
+
+export interface ChapterOrderEntry {
+  id: string;
+  number: number;
+}
+
+export async function reorderChapters(
+  novelId: string,
+  volumeId: string,
+  entries: ChapterOrderEntry[],
+): Promise<void> {
+  const batch = writeBatch(db);
+  entries.forEach((entry) => {
+    batch.update(chapterRef(novelId, volumeId, entry.id), {
+      number: entry.number,
+      updated_at: serverTimestamp(),
+    });
+    batch.set(markerRef(novelId, entry.number), { chapter_id: entry.id });
+  });
+  await batch.commit();
 }

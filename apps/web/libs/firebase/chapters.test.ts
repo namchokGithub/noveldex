@@ -3,11 +3,13 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import { createTag } from "./tags";
 import {
+  ChapterOrderEntry as ReorderEntry,
   createChapter,
   deleteChapter,
   getChapter,
   getChaptersByVolume,
   linkChapterTag,
+  reorderChapters,
   unlinkChapterTag,
   updateChapter,
 } from "./chapters";
@@ -131,5 +133,45 @@ describe("chapters", () => {
     await expect(
       createChapter("novel-1", "vol-1", { number: 1, title: "Reused" }),
     ).resolves.toBeTruthy();
+  });
+});
+
+describe("reorderChapters", () => {
+  it("renumbers chapters and moves their chapterNumbers markers atomically", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const a = await createChapter("novel-1", "vol-1", { number: 1, title: "A" });
+    const b = await createChapter("novel-1", "vol-1", { number: 2, title: "B" });
+    const c = await createChapter("novel-1", "vol-1", { number: 3, title: "C" });
+
+    const newOrder: ReorderEntry[] = [
+      { id: c.id, number: 1 },
+      { id: a.id, number: 2 },
+      { id: b.id, number: 3 },
+    ];
+    await reorderChapters("novel-1", "vol-1", newOrder);
+
+    const chapters = await getChaptersByVolume("novel-1", "vol-1");
+    expect(chapters.map((ch) => ({ id: ch.id, number: ch.number }))).toEqual([
+      { id: c.id, number: 1 },
+      { id: a.id, number: 2 },
+      { id: b.id, number: 3 },
+    ]);
+
+    for (const entry of newOrder) {
+      // eslint-disable-next-line no-await-in-loop
+      const marker = await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", String(entry.number)));
+      expect(marker.data()).toEqual({ chapter_id: entry.id });
+    }
+  });
+
+  it("is a no-op-safe partial reorder — only entries present in the list move", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const a = await createChapter("novel-1", "vol-1", { number: 1, title: "A" });
+    const b = await createChapter("novel-1", "vol-1", { number: 2, title: "B" });
+
+    await reorderChapters("novel-1", "vol-1", [{ id: a.id, number: 2 }, { id: b.id, number: 1 }]);
+
+    const chapters = await getChaptersByVolume("novel-1", "vol-1");
+    expect(chapters.map((ch) => ch.id)).toEqual([b.id, a.id]);
   });
 });

@@ -22,8 +22,9 @@ export {
   deleteChapter,
   linkChapterTag,
   unlinkChapterTag,
+  reorderChapters,
 } from "@/libs/firebase/chapters";
-export type { ChapterPayload, ChapterCreatePayload } from "@/libs/firebase/chapters";
+export type { ChapterPayload, ChapterCreatePayload, ChapterOrderEntry } from "@/libs/firebase/chapters";
 
 interface ApiResponse<T> {
   data: T;
@@ -32,22 +33,6 @@ interface ApiResponse<T> {
 export interface LastOrderNos {
   volume: number;
   chapter: number;
-}
-
-export interface ChapterOrderEntry {
-  id: string;
-  number: number;
-}
-
-export async function reorderChapters(
-  novelId: string,
-  volumeId: string,
-  chapters: ChapterOrderEntry[],
-): Promise<void> {
-  await apiClient.patch(
-    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/reorder`,
-    { body: { chapters } },
-  );
 }
 
 export async function getCharacters(
