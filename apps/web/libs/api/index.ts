@@ -1,9 +1,4 @@
-import type {
-  Chapter,
-  CharacterRole,
-  ChapterWithCharacters,
-  PaginatedCharacters,
-} from "@/app/types";
+import type { CharacterRole, PaginatedCharacters } from "@/app/types";
 
 import { apiClient } from "./client";
 
@@ -18,6 +13,18 @@ export { getTags, createTag } from "@/libs/firebase/tags";
 export { getVolumes, getVolume, createVolume, updateVolume, deleteVolume } from "@/libs/firebase/volumes";
 export type { VolumePayload } from "@/libs/firebase/volumes";
 
+// Chapters domain via Firestore
+export {
+  getChaptersByVolume,
+  getChapter,
+  createChapter,
+  updateChapter,
+  deleteChapter,
+  linkChapterTag,
+  unlinkChapterTag,
+} from "@/libs/firebase/chapters";
+export type { ChapterPayload, ChapterCreatePayload } from "@/libs/firebase/chapters";
+
 interface ApiResponse<T> {
   data: T;
 }
@@ -27,101 +34,9 @@ export interface LastOrderNos {
   chapter: number;
 }
 
-interface ChapterPayload {
-  title?: string;
-  summary?: string;
-  read_at?: string | null;
-}
-
 export interface ChapterOrderEntry {
   id: string;
   number: number;
-}
-
-interface ChapterCreatePayload {
-  number: number;
-  title: string;
-  summary?: string;
-  read_at?: string | null;
-}
-
-export async function getChaptersByVolume(
-  novelId: string,
-  volumeId: string,
-): Promise<Chapter[]> {
-  const response = await apiClient.get<ApiResponse<Chapter[]>>(
-    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters`,
-  );
-
-  return (response.data ?? []).map((chapter) => ({
-    ...chapter,
-    tags: chapter.tags ?? [],
-  }));
-}
-
-export async function getChapter(
-  novelId: string,
-  volumeId: string,
-  chapterId: string,
-): Promise<ChapterWithCharacters> {
-  const response = await apiClient.get<ApiResponse<ChapterWithCharacters>>(
-    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapterId}`,
-  );
-
-  return {
-    ...response.data,
-    characters: response.data.characters ?? [],
-    tags: response.data.tags ?? [],
-  };
-}
-
-export async function linkChapterTag(
-  novelId: string,
-  volumeId: string,
-  chapterId: string,
-  tagId: string,
-): Promise<void> {
-  await apiClient.post(
-    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapterId}/tags`,
-    {
-      body: { tag_id: tagId },
-    },
-  );
-}
-
-export async function unlinkChapterTag(
-  novelId: string,
-  volumeId: string,
-  chapterId: string,
-  tagId: string,
-): Promise<void> {
-  await apiClient.delete(
-    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapterId}/tags/${tagId}`,
-  );
-}
-
-export async function updateChapter(
-  novelId: string,
-  volumeId: string,
-  chapterId: string,
-  payload: ChapterPayload,
-): Promise<void> {
-  await apiClient.patch(
-    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapterId}`,
-    {
-      body: payload,
-    },
-  );
-}
-
-export async function deleteChapter(
-  novelId: string,
-  volumeId: string,
-  chapterId: string,
-): Promise<void> {
-  await apiClient.delete(
-    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters/${chapterId}`,
-  );
 }
 
 export async function reorderChapters(
@@ -168,21 +83,6 @@ export async function getLastOrderNos(params: {
   const response = await apiClient.get<ApiResponse<LastOrderNos>>(
     "/api/v1/master/last-order-nos",
     params,
-  );
-
-  return response.data;
-}
-
-export async function createChapter(
-  novelId: string,
-  volumeId: string,
-  payload: ChapterCreatePayload,
-): Promise<Chapter> {
-  const response = await apiClient.post<ApiResponse<Chapter>>(
-    `/api/v1/novels/${novelId}/volumes/${volumeId}/chapters`,
-    {
-      body: payload,
-    },
   );
 
   return response.data;
