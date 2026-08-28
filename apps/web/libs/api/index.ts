@@ -4,7 +4,6 @@ import type {
   ChapterWithCharacters,
   PaginatedCharacters,
   PaginatedVolumes,
-  Tag,
   Volume,
 } from "@/app/types";
 
@@ -13,6 +12,9 @@ import { apiClient } from "./client";
 // Novels domain via Firestore
 export { getNovels, getNovel, createNovel } from "@/libs/firebase/novels";
 export type { NovelCreatePayload } from "@/libs/firebase/novels";
+
+// Tags domain via Firestore
+export { getTags, createTag } from "@/libs/firebase/tags";
 
 interface ApiResponse<T> {
   data: T;
@@ -149,25 +151,6 @@ export async function getChapter(
     characters: response.data.characters ?? [],
     tags: response.data.tags ?? [],
   };
-}
-
-export async function getTags(novelId: string): Promise<Tag[]> {
-  const response = await apiClient.get<ApiResponse<Tag[]>>(
-    `/api/v1/novels/${novelId}/tags`,
-  );
-
-  return response.data ?? [];
-}
-
-export async function createTag(novelId: string, name: string): Promise<Tag> {
-  const response = await apiClient.post<ApiResponse<Tag>>(
-    `/api/v1/novels/${novelId}/tags`,
-    {
-      body: { name },
-    },
-  );
-
-  return response.data;
 }
 
 export async function linkChapterTag(
