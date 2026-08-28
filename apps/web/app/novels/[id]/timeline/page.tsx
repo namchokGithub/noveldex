@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import type { NovelEvent } from '@/app/types'
 import {
   backLinkClassName,
   cardClassName,
@@ -19,22 +20,14 @@ import {
   timelineRailClassName,
 } from '../../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
-
-interface NovelEvent {
-  id: string
-  novel_id: string
-  chapter_id: string | null
-  chapter_volume_id?: string | null
-  chapter_title: string
-  chapter_number: number | null
-  title: string
-  description: string
-  story_date: string
-  sort_order: number
-  character_names: string[]
-}
+import {
+  createEvent,
+  deleteEvent,
+  getAllCharacters,
+  getChaptersFlat,
+  getEvents,
+  updateEvent,
+} from '@/libs/api'
 
 interface ChapterOption {
   id: string
@@ -54,6 +47,7 @@ interface FormState {
   sort_order: string
   description: string
   chapter_id: string
+  chapter_volume_id: string
 }
 
 const EMPTY_FORM: FormState = {
@@ -62,6 +56,7 @@ const EMPTY_FORM: FormState = {
   sort_order: '0',
   description: '',
   chapter_id: '',
+  chapter_volume_id: '',
 }
 
 export default function TimelinePage({
@@ -97,10 +92,7 @@ export default function TimelinePage({
 
   async function loadEvents() {
     try {
-      const res = await fetch(`${BASE}/api/v1/novels/${novelId}/events`)
-      if (!res.ok) return
-      const body = await res.json()
-      setEvents((body.data as NovelEvent[]) ?? [])
+      setEvents(await getEvents(novelId))
     } catch {}
   }
 
@@ -108,23 +100,14 @@ export default function TimelinePage({
     async function init() {
       setLoading(true)
       try {
-        const [evRes, chRes, charRes] = await Promise.all([
-          fetch(`${BASE}/api/v1/novels/${novelId}/events`),
-          fetch(`${BASE}/api/v1/novels/${novelId}/chapters`),
-          fetch(`${BASE}/api/v1/novels/${novelId}/characters`),
+        const [ev, ch, char] = await Promise.all([
+          getEvents(novelId),
+          getChaptersFlat(novelId),
+          getAllCharacters(novelId),
         ])
-        if (evRes.ok) {
-          const body = await evRes.json()
-          setEvents((body.data as NovelEvent[]) ?? [])
-        }
-        if (chRes.ok) {
-          const body = await chRes.json()
-          setChapters((body.data as ChapterOption[]) ?? [])
-        }
-        if (charRes.ok) {
-          const body = await charRes.json()
-          setCharacters((body.data as CharacterOption[]) ?? [])
-        }
+        setEvents(ev)
+        setChapters(ch)
+        setCharacters(char)
       } catch {}
       setLoading(false)
     }
@@ -161,30 +144,20 @@ export default function TimelinePage({
     setAddError(null)
     setAddSaving(true)
     try {
-      const res = await fetch(`${BASE}/api/v1/novels/${novelId}/events`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: addForm.title,
-          story_date: addForm.story_date,
-          sort_order: parseInt(addForm.sort_order, 10),
-          description: addForm.description,
-          chapter_id: addForm.chapter_id || null,
-        }),
+      await createEvent(novelId, {
+        title: addForm.title,
+        story_date: addForm.story_date,
+        sort_order: parseInt(addForm.sort_order, 10),
+        description: addForm.description,
+        chapter_id: addForm.chapter_id || null,
+        chapter_volume_id: addForm.chapter_volume_id || null,
       })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        const message = body.error ?? `Request failed: ${res.status}`
-        setAddError(message)
-        setSnackbar({ tone: 'error', message })
-        return
-      }
       setAddForm(EMPTY_FORM)
       setShowAddForm(false)
       setSnackbar({ tone: 'success', message: t('timeline.addSuccess') })
       await loadEvents()
-    } catch {
-      const message = t('common.networkError')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('common.networkError')
       setAddError(message)
       setSnackbar({ tone: 'error', message })
     } finally {
@@ -200,6 +173,7 @@ export default function TimelinePage({
       sort_order: String(ev.sort_order),
       description: ev.description,
       chapter_id: ev.chapter_id ?? '',
+      chapter_volume_id: ev.chapter_volume_id ?? '',
     })
     setEditError(null)
   }
@@ -210,29 +184,19 @@ export default function TimelinePage({
     setEditError(null)
     setEditSaving(true)
     try {
-      const res = await fetch(`${BASE}/api/v1/novels/${novelId}/events/${editingId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: editForm.title,
-          story_date: editForm.story_date,
-          sort_order: parseInt(editForm.sort_order, 10),
-          description: editForm.description,
-          chapter_id: editForm.chapter_id || null,
-        }),
+      await updateEvent(novelId, editingId, {
+        title: editForm.title,
+        story_date: editForm.story_date,
+        sort_order: parseInt(editForm.sort_order, 10),
+        description: editForm.description,
+        chapter_id: editForm.chapter_id || null,
+        chapter_volume_id: editForm.chapter_volume_id || null,
       })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        const message = body.error ?? `Request failed: ${res.status}`
-        setEditError(message)
-        setSnackbar({ tone: 'error', message })
-        return
-      }
       setEditingId(null)
       setSnackbar({ tone: 'success', message: t('timeline.editSuccess') })
       await loadEvents()
-    } catch {
-      const message = t('common.networkError')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('common.networkError')
       setEditError(message)
       setSnackbar({ tone: 'error', message })
     } finally {
@@ -245,13 +209,7 @@ export default function TimelinePage({
 
     setDeletingId(confirmDeleteEvent.id)
     try {
-      const res = await fetch(`${BASE}/api/v1/novels/${novelId}/events/${confirmDeleteEvent.id}`, {
-        method: 'DELETE',
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error ?? `Request failed: ${res.status}`)
-      }
+      await deleteEvent(novelId, confirmDeleteEvent.id)
       setConfirmDeleteEvent(null)
       setSnackbar({ tone: 'success', message: t('timeline.deleteSuccess') })
       await loadEvents()
@@ -466,13 +424,13 @@ export default function TimelinePage({
                               className={tagClassName}
                             >
                               Ch.{String(ev.chapter_number ?? '').padStart(2, '0')} ·{' '}
-                              {ev.chapter_title}
+                              {ev.chapter_title ?? ''}
                             </Link>
                           ) : (
                             // Keep the label visible even if older event data is missing volume metadata.
                             <span className={tagClassName}>
                               Ch.{String(ev.chapter_number ?? '').padStart(2, '0')} ·{' '}
-                              {ev.chapter_title}
+                              {ev.chapter_title ?? ''}
                             </span>
                           )}
                         </div>
@@ -606,7 +564,15 @@ function EventFormFields({
           <label className={smallLabelClassName}>{t('timeline.field.chapter')}</label>
           <select
             value={form.chapter_id}
-            onChange={set('chapter_id')}
+            onChange={(e) => {
+              const chapterId = e.target.value
+              const chapter = chapters.find((ch) => ch.id === chapterId)
+              onChange({
+                ...form,
+                chapter_id: chapterId,
+                chapter_volume_id: chapter?.volume_id ?? '',
+              })
+            }}
             className={inputClassName}
           >
             <option value="">{t('timeline.field.noneOption')}</option>

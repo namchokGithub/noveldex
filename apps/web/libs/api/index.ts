@@ -12,6 +12,7 @@ export type { VolumePayload } from "@/libs/firebase/volumes";
 // Chapters domain via Firestore
 export {
   getChaptersByVolume,
+  getChaptersFlat,
   getChapter,
   createChapter,
   updateChapter,
@@ -39,3 +40,7 @@ export {
   deleteCharacter,
 } from "@/libs/firebase/characters";
 export type { CharacterCreatePayload, CharacterUpdatePayload } from "@/libs/firebase/characters";
+
+// Events domain via Firestore
+export { getEvents, createEvent, updateEvent, deleteEvent } from "@/libs/firebase/events";
+export type { EventPayload } from "@/libs/firebase/events";
