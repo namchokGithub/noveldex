@@ -38,24 +38,24 @@ function eventRef(novelId: string, eventId: string) {
   return doc(db, "novels", novelId, "events", eventId);
 }
 
-async function toEvent(novelId: string, id: string, data: EventDoc): Promise<NovelEvent> {
-  const characterNames: string[] = [];
-  if (data.character_ids.length > 0) {
-    const all = await getAllCharacters(novelId);
-    const byId = new Map(all.map((c) => [c.id, c.name]));
-    data.character_ids.forEach((cid) => {
-      const name = byId.get(cid);
-      if (name) characterNames.push(name);
-    });
-  }
+function toEvent(
+  novelId: string,
+  id: string,
+  data: EventDoc,
+  characterNameById: Map<string, string>,
+): NovelEvent {
+  const characterIds = data.character_ids ?? [];
+  const characterNames = characterIds
+    .map((cid) => characterNameById.get(cid))
+    .filter((name): name is string => Boolean(name));
 
   return {
     id,
     novel_id: novelId,
-    chapter_id: data.chapter_id,
-    chapter_volume_id: data.chapter_volume_id,
-    chapter_title: data.chapter_title,
-    chapter_number: data.chapter_number,
+    chapter_id: data.chapter_id ?? null,
+    chapter_volume_id: data.chapter_volume_id ?? null,
+    chapter_title: data.chapter_title ?? null,
+    chapter_number: data.chapter_number ?? null,
     title: data.title,
     description: data.description,
     story_date: data.story_date,
@@ -64,6 +64,18 @@ async function toEvent(novelId: string, id: string, data: EventDoc): Promise<Nov
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
   };
+}
+
+// Resolves character_ids -> character_names for a single event (create/update paths).
+// Mirrors chapters.ts's tagsForChapter: skip the getAllCharacters round trip entirely
+// when there are no ids to resolve, since character_ids is empty on every event today.
+async function characterNameLookup(
+  novelId: string,
+  characterIds: string[],
+): Promise<Map<string, string>> {
+  if (characterIds.length === 0) return new Map();
+  const all = await getAllCharacters(novelId);
+  return new Map(all.map((c) => [c.id, c.name]));
 }
 
 async function resolveChapterFields(
@@ -129,7 +141,9 @@ export async function createEvent(novelId: string, payload: EventPayload): Promi
     }),
   );
   const snapshot = await getDoc(ref);
-  return toEvent(novelId, snapshot.id, snapshot.data() as EventDoc);
+  const data = snapshot.data() as EventDoc;
+  const nameById = await characterNameLookup(novelId, data.character_ids ?? []);
+  return toEvent(novelId, snapshot.id, data, nameById);
 }
 
 export async function updateEvent(
@@ -152,14 +166,18 @@ export async function updateEvent(
   const ref = eventRef(novelId, eventId) as DocumentReference<EventDoc, EventDoc>;
   await updateDoc(ref, withUpdateTimestamp(update));
   const snapshot = await getDoc(ref);
-  return toEvent(novelId, snapshot.id, snapshot.data() as EventDoc);
+  const data = snapshot.data() as EventDoc;
+  const nameById = await characterNameLookup(novelId, data.character_ids ?? []);
+  return toEvent(novelId, snapshot.id, data, nameById);
 }
 
 export async function getEvents(novelId: string): Promise<NovelEvent[]> {
   const snapshot = await getDocs(query(eventsCol(novelId), orderBy("sort_order", "asc")));
-  return Promise.all(
-    snapshot.docs.map((d) => toEvent(novelId, d.id, d.data() as EventDoc)),
-  );
+  // Fetch the novel's characters exactly once (not per event) to avoid N+1 reads —
+  // mirrors chapters.ts's getChaptersByVolume hoisting getTags(novelId) before its map.
+  const allCharacters = await getAllCharacters(novelId);
+  const nameById = new Map(allCharacters.map((c) => [c.id, c.name]));
+  return snapshot.docs.map((d) => toEvent(novelId, d.id, d.data() as EventDoc, nameById));
 }
 
 export async function deleteEvent(novelId: string, eventId: string): Promise<void> {

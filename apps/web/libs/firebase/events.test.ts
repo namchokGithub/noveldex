@@ -1,4 +1,4 @@
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, Timestamp, updateDoc } from "firebase/firestore";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import { createEvent, deleteEvent, getEvents, updateEvent } from "./events";
@@ -22,6 +22,20 @@ async function seedChapter(novelId: string, volumeId: string, chapterId: string,
     volume_id: volumeId,
     tag_ids: [],
     character_ids: [],
+  });
+}
+
+async function seedCharacter(novelId: string, characterId: string, name: string) {
+  await setDoc(doc(db, "novels", novelId, "characters", characterId), {
+    name,
+    aliases: [],
+    role_id: "role-minor",
+    role: "minor",
+    role_name: "Minor",
+    profile_image_url: null,
+    description: "",
+    created_at: Timestamp.now(),
+    updated_at: Timestamp.now(),
   });
 }
 
@@ -104,6 +118,26 @@ describe("events", () => {
     const events = await getEvents("novel-1");
 
     expect(events.map((e) => e.title)).toEqual(["A", "B"]);
+  });
+
+  it("resolves character_ids to character_names via getEvents", async () => {
+    await seedCharacter("novel-1", "char-1", "Alice");
+    const event = await createEvent("novel-1", {
+      title: "Meeting",
+      description: "",
+      story_date: "Year 1",
+      sort_order: 0,
+      chapter_id: null,
+    });
+
+    await updateDoc(doc(db, "novels", "novel-1", "events", event.id), {
+      character_ids: ["char-1"],
+    });
+
+    const events = await getEvents("novel-1");
+    const found = events.find((e) => e.id === event.id);
+
+    expect(found?.character_names).toEqual(["Alice"]);
   });
 
   it("deletes an event", async () => {
