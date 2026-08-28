@@ -1,4 +1,4 @@
-import { doc, setDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import {
@@ -131,6 +131,13 @@ describe("volumes", () => {
     await seedChapter("novel-1", volume.id, "ch-2", 2, false);
 
     await deleteVolume("novel-1", volume.id);
+
+    expect((await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "1"))).exists()).toBe(
+      false,
+    );
+    expect((await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "2"))).exists()).toBe(
+      false,
+    );
 
     await expect(getVolume("novel-1", volume.id)).rejects.toThrow();
     const remaining = await getVolumes("novel-1");
