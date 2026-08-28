@@ -30,10 +30,9 @@ interface ApiResponse<T> {
   data: T;
 }
 
-export interface LastOrderNos {
-  volume: number;
-  chapter: number;
-}
+// LastOrderNos domain via Firestore
+export { getLastOrderNos } from "@/libs/firebase/lastOrderNos";
+export type { LastOrderNos } from "@/libs/firebase/lastOrderNos";
 
 export async function getCharacters(
   novelId: string,
@@ -59,16 +58,4 @@ export async function getCharacterRoles(): Promise<CharacterRole[]> {
     "/api/v1/master/character-roles",
   );
   return response.data ?? [];
-}
-
-export async function getLastOrderNos(params: {
-  novel_id?: string;
-  volume_id?: string;
-}): Promise<LastOrderNos> {
-  const response = await apiClient.get<ApiResponse<LastOrderNos>>(
-    "/api/v1/master/last-order-nos",
-    params,
-  );
-
-  return response.data;
 }
