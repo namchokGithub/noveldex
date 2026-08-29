@@ -25,6 +25,7 @@ interface EventDoc {
   chapter_volume_id: string | null;
   chapter_title: string | null;
   chapter_number: number | null;
+  page_number?: number | null;
   character_ids: string[];
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -56,10 +57,12 @@ function toEvent(
     chapter_volume_id: data.chapter_volume_id ?? null,
     chapter_title: data.chapter_title ?? null,
     chapter_number: data.chapter_number ?? null,
+    page_number: data.page_number ?? null,
     title: data.title,
     description: data.description,
     story_date: data.story_date,
     sort_order: data.sort_order,
+    character_ids: characterIds,
     character_names: characterNames,
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
@@ -121,6 +124,8 @@ export interface EventPayload {
   sort_order?: number;
   chapter_id?: string | null;
   chapter_volume_id?: string | null;
+  page_number?: number | null;
+  character_ids?: string[];
 }
 
 export async function createEvent(novelId: string, payload: EventPayload): Promise<NovelEvent> {
@@ -136,7 +141,8 @@ export async function createEvent(novelId: string, payload: EventPayload): Promi
       description: payload.description ?? "",
       story_date: payload.story_date ?? "",
       sort_order: payload.sort_order ?? 0,
-      character_ids: [],
+      page_number: payload.page_number ?? null,
+      character_ids: payload.character_ids ?? [],
       ...chapterFields,
     }),
   );
@@ -156,6 +162,8 @@ export async function updateEvent(
   if (payload.description !== undefined) update.description = payload.description;
   if (payload.story_date !== undefined) update.story_date = payload.story_date;
   if (payload.sort_order !== undefined) update.sort_order = payload.sort_order;
+  if (payload.page_number !== undefined) update.page_number = payload.page_number;
+  if (payload.character_ids !== undefined) update.character_ids = payload.character_ids;
   if (payload.chapter_id !== undefined) {
     Object.assign(
       update,

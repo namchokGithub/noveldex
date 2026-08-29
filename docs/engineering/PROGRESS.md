@@ -2,21 +2,11 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Phase Refactor: Firebase Migration (Go API + Postgres → Firestore) ← current
+## Phase 3: Timeline + Search ← current
 
-Spec: `docs/superpowers/specs/2026-08-28-firebase-migration-design.md`
-
-- [x] Plan 1 — Firebase foundation + `novels` domain (`docs/superpowers/plans/2026-08-28-firebase-foundation-and-novels.md`)
-- [x] Plan 2 — `tags` + `volumes` + `chapters` domains: CRUD, tag linking, bulk reorder, `[[Name]]` mention auto-link (temporary Go API hybrid), `getLastOrderNos` (`docs/superpowers/plans/2026-08-28-firebase-volumes-chapters-tags.md`)
-- [x] Plan 3 — `characters` + `character_roles` + `events` domains via Firestore; temporary mention-link/character-hydration Go API hybrid removed; character call sites rewired; timeline migrated to Firestore and its chapter-picker regression fixed (`docs/superpowers/plans/2026-08-28-firebase-characters-roles-events.md`). Final verification: 61 Vitest tests, ESLint, and TypeScript check passed.
-- [x] Plan 4 — Postgres→Firestore production migration completed from `backups/postgres/noveldex-20260828-233248.sql` using a disposable PostgreSQL 16 restore. Dry-run found no integrity errors; migrated source counts were 1 novel, 5 roles, 23 volumes, 4 chapters, 1 character, 2 events, and 1 tag. `--verify-only` now checks all collection counts, event chapter-link backfills, and `chapterNumbers` markers (`docs/superpowers/plans/2026-08-28-firebase-data-migration-and-cutover.md`).
-- [x] Post-migration production validation — expanded `--verify-only` passed against the real Firebase project: all collection counts, event chapter-link backfills, and `chapterNumbers` markers match PostgreSQL. Public Firestore rules were deployed manually. `firestore.indexes.json` was deployed with the interactive Firebase CLI account; all four composite indexes and the `chapters.novel_id` COLLECTION_GROUP ascending field override are ready. Read-only browser smoke passed for the migrated novel detail (23 volumes, 4 chapters, 1 read), characters (Rimuru, 1 appearance), and timeline (2 events, linked chapter).
-- [ ] Full-text search on Firestore — deferred since Plan 1 (Firestore has no native full-text search); needs a prefix-match or external-service decision before it's rebuilt
-- [x] Post-migration repo cleanup — removed retired Go source, stale HTTP search/client code, Redis/API/migration commands, and the unused `NEXT_PUBLIC_API_URL` template setting. Flattened the sole runtime application from `apps/web` to `web`; consolidated runtime guidance in `README.md`, `CLAUDE.md`, `docs/ai/AGENTS.md`, and `docs/ai/CONTEXT.md`; superseded ADR-002 with direct-Firestore decisions. PostgreSQL backups and recovery commands remain.
-
-## Phase 3: Timeline
-
+- [ ] Timeline location + event characters — [plan](../superpowers/plans/2026-08-29-timeline-location-and-event-characters.md): เปลี่ยนจากปีเป็นเล่ม → บท → หน้า, เชื่อม/สร้างตัวละครจาก Event
 - [ ] Handle unknown / approximate dates
+- [ ] Full-text search on Firestore — Firestore has no native full-text search; decide between prefix matching and an external service before rebuilding it
 
 ## Phase 4.6: My Polish
 
@@ -41,4 +31,3 @@ Spec: `docs/superpowers/specs/2026-08-28-firebase-migration-design.md`
 
 - [ ] Unit test
 - [ ] `AddNovelForm` is disabled (commented out) in `app/novels/page.tsx` — no way to add a novel from the UI right now; pre-existing, unrelated to the Firebase migration
-- [ ] `app/novels/NovelCover.tsx` has a pre-existing TypeScript error (`next/image` `src` prop type mismatch) — pre-existing, unrelated to the Firebase migration

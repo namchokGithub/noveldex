@@ -140,6 +140,32 @@ describe("events", () => {
     expect(found?.character_names).toEqual(["Alice"]);
   });
 
+  it("persists page_number and character_ids supplied by the event form", async () => {
+    await seedCharacter("novel-1", "char-1", "Alice");
+    await seedCharacter("novel-1", "char-2", "Bob");
+
+    const event = await createEvent("novel-1", {
+      title: "Page event",
+      description: "",
+      sort_order: 2,
+      page_number: 12,
+      character_ids: ["char-1", "char-2"],
+      chapter_id: null,
+    });
+
+    expect(event.page_number).toBe(12);
+    expect(event.character_ids).toEqual(["char-1", "char-2"]);
+    expect(event.character_names).toEqual(["Alice", "Bob"]);
+
+    const updated = await updateEvent("novel-1", event.id, {
+      page_number: null,
+      character_ids: ["char-2"],
+    });
+    expect(updated.page_number).toBeNull();
+    expect(updated.character_ids).toEqual(["char-2"]);
+    expect(updated.character_names).toEqual(["Bob"]);
+  });
+
   it("deletes an event", async () => {
     const event = await createEvent("novel-1", {
       title: "Gone",

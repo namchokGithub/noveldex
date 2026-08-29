@@ -72,10 +72,12 @@ export interface NovelEvent {
   chapter_volume_id: string | null
   chapter_title: string | null
   chapter_number: number | null
+  page_number: number | null
   title: string
   description: string
   story_date: string
   sort_order: number
+  character_ids: string[]
   character_names: string[]
   created_at: string
   updated_at: string
