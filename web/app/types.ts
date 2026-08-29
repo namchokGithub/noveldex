@@ -51,6 +51,7 @@ export interface Chapter {
   number: number
   title: string
   summary: string
+  notes: ChapterNote[]
   read_at: string | null
   tags: Tag[]
   created_at: string
@@ -65,6 +66,13 @@ export interface ChapterSummary {
   summary?: string
   read_at: string | null
   character_ids?: string[]
+}
+
+export interface ChapterNote {
+  id: string
+  content: string
+  created_at: string
+  updated_at: string
 }
 
 export interface NovelEvent {

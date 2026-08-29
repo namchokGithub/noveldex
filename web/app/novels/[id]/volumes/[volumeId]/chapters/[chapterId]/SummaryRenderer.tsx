@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { Character } from '@/app/types'
+import { Character, ChapterNote } from '@/app/types'
 
 interface Props {
   summary: string
+  notes?: ChapterNote[]
   novelId: string
   characters: Character[]
   highlightQuery?: string
@@ -17,11 +18,13 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 
 export default function SummaryRenderer({
   summary,
+  notes = [],
   novelId,
   characters,
   highlightQuery = '',
 }: Props) {
-  if (!summary) {
+  const renderedNotes = notes.length > 0 ? notes : summary ? [{ id: 'legacy-summary', content: summary, created_at: '', updated_at: '' }] : []
+  if (renderedNotes.length === 0) {
     return (
       <p className="text-sm italic text-stone-400">No summary yet.</p>
     )
@@ -33,8 +36,8 @@ export default function SummaryRenderer({
     characterMap.set(char.name, char.id)
   })
 
-  // Split on [[Name]] pattern
-  const parts = summary.split(/\[\[([^\]]+)\]\]/)
+  function renderNote(note: ChapterNote) {
+  const parts = note.content.split(/\[\[([^\]]+)\]\]/)
 
   // Split returns: [text_before, match1, text_after, match2, ...]
   // Even indices = text, odd indices = capture group
@@ -71,9 +74,8 @@ export default function SummaryRenderer({
     }
   })
 
-  return (
-    <div className="whitespace-pre-wrap text-sm leading-7 text-stone-600">
-      {elements}
-    </div>
-  )
+  return <div className="whitespace-pre-wrap text-sm leading-7 text-stone-600">{elements}</div>
+  }
+
+  return <div className="space-y-3">{renderedNotes.map((note, index) => <div key={note.id} className="rounded-2xl border border-stone-200 bg-stone-50/60 p-4"><p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">Note {index + 1}</p>{renderNote(note)}</div>)}</div>
 }

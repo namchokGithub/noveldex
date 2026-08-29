@@ -61,6 +61,9 @@ describe("chapters", () => {
     const data = rawDoc.data();
     expect(data?.novel_id).toBe("novel-1");
     expect(data?.volume_id).toBe("vol-1");
+    expect(chapter.notes).toHaveLength(1);
+    expect(chapter.notes[0].content).toBe("Something happens.");
+    expect(data?.notes).toHaveLength(1);
   });
 
   it("rejects creating a chapter whose number is already used elsewhere in the novel", async () => {
@@ -163,6 +166,34 @@ describe("chapters", () => {
     expect(fetched.title).toBe("One (revised)");
     expect(fetched.read_at).toBe("2026-08-28T00:00:00.000Z");
     expect(fetched.number).toBe(1);
+  });
+
+  it("stores notes independently and keeps legacy summary only as a compatibility field", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One", summary: "Old summary" });
+    const notes = [
+      { id: "note-1", content: "First note", created_at: "2026-08-29T00:00:00.000Z", updated_at: "2026-08-29T00:00:00.000Z" },
+      { id: "note-2", content: "Second note", created_at: "2026-08-29T00:01:00.000Z", updated_at: "2026-08-29T00:02:00.000Z" },
+    ];
+
+    await updateChapter("novel-1", "vol-1", chapter.id, { notes });
+
+    const fetched = await getChapter("novel-1", "vol-1", chapter.id);
+    expect(fetched.notes).toEqual(notes);
+    expect(fetched.summary).toBe("First note\nSecond note");
+    const raw = await getDoc(doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", chapter.id));
+    expect(raw.data()?.summary).toBe("Old summary");
+  });
+
+  it("falls back to a legacy summary when notes have not been backfilled", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await setDoc(doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "legacy"), {
+      number: 1, title: "Legacy", summary: "Legacy note", read_at: null, novel_id: "novel-1", volume_id: "vol-1", tag_ids: [], character_ids: [], created_at: serverTimestamp(), updated_at: serverTimestamp(),
+    });
+
+    const fetched = await getChapter("novel-1", "vol-1", "legacy");
+    expect(fetched.notes).toHaveLength(1);
+    expect(fetched.notes[0].content).toBe("Legacy note");
   });
 
   it("links and unlinks a tag on a chapter", async () => {
@@ -281,6 +312,19 @@ describe("mention auto-link", () => {
 
     const fetched = await getChapter("novel-1", "vol-1", chapter.id);
     expect(fetched.characters.map((c) => c.id)).toContain(character.id);
+  });
+
+  it("links mentions from all notes and does not unlink a character after a note is removed", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const character = await createCharacter("novel-1", { name: "MultiNoteCharacter", role: "minor", description: "", aliases: [] });
+    const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
+    const first = { id: "note-1", content: "[[MultiNoteCharacter]] appears.", created_at: "2026-08-29T00:00:00.000Z", updated_at: "2026-08-29T00:00:00.000Z" };
+    const second = { id: "note-2", content: "Another note.", created_at: "2026-08-29T00:01:00.000Z", updated_at: "2026-08-29T00:01:00.000Z" };
+
+    await updateChapter("novel-1", "vol-1", chapter.id, { notes: [first, second] });
+    await updateChapter("novel-1", "vol-1", chapter.id, { notes: [second] });
+
+    expect((await getChapter("novel-1", "vol-1", chapter.id)).characters.map((item) => item.id)).toContain(character.id);
   });
 
   it("does not throw when no characters match, and is non-blocking on lookup failure", async () => {

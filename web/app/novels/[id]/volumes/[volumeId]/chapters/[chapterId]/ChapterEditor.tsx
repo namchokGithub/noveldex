@@ -30,11 +30,13 @@ export default function ChapterEditor({
   novelId,
   volumeId,
   initialFind = "",
+  showSummary = true,
 }: {
   chapter: ChapterWithCharacters;
   novelId: string;
   volumeId: string;
   initialFind?: string;
+  showSummary?: boolean;
 }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -79,15 +81,17 @@ export default function ChapterEditor({
   }, []);
 
   useEffect(() => {
+    if (!showSummary) return;
     const handler = (event: Event) => {
       const reply = (event as CustomEvent<(source: ChapterSearchSource) => void>).detail;
       if (typeof reply === 'function') reply({ title, summary, focusMatch: focusSearchMatch });
     };
     window.addEventListener(CHAPTER_SEARCH_SOURCE_EVENT, handler);
     return () => window.removeEventListener(CHAPTER_SEARCH_SOURCE_EVENT, handler);
-  }, [focusSearchMatch, summary, title]);
+  }, [focusSearchMatch, showSummary, summary, title]);
 
   useEffect(() => {
+    if (!showSummary) return;
     const query = initialFind.trim();
     if (!query) return;
     const titleIndex = title.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
@@ -97,7 +101,7 @@ export default function ChapterEditor({
       else if (summaryIndex >= 0) focusSearchMatch('summary', summaryIndex, query.length);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [focusSearchMatch, initialFind, summary, title]);
+  }, [focusSearchMatch, initialFind, showSummary, summary, title]);
 
   useEffect(() => {
     if (!snackbar) return;
@@ -329,7 +333,7 @@ export default function ChapterEditor({
         </div>
       </div>
 
-      <div className={cardClassName}>
+      {showSummary && <div className={cardClassName}>
         <label className={smallLabelClassName}>{t("addChapter.summary")}</label>
         <div className="relative">
           <textarea
@@ -370,7 +374,7 @@ export default function ChapterEditor({
             {summarySaving ? t("common.saving") : t("chapter.saveSummary")}
           </button>
         </div>
-      </div>
+      </div>}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className={cardClassName}>

@@ -15,7 +15,7 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import type { Chapter, ChapterSummary, ChapterWithCharacters, Tag } from "@/app/types";
+import type { Chapter, ChapterNote, ChapterSummary, ChapterWithCharacters, Tag } from "@/app/types";
 import { db } from "./app";
 import { getAllCharacters } from "./characters";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
@@ -26,6 +26,7 @@ interface ChapterDoc {
   number: number;
   title: string;
   summary: string;
+  notes?: ChapterNoteDoc[];
   read_at: Timestamp | null;
   novel_id: string;
   volume_id: string;
@@ -33,6 +34,27 @@ interface ChapterDoc {
   character_ids: string[];
   created_at: Timestamp;
   updated_at: Timestamp;
+}
+
+interface ChapterNoteDoc {
+  id: string;
+  content: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+function notesForChapter(data: ChapterDoc): ChapterNote[] {
+  if (data.notes) return data.notes
+    .map((note) => ({ ...note, created_at: tsToIso(note.created_at), updated_at: tsToIso(note.updated_at) }))
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  if (!data.summary) return [];
+  return [{ id: "legacy-summary", content: data.summary, created_at: tsToIso(data.created_at), updated_at: tsToIso(data.updated_at) }];
+}
+
+function notesToDoc(notes: ChapterNote[]): ChapterNoteDoc[] {
+  return [...notes]
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map((note) => ({ id: note.id, content: note.content, created_at: Timestamp.fromDate(new Date(note.created_at)), updated_at: Timestamp.fromDate(new Date(note.updated_at)) }));
 }
 
 function chaptersCol(novelId: string, volumeId: string) {
@@ -48,12 +70,15 @@ function markerRef(novelId: string, number: number) {
 }
 
 function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
+  const notes = notesForChapter(data);
   return {
     id,
     volume_id: data.volume_id,
     number: data.number,
     title: data.title,
-    summary: data.summary,
+    // Keep the legacy field populated for older callers, but make notes canonical.
+    summary: notes.map((note) => note.content).join("\n") || data.summary || "",
+    notes,
     read_at: data.read_at ? tsToIso(data.read_at) : null,
     tags,
     created_at: tsToIso(data.created_at),
@@ -123,6 +148,7 @@ export async function getChaptersFlat(novelId: string): Promise<ChapterSummary[]
       number: number;
       title: string;
       summary?: string;
+      notes?: ChapterNoteDoc[];
       read_at: Timestamp | null;
       character_ids?: string[];
     };
@@ -131,7 +157,7 @@ export async function getChaptersFlat(novelId: string): Promise<ChapterSummary[]
       volume_id: data.volume_id,
       number: data.number,
       title: data.title,
-      summary: data.summary ?? "",
+      summary: data.notes?.map((note) => note.content).join("\n") ?? data.summary ?? "",
       read_at: data.read_at ? tsToIso(data.read_at) : null,
       character_ids: data.character_ids ?? [],
     };
@@ -163,6 +189,7 @@ export interface ChapterCreatePayload {
   number: number;
   title: string;
   summary?: string;
+  notes?: ChapterNote[];
   read_at?: string | null;
 }
 
@@ -180,12 +207,15 @@ export async function createChapter(
       throw new Error("chapter number already exists in this novel");
     }
     tx.set(marker, { chapter_id: chapterRefNew.id });
+    const now = new Date().toISOString();
+    const notes = payload.notes ?? (payload.summary ? [{ id: crypto.randomUUID(), content: payload.summary, created_at: now, updated_at: now }] : []);
     tx.set(
       chapterRefNew,
       withCreateTimestamps({
         number: payload.number,
         title: payload.title,
         summary: payload.summary ?? "",
+        notes: notesToDoc(notes),
         read_at: payload.read_at ? Timestamp.fromDate(new Date(payload.read_at)) : null,
         novel_id: novelId,
         volume_id: volumeId,
@@ -202,6 +232,7 @@ export async function createChapter(
 export interface ChapterPayload {
   title?: string;
   summary?: string;
+  notes?: ChapterNote[];
   read_at?: string | null;
 }
 
@@ -214,13 +245,15 @@ export async function updateChapter(
   const update: Record<string, unknown> = {};
   if (payload.title !== undefined) update.title = payload.title;
   if (payload.summary !== undefined) update.summary = payload.summary;
+  if (payload.notes !== undefined) update.notes = notesToDoc(payload.notes);
   if (payload.read_at !== undefined) {
     update.read_at = payload.read_at ? Timestamp.fromDate(new Date(payload.read_at)) : null;
   }
   await updateDoc(chapterRef(novelId, volumeId, chapterId), withUpdateTimestamp(update));
 
-  if (payload.summary !== undefined && payload.summary !== "") {
-    await linkMentions(novelId, volumeId, chapterId, payload.summary);
+  const mentionText = payload.notes?.map((note) => note.content).join("\n") ?? payload.summary;
+  if (mentionText !== undefined && mentionText !== "") {
+    await linkMentions(novelId, volumeId, chapterId, mentionText);
   }
 }
 
