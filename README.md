@@ -1,63 +1,34 @@
-# noveldex
+# NovelDex
 
-Novel indexing webapp — chapter summaries, character wiki, and timeline tracker.
+Novel and chapter tracker built with Next.js and Cloud Firestore.
 
 ## Stack
 
-| Layer | Tech | Deploy |
-|-------|------|--------|
-| API | Go 1.24, chi v5, pgx/v5 | Fly.io |
-| Web | Next.js 16, React 19, Tailwind v4 | Vercel |
-| DB | PostgreSQL 16 | Neon |
-| Cache | Redis 7 | Fly.io |
+- Next.js 16, React 19, TypeScript, Tailwind CSS
+- Firebase Web SDK and Cloud Firestore
+- PostgreSQL 16 is retained only to restore or inspect legacy backups; it is not an application runtime dependency.
 
-## Local dev
+## Local development
 
-```bash
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.local.example apps/web/.env.local
-make dev
+```powershell
+Copy-Item web/.env.local.example web/.env.local
+cd web
+corepack pnpm dev
 ```
 
-Apply migrations after first run:
-
-```bash
-DATABASE_URL=postgres://postgres:password@localhost:5432/noveldex?sslmode=disable make migrate-up
-```
-
-Web runs on `:3000`, API on `:8080`.
+Set the Firebase values in `web/.env.local`. Use `NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1` for the Firestore emulator, or `0` for the configured Firebase project.
 
 ## Commands
 
-```bash
-make dev          # docker infra + api + web
-make api          # Go API only
-make web          # Next.js only
-make migrate-up   # apply all pending migrations
-make migrate-down # roll back one migration
-make db           # psql shell
-make db-backup    # dump postgres to backups/postgres/
-make db-restore   # restore latest backup
-make db-backups   # list saved backups
-make logs         # tail docker logs
+```powershell
+make dev                  # PostgreSQL backup container + web app
+make web                  # web app only
+make firebase-emulators   # Firestore emulator
+make db                   # PostgreSQL shell for backup recovery
+make db-backup            # create a PostgreSQL backup
+make db-restore           # restore a backup into the local PostgreSQL container
 ```
 
-Restore a specific backup:
+Full-text search is intentionally deferred: Firestore has no native full-text search.
 
-```bash
-make db-restore BACKUP_FILE=backups/postgres/noveldex-YYYYMMDD-HHMMSS.sql
-```
-
-Backups are stored in `backups/postgres/` inside the repo, and `make db-backup` automatically keeps only the latest 3 files.
-
-## Features
-
-- **Novels** — track reading status, author, description
-- **Volumes** — group chapters into arcs or parts within a novel
-- **Chapters** — summaries with `[[Name]]` auto-linking to characters; scoped under volumes
-- **Characters** — profiles, role badges, chapter appearance tracking
-- **Timeline** — event log with story dates, chapter links, character tags, client-side filtering
-
-## Status
-
-Phase 3 (Timeline) complete. See [docs/engineering/PROGRESS.md](docs/engineering/PROGRESS.md) for full roadmap.
+See [progress](docs/engineering/PROGRESS.md) and [architecture decisions](docs/engineering/DECISIONS.md).

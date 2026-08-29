@@ -1,0 +1,41 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && bash ./scripts/open-dev-url.sh http://localhost:3000\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "emulators": "firebase emulators:start --only firestore --project demo-noveldex",
+    "migrate:firestore": "tsx --env-file=.env.local scripts/migrate-postgres-to-firestore.ts",
+    "backfill:event-locations": "tsx --env-file=.env.local scripts/backfill-event-locations.ts"
+  },
+  "dependencies": {
+    "firebase": "^11.10.0",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "firebase-admin": "^14.3.0",
+    "firebase-tools": "^13",
+    "open-cli": "^8.0.0",
+    "pg": "^8.23.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.12",
+    "typescript": "^5",
+    "vitest": "^2",
+    "wait-on": "^8.0.5"
+  }
+}

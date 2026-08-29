@@ -2,6 +2,10 @@
 
 Navigation index. All project documentation lives here.
 
+| File | Purpose |
+|------|---------|
+| [_complete_logs.md](_complete_logs.md) | Completed work log — items closed out of `engineering/PROGRESS.md`, kept for history. |
+
 ---
 
 ## `docs/ai/`
