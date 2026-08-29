@@ -1,27 +1,41 @@
 # NovelDex — Architecture Decisions
 
-## ADR-001: Monorepo (apps/api + apps/web)
-**Decision:** Single repo, separate app directories. No workspaces or Turborepo.
-**Why:** Small team, tight coupling between API shape and UI. Shared git history makes cross-cutting changes easier. Overhead of workspace tooling not justified yet.
-**Trade-off:** No enforced build isolation. Acceptable at this scale.
+## ADR-001: Single repository
+
+**Decision:** Keep a single repository with `apps/web` as the runtime app.
+
+**Why:** The project is small and all active code now ships together.
 
 ---
 
-## ADR-002: Go + PostgreSQL over Firebase / BaaS
-**Decision:** Custom Go backend, Postgres on Neon, not Firebase/Supabase/PlanetScale.
-**Why:** Novel data is relational and query-heavy (chapters → characters → timeline). Firebase's document model would fight this shape. Go gives type safety and clean migration control via golang-migrate.
-**Trade-off:** More setup, own auth to implement. Paid back in Phase 3–4 when complex queries appear.
+## ADR-002: Superseded — Go API and PostgreSQL runtime
+
+The former Go API, Redis cache, and PostgreSQL application database were retired after the Firestore migration. PostgreSQL backups are retained only for recovery and auditing.
 
 ---
 
-## ADR-003: No auth until Phase 5
-**Decision:** Ship Phases 1–4 without user accounts. All data is public/unowned.
-**Why:** Auth adds friction to every feature. Validate the data model and UI first. Adding ownership in Phase 5 is a known, bounded change (add user_id FK + middleware).
-**Trade-off:** Cannot deploy publicly before Phase 5. Local/demo use only.
+## ADR-006: Direct Firestore application architecture
+
+**Decision:** The Next.js app accesses Firestore directly with the Firebase Web SDK. Domain modules in `apps/web/libs/firebase` own reads and writes.
+
+**Why:** The active data model is already document-shaped, removes the unused Go/Redis layer, and supports the current UI with Firestore collection-group indexes.
+
+**Trade-offs:** Firestore indexes must be deployed with `apps/web/firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability.
 
 ---
 
-## ADR-004: story_date stored as TEXT
-**Decision:** `story_date TEXT` on chapters, not `DATE` or `TIMESTAMP`.
-**Why:** In-universe dates are often fictional ("Year 3 of the Crimson Era"), approximate ("early spring"), or unknown. A real date type would force normalization that doesn't exist in the source material.
-**Trade-off:** Ordering requires explicit logic. Timeline sort handled in application layer or with a separate `story_date_sort_key INTEGER` if needed.
+## ADR-007: Public rules until authentication
+
+**Decision:** Firestore rules remain public temporarily.
+
+**Why:** Existing data is currently single-user/demo data. Phase 5 will introduce authentication and ownership-aware rules.
+
+**Trade-off:** Do not expose sensitive production data before Phase 5 rules replace the temporary policy.
+
+---
+
+## ADR-004: Fictional story dates remain text
+
+**Decision:** `story_date` remains text.
+
+**Why:** Fictional dates can be non-standard or approximate. Sorting is explicit through event `sort_order`.

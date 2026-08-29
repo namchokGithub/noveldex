@@ -1,4 +1,4 @@
-.PHONY: dev web migrate-up migrate-down migrate-create db db-backup db-restore db-backups logs firebase-emulators
+.PHONY: dev web stop db db-backup db-restore db-backups logs firebase-emulators
 
 BACKUP_DIR ?= backups/postgres
 BACKUP_KEEP ?= 3
@@ -9,16 +9,10 @@ dev:
 	$(MAKE) web
 
 web:
-	cd apps/web && pnpm dev
+	cd web && pnpm dev
 
-migrate-up:
-	migrate -path apps/api/migrations -database "$(DATABASE_URL)" up
-
-migrate-down:
-	migrate -path apps/api/migrations -database "$(DATABASE_URL)" down 1
-
-migrate-create:
-	migrate create -ext sql -dir apps/api/migrations -seq $(name)
+stop:
+	powershell.exe -NoProfile -Command "$$ports = 3000,8081; $$processIds = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $$ports -contains $$_.LocalPort } | Select-Object -ExpandProperty OwningProcess -Unique; if ($$processIds) { Stop-Process -Id $$processIds -Force; Write-Host ('Stopped processes: ' + ($$processIds -join ', ')) } else { Write-Host 'No web or Firestore emulator processes are listening.' }"
 
 db:
 	docker compose exec postgres psql -U postgres -d noveldex
@@ -58,4 +52,4 @@ logs:
 	docker compose logs -f
 
 firebase-emulators:
-	cd apps/web && pnpm run emulators
+	cd web && pnpm run emulators

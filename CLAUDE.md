@@ -1,66 +1,32 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# NovelDex contributor guide
 
 ## Commands
 
-```bash
-# Start everything (docker infra + api + web in parallel)
+```powershell
 make dev
-
-# Run services individually
-make api          # Go API on :8080
-make web          # Next.js on :3000
-
-# Database
-make db           # psql into local postgres
-make migrate-up   # apply migrations (requires DATABASE_URL)
-make migrate-down # roll back one migration
-make logs         # tail docker compose logs
+make web
+make firebase-emulators
+cd web; corepack pnpm lint
+cd web; corepack pnpm test
+cd web; corepack pnpm build
 ```
 
-ENV setup before first run:
-```bash
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.local.example apps/web/.env.local
-```
-
-Web lint: `cd apps/web && pnpm lint`
+`make dev` starts local PostgreSQL only for legacy backup/recovery work and then starts the Next.js app. The production application reads and writes Firestore directly; do not add a Go API, Redis, or `NEXT_PUBLIC_API_URL` dependency.
 
 ## Architecture
 
-Monorepo, no workspace tooling. Two apps, one git history.
+`web` is the sole runtime application. Domain access lives in `web/libs/firebase`; `web/libs/api/index.ts` is a compatibility export surface, not an HTTP client.
 
-```
-apps/api/          Go 1.24 backend
-  cmd/server/      entry point (chi router, middleware)
-  internal/config/ ENV loading via godotenv
-  internal/handler/ HTTP handlers (one file per domain)
-  migrations/      golang-migrate SQL files
+Firestore data is nested under `novels/{novelId}` for volumes, chapters, characters, tags, events, and chapter-number markers. Global character roles live in `character_roles`.
 
-apps/web/          Next.js 16 + React 19 + Tailwind v4 frontend
-  app/             App Router pages
-```
+The Firestore rules are temporarily public until Phase 5 authentication. Full-text search is deferred.
 
-**API** (Go): chi v5 router. Config loaded from ENV via `internal/config`. Handlers are plain `http.HandlerFunc`s in `internal/handler/`. DB via `database/sql` + `lib/pq`.
+## Guardrails
 
-**Web** (Next.js 16): React 19 Server Components. Tailwind v4 (PostCSS plugin, not CLI). `NEXT_PUBLIC_API_URL` env var points at API.
+- Use App Router and Server Components by default.
+- Use `ConfirmDialog` for destructive UI actions and `Snackbar` for mutation results.
+- Keep list pagination in URL search parameters.
+- Never commit `.env.local` or Firebase service-account credentials.
+- PostgreSQL backups remain recovery material; do not treat them as a live application database.
 
-**Infra**: Postgres 16 + Redis 7 via Docker Compose locally. Prod: API on Fly.io, web on Vercel, DB on Neon.
-
-## Critical: Next.js 16
-
-Next.js 16 has breaking API/convention changes vs training data. **Before writing any Next.js code, read the relevant guide in `apps/web/node_modules/next/dist/docs/`.** Heed deprecation notices.
-
-## DB Conventions
-
-- UUIDs as primary keys (`gen_random_uuid()`)
-- `created_at`, `updated_at` on all tables (trigger-managed)
-- Soft deletes via nullable `deleted_at`
-- `story_date` stored as `TEXT` — in-universe dates are non-standard (fictional eras, approximate seasons)
-
-## Key Constraints
-
-- No auth until Phase 5 (ADR-003). All data is unowned. Do not add user_id FKs or session middleware before then.
-- Timeline sort order handled in application layer or via a separate `story_date_sort_key INTEGER` column, not by parsing `story_date`.
-- Migrations use `golang-migrate`. File naming: `{version}_{description}.up.sql` / `.down.sql`.
+See `docs/ai/AGENTS.md` for agent-specific instructions and `docs/engineering/PROGRESS.md` for current work.
