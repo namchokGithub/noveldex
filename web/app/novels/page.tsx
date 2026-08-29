@@ -3,6 +3,7 @@ import type { Novel } from "../types";
 import { T } from "@/components/i18n/I18nProvider";
 import { getNovels as getNovelsFromApi } from "@/libs/api";
 import NovelCover from "./NovelCover";
+import { CommandPaletteTrigger } from "@/components/commands/CommandPalette";
 
 export const dynamic = "force-dynamic";
 
@@ -77,19 +78,7 @@ export default async function NovelsPage() {
                 {/* <div className="flex justify-start lg:justify-end">
                   <AddNovelForm />
                 </div> */}
-                <div className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/80 px-4 py-3 text-sm text-stone-500 shadow-sm">
-                  <div>
-                    <p className="font-medium text-stone-700">
-                      <T k="novels.quickSearch" />
-                    </p>
-                    <p className="text-xs text-stone-500">
-                      <T k="novels.quickSearchHelp" />
-                    </p>
-                  </div>
-                  <span className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600">
-                    ⌘K
-                  </span>
-                </div>
+                <CommandPaletteTrigger />
               </div>
             </div>
 
@@ -136,6 +125,7 @@ export default async function NovelsPage() {
                             className="h-56 w-40 rounded-[28px] object-cover shadow-[0_24px_50px_rgba(41,37,36,0.18)] sm:h-64 sm:w-44"
                             fallbackClassName="relative shadow-[0_24px_50px_rgba(41,37,36,0.22)]"
                             titleClassName="text-3xl"
+                            priority
                           />
                           <div className="pointer-events-none absolute -inset-2 -z-10 rounded-4xl bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_56%),radial-gradient(circle_at_bottom,rgba(245,158,11,0.18),transparent_60%)] blur-2xl" />
                         </div>

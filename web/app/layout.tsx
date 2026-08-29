@@ -4,6 +4,7 @@ import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import LanguageToggle from "@/components/i18n/LanguageToggle";
+import CommandPalette from "@/components/commands/CommandPalette";
 
 const googleSans = localFont({
   src: [
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <I18nProvider>
           <LanguageToggle />
+          <CommandPalette />
           {children}
         </I18nProvider>
       </body>

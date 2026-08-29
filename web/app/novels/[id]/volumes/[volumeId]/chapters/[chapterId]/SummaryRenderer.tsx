@@ -5,12 +5,21 @@ interface Props {
   summary: string
   novelId: string
   characters: Character[]
+  highlightQuery?: string
+}
+
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'))
+  return <>{parts.map((part, index) => part.toLocaleLowerCase() === query.toLocaleLowerCase() ? <mark key={index} className="rounded bg-amber-200 px-0.5 text-stone-900">{part}</mark> : <span key={index}>{part}</span>)}</>
 }
 
 export default function SummaryRenderer({
   summary,
   novelId,
   characters,
+  highlightQuery = '',
 }: Props) {
   if (!summary) {
     return (
@@ -34,7 +43,7 @@ export default function SummaryRenderer({
       // Regular text segment
       return (
         <span key={index}>
-          {part}
+          <HighlightText text={part} query={highlightQuery} />
         </span>
       )
     } else {

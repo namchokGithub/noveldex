@@ -10,6 +10,7 @@ type NovelCoverProps = {
   className?: string;
   fallbackClassName?: string;
   titleClassName?: string;
+  priority?: boolean;
 };
 
 function getInitials(title: string) {
@@ -32,6 +33,7 @@ export default function NovelCover({
   className = "",
   fallbackClassName = "",
   titleClassName = "",
+  priority = false,
 }: NovelCoverProps) {
   const [failed, setFailed] = useState(false);
   if (!coverUrl || failed) {
@@ -56,6 +58,7 @@ export default function NovelCover({
       height={480}
       className={className}
       onError={() => setFailed(true)}
+      priority={priority}
       unoptimized
     />
   );

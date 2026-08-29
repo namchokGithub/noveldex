@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && bash ./scripts/open-dev-url.sh http://localhost:3000\"",
+    "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\open-dev-url.ps1 http://localhost:3000\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

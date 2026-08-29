@@ -62,7 +62,9 @@ export interface ChapterSummary {
   volume_id: string
   number: number
   title: string
+  summary?: string
   read_at: string | null
+  character_ids?: string[]
 }
 
 export interface NovelEvent {

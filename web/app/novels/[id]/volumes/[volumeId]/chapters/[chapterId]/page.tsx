@@ -35,10 +35,13 @@ export async function generateMetadata({
 
 export default async function ChapterPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; volumeId: string; chapterId: string }>;
+  searchParams: Promise<{ find?: string }>;
 }) {
   const { id, volumeId, chapterId } = await params;
+  const { find = "" } = await searchParams;
 
   let chapter;
 
@@ -73,6 +76,7 @@ export default async function ChapterPage({
             summary={chapter.summary}
             novelId={id}
             characters={chapter.characters}
+            highlightQuery={find}
           />
         </div>
 
@@ -80,7 +84,7 @@ export default async function ChapterPage({
           <LinkedCharactersPanel characters={chapter.characters} novelId={id} />
         </div> */}
 
-        <ChapterEditor chapter={chapter} novelId={id} volumeId={volumeId} />
+        <ChapterEditor chapter={chapter} novelId={id} volumeId={volumeId} initialFind={find} />
       </div>
     </DashboardPage>
   );

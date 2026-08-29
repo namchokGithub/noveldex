@@ -41,16 +41,26 @@ function translate(language: Locale, key: TranslationKey, values?: TranslationVa
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Locale>(() => {
-    if (typeof window === 'undefined') return 'en'
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-    return stored === 'en' || stored === 'th' ? stored : 'en'
-  })
+  // Keep the first client render identical to the server render. Reading localStorage
+  // in the initializer made a saved Thai preference render before hydration while SSR
+  // always rendered English.
+  const [language, setLanguageState] = useState<Locale>('en')
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    const frame = window.requestAnimationFrame(() => {
+      if (stored === 'en' || stored === 'th') setLanguageState(stored)
+      setHydrated(true)
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
+
+  useEffect(() => {
+    if (!hydrated) return
     window.localStorage.setItem(STORAGE_KEY, language)
     document.documentElement.lang = language
-  }, [language])
+  }, [hydrated, language])
 
   const value = useMemo<I18nContextValue>(
     () => ({

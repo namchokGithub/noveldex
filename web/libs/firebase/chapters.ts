@@ -122,14 +122,18 @@ export async function getChaptersFlat(novelId: string): Promise<ChapterSummary[]
       volume_id: string;
       number: number;
       title: string;
+      summary?: string;
       read_at: Timestamp | null;
+      character_ids?: string[];
     };
     return {
       id: d.id,
       volume_id: data.volume_id,
       number: data.number,
       title: data.title,
+      summary: data.summary ?? "",
       read_at: data.read_at ? tsToIso(data.read_at) : null,
+      character_ids: data.character_ids ?? [],
     };
   });
 }

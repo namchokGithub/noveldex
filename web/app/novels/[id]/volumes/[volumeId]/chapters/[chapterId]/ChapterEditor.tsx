@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ChapterWithCharacters, Tag } from "@/app/types";
 import LinkedCharactersPanel from "./LinkedCharactersPanel";
@@ -16,6 +16,7 @@ import {
   toDateTimeLocalInputValue,
 } from "@/app/novels/ui";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { CHAPTER_SEARCH_SOURCE_EVENT, type ChapterSearchSource } from "@/components/commands/CommandPalette";
 import {
   createTag,
   getTags,
@@ -28,14 +29,17 @@ export default function ChapterEditor({
   chapter,
   novelId,
   volumeId,
+  initialFind = "",
 }: {
   chapter: ChapterWithCharacters;
   novelId: string;
   volumeId: string;
+  initialFind?: string;
 }) {
   const { t } = useI18n();
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState(chapter.title ?? "");
   const [titleError, setTitleError] = useState<string | null>(null);
@@ -65,6 +69,35 @@ export default function ChapterEditor({
     tone: "success" | "error";
     message: string;
   } | null>(null);
+
+  const focusSearchMatch = useCallback((field: 'title' | 'summary', start: number, length: number) => {
+    const input = field === 'title' ? titleRef.current : textareaRef.current;
+    if (!input) return;
+    input.focus();
+    input.setSelectionRange(start, start + length);
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const reply = (event as CustomEvent<(source: ChapterSearchSource) => void>).detail;
+      if (typeof reply === 'function') reply({ title, summary, focusMatch: focusSearchMatch });
+    };
+    window.addEventListener(CHAPTER_SEARCH_SOURCE_EVENT, handler);
+    return () => window.removeEventListener(CHAPTER_SEARCH_SOURCE_EVENT, handler);
+  }, [focusSearchMatch, summary, title]);
+
+  useEffect(() => {
+    const query = initialFind.trim();
+    if (!query) return;
+    const titleIndex = title.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
+    const summaryIndex = summary.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
+    const frame = window.requestAnimationFrame(() => {
+      if (titleIndex >= 0) focusSearchMatch('title', titleIndex, query.length);
+      else if (summaryIndex >= 0) focusSearchMatch('summary', summaryIndex, query.length);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusSearchMatch, initialFind, summary, title]);
 
   useEffect(() => {
     if (!snackbar) return;
@@ -279,6 +312,7 @@ export default function ChapterEditor({
       <div className={cardClassName}>
         <label className={smallLabelClassName}>{t("addChapter.title")}</label>
         <input
+          ref={titleRef}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className={inputClassName}

@@ -9,9 +9,6 @@ export default function LanguageToggle() {
 
   return (
     <div className="fixed right-4 top-4 z-40 flex items-center gap-1 rounded-full border border-stone-200 bg-white/85 p-1 shadow-lg backdrop-blur">
-      <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
-        {t('language.toggleLabel')}
-      </span>
       <button
         type="button"
         onClick={() => setLanguage('en')}
