@@ -314,7 +314,7 @@ export default function ChapterEditor({
   return (
     <div className="flex flex-col gap-8">
       <div className={cardClassName}>
-        <label className={smallLabelClassName}>{t("addChapter.title")}</label>
+        <label className={smallLabelClassName}>{t("chapter.editTitle")}</label>
         <input
           ref={titleRef}
           value={title}
@@ -404,6 +404,7 @@ export default function ChapterEditor({
         <div className={cardClassName}>
           <LinkedCharactersPanel
             characters={chapter.characters}
+            mentionedCharacterNames={chapter.mentioned_character_names}
             novelId={novelId}
           />
         </div>

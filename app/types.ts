@@ -71,6 +71,8 @@ export interface ChapterSummary {
 export interface ChapterNote {
   id: string
   content: string
+  character_ids?: string[]
+  mentioned_character_names?: string[]
   created_at: string
   updated_at: string
 }
@@ -119,6 +121,7 @@ export interface Character {
 
 export interface ChapterWithCharacters extends Chapter {
   characters: Character[]
+  mentioned_character_names: string[]
 }
 
 export interface SearchChapterResult {

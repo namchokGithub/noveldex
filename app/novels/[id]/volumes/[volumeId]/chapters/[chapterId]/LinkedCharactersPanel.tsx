@@ -5,11 +5,12 @@ import { T } from '@/components/i18n/I18nProvider'
 
 interface Props {
   characters: Character[]
+  mentionedCharacterNames: string[]
   novelId: string
 }
 
-export default function LinkedCharactersPanel({ characters, novelId }: Props) {
-  if (characters.length === 0) {
+export default function LinkedCharactersPanel({ characters, mentionedCharacterNames, novelId }: Props) {
+  if (mentionedCharacterNames.length === 0) {
     return <p className="text-sm text-stone-500"><T k="chapter.noLinkedCharacters" /></p>
   }
 
@@ -19,17 +20,10 @@ export default function LinkedCharactersPanel({ characters, novelId }: Props) {
         <T k="chapter.characters" />
       </h2>
       <ul className="flex flex-wrap gap-2">
-        {characters.map((char) => (
-          <li key={char.id}>
-            <Link
-              href={`/novels/${novelId}/characters/${char.id}`}
-              className={chipClassName}
-            >
-              {char.name}
-              <span className="text-[11px] text-stone-500">{char.role}</span>
-            </Link>
-          </li>
-        ))}
+        {mentionedCharacterNames.map((name) => {
+          const char = characters.find((item) => item.name === name)
+          return <li key={name}>{char ? <Link href={`/novels/${novelId}/characters/${char.id}`} className={chipClassName}>{char.name}<span className="text-[11px] text-stone-500">{char.role}</span></Link> : <span className={chipClassName}>{name}</span>}</li>
+        })}
       </ul>
     </div>
   )

@@ -173,6 +173,7 @@ const en = {
   "chapter.pageEyebrow": "Chapter {number}",
   "chapter.pageDescription":
     "Edit chapter title, summary, reading date, linked cast, and tags.",
+  "chapter.editTitle": "Edit chapter title",
   "chapter.saveTitle": "Save title",
   "chapter.titleSaved": "Title saved",
   "chapter.saveSummary": "Save summary",

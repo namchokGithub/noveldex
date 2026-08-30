@@ -1,4 +1,9 @@
+"use client";
+
 import Link from 'next/link'
+
+import { useState } from "react"
+import { useI18n } from "@/components/i18n/I18nProvider"
 import { Character, ChapterNote } from '@/app/types'
 
 interface Props {
@@ -23,6 +28,8 @@ export default function SummaryRenderer({
   characters,
   highlightQuery = '',
 }: Props) {
+  const { t } = useI18n()
+  const [expanded, setExpanded] = useState(false)
   const renderedNotes = notes.length > 0 ? notes : summary ? [{ id: 'legacy-summary', content: summary, created_at: '', updated_at: '' }] : []
   if (renderedNotes.length === 0) {
     return (
@@ -60,14 +67,14 @@ export default function SummaryRenderer({
             href={`/novels/${novelId}/characters/${charId}`}
             className="font-medium text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-900"
           >
-            [[{part}]]
+            {part}
           </Link>
         )
       } else {
         // Not found - render as gray text
         return (
           <span key={index} className="text-stone-400">
-            [[{part}]]
+            {part}
           </span>
         )
       }
@@ -77,5 +84,8 @@ export default function SummaryRenderer({
   return <div className="whitespace-pre-wrap text-sm leading-7 text-stone-600">{elements}</div>
   }
 
-  return <div className="space-y-3">{renderedNotes.map((note, index) => <div key={note.id} className="rounded-2xl border border-stone-200 bg-stone-50/60 p-4"><p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">Note {index + 1}</p>{renderNote(note)}</div>)}</div>
+  const latestNote = renderedNotes[renderedNotes.length - 1]
+  const isLongPreview = latestNote.content.length > 600
+
+  return <div className="space-y-3"><div className="rounded-2xl border border-stone-200 bg-stone-50/60 p-4"><p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">Note {renderedNotes.length}</p><div className={isLongPreview && !expanded ? "max-h-64 overflow-hidden" : ""}>{renderNote(latestNote)}</div>{isLongPreview ? <button type="button" onClick={() => setExpanded((current) => !current)} className="mt-3 text-sm font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 transition hover:text-stone-950 hover:decoration-stone-500">{expanded ? t("common.showLess") : t("common.readFull")}</button> : null}</div></div>
 }

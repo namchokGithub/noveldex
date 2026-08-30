@@ -177,6 +177,7 @@ const th = {
   "chapter.pageEyebrow": "ตอนที่ {number}",
   "chapter.pageDescription":
     "แก้ไขชื่อตอน สรุปตอน วันที่อ่าน ตัวละครที่เชื่อมไว้ และแท็ก",
+  "chapter.editTitle": "แก้ไขชื่อตอน",
   "chapter.saveTitle": "บันทึกชื่อ",
   "chapter.titleSaved": "บันทึกชื่อตอนสำเร็จ",
   "chapter.saveSummary": "บันทึกสรุป",

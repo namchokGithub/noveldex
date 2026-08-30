@@ -3,6 +3,7 @@ import {
   collection,
   collectionGroup,
   deleteDoc,
+  documentId,
   doc,
   DocumentReference,
   getDoc,
@@ -217,6 +218,39 @@ export async function getAllCharacters(novelId: string): Promise<Character[]> {
   return Promise.all(
     snapshot.docs.map((d) => toCharacter(novelId, d.id, d.data() as CharacterDoc, false)),
   );
+}
+
+function chunks<T>(items: T[], size: number): T[][] {
+  return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, (index + 1) * size),
+  );
+}
+
+export async function getCharactersByIds(novelId: string, characterIds: string[]): Promise<Character[]> {
+  const ids = [...new Set(characterIds)];
+  if (ids.length === 0) return [];
+  const snapshots = await Promise.all(chunks(ids, 30).map((group) =>
+    getDocs(query(charactersCol(novelId), where(documentId(), "in", group))),
+  ));
+  const characters = await Promise.all(snapshots.flatMap((snapshot) => snapshot.docs).map((snapshot) =>
+    toCharacter(novelId, snapshot.id, snapshot.data() as CharacterDoc, false),
+  ));
+  const byId = new Map<string, Character>();
+  characters.forEach((character) => {
+    byId.set(character.id, character);
+  });
+  return ids.map((id) => byId.get(id)).filter((character): character is Character => Boolean(character));
+}
+
+export async function getCharactersByNames(novelId: string, names: string[]): Promise<Character[]> {
+  const uniqueNames = [...new Set(names)];
+  if (uniqueNames.length === 0) return [];
+  const snapshots = await Promise.all(chunks(uniqueNames, 30).map((group) =>
+    getDocs(query(charactersCol(novelId), where("name", "in", group))),
+  ));
+  return Promise.all(snapshots.flatMap((snapshot) => snapshot.docs).map((snapshot) =>
+    toCharacter(novelId, snapshot.id, snapshot.data() as CharacterDoc, false),
+  ));
 }
 
 export async function getCharacters(
