@@ -9,7 +9,7 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Plan 3 — Firestore characters, character roles, events, and timeline; Go API hybrid removed
 - [x] Plan 4 — PostgreSQL-to-Firestore production migration from `backups/postgres/noveldex-20260828-233248.sql`; migrated 1 novel, 5 roles, 23 volumes, 4 chapters, 1 character, 2 events, and 1 tag
 - [x] Production verification — counts, event chapter-link backfills, and `chapterNumbers` markers matched PostgreSQL; Firestore rules and indexes deployed; browser smoke passed for novel detail, characters, and timeline
-- [x] Post-migration cleanup — removed Go/Redis/HTTP-search runtime, flattened the runtime app to `web/`, consolidated active documentation, and retained PostgreSQL backup recovery commands
+- [x] Post-migration cleanup — removed Go/Redis/HTTP-search runtime, moved the runtime app to the repository root, consolidated active documentation, and retained PostgreSQL backup recovery commands
 - [x] `NovelCover` TypeScript `next/image` source type error
 
 ## Phase 0: Foundation
