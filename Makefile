@@ -9,7 +9,7 @@ dev:
 	$(MAKE) web
 
 web:
-	cd web && corepack pnpm dev
+	corepack pnpm dev
 
 stop:
 	powershell.exe -NoProfile -Command "$$ports = 3000,8081; $$processIds = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $$ports -contains $$_.LocalPort } | Select-Object -ExpandProperty OwningProcess -Unique; if ($$processIds) { Stop-Process -Id $$processIds -Force; Write-Host ('Stopped processes: ' + ($$processIds -join ', ')) } else { Write-Host 'No web or Firestore emulator processes are listening.' }"
@@ -52,4 +52,4 @@ logs:
 	docker compose logs -f
 
 firebase-emulators:
-	cd web && pnpm run emulators
+	corepack pnpm run emulators

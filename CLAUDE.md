@@ -6,16 +6,16 @@
 make dev
 make web
 make firebase-emulators
-cd web; corepack pnpm lint
-cd web; corepack pnpm test
-cd web; corepack pnpm build
+corepack pnpm lint
+corepack pnpm test
+corepack pnpm build
 ```
 
 `make dev` starts local PostgreSQL only for legacy backup/recovery work and then starts the Next.js app. The production application reads and writes Firestore directly; do not add a Go API, Redis, or `NEXT_PUBLIC_API_URL` dependency.
 
 ## Architecture
 
-`web` is the sole runtime application. Domain access lives in `web/libs/firebase`; `web/libs/api/index.ts` is a compatibility export surface, not an HTTP client.
+The repository root is the sole runtime application. Domain access lives in `libs/firebase`; `libs/api/index.ts` is a compatibility export surface, not an HTTP client.
 
 Firestore data is nested under `novels/{novelId}` for volumes, chapters, characters, tags, events, and chapter-number markers. Global character roles live in `character_roles`.
 

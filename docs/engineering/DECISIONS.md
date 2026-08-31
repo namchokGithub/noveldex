@@ -2,7 +2,7 @@
 
 ## ADR-001: Single repository
 
-**Decision:** Keep a single repository with `apps/web` as the runtime app.
+**Decision:** Keep a single repository with the repository root as the runtime app.
 
 **Why:** The project is small and all active code now ships together.
 
@@ -16,11 +16,11 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 ## ADR-006: Direct Firestore application architecture
 
-**Decision:** The Next.js app accesses Firestore directly with the Firebase Web SDK. Domain modules in `apps/web/libs/firebase` own reads and writes.
+**Decision:** The Next.js app accesses Firestore directly with the Firebase Web SDK. Domain modules in `libs/firebase` own reads and writes.
 
 **Why:** The active data model is already document-shaped, removes the unused Go/Redis layer, and supports the current UI with Firestore collection-group indexes.
 
-**Trade-offs:** Firestore indexes must be deployed with `apps/web/firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability.
+**Trade-offs:** Firestore indexes must be deployed with `firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability.
 
 ---
 
