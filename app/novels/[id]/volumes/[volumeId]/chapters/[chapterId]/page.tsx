@@ -3,10 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ChapterEditor from "./ChapterEditor";
 import ChapterNotesEditor from "./ChapterNotesEditor";
-import SummaryRenderer from "./SummaryRenderer";
 import {
   backLinkClassName,
-  cardClassName,
   DashboardPage,
   SectionHeading,
 } from "@/app/novels/ui";
@@ -68,23 +66,6 @@ export default async function ChapterPage({
           title={chapter.title}
           description={<T k="chapter.pageDescription" />}
         />
-
-        <div className={cardClassName}>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-            Preview
-          </h2>
-          <SummaryRenderer
-            summary={chapter.summary}
-            notes={chapter.notes}
-            novelId={id}
-            characters={chapter.characters}
-            highlightQuery={find}
-          />
-        </div>
-
-        {/* <div className={cardClassName}>
-          <LinkedCharactersPanel characters={chapter.characters} novelId={id} />
-        </div> */}
 
         <ChapterNotesEditor notes={chapter.notes} characters={chapter.characters} novelId={id} volumeId={volumeId} chapterId={chapter.id} initialFind={find} />
         <ChapterEditor chapter={chapter} novelId={id} volumeId={volumeId} showSummary={false} />
