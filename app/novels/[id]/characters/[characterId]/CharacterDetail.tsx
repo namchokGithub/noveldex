@@ -219,13 +219,13 @@ export default function CharacterDetail({
               <li key={ch.id}>
                 <Link
                   href={`/novels/${novelId}/volumes/${ch.volume_id}/chapters/${ch.id}`}
-                  className={listRowClassName}
+                  className={`${listRowClassName} flex-wrap`}
                 >
-                  <span className="text-sm font-medium text-stone-900">
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
                     Ch. {ch.number} — {ch.title}
                   </span>
                   {ch.read_at && (
-                    <span className="text-xs text-stone-500">{ch.read_at}</span>
+                    <span className="shrink-0 text-xs text-stone-500">{ch.read_at}</span>
                   )}
                 </Link>
               </li>

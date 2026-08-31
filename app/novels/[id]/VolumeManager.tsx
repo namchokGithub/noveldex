@@ -196,10 +196,7 @@ export default function VolumeManager({
   if (volumes.length === 0) {
     return (
       <div className={cardClassName}>
-        <p className="text-sm text-stone-500">
-          {t("volumeManager.empty")}
-          ![1779811058926](image/VolumeManager/1779811058926.png)![1779811063412](image/VolumeManager/1779811063412.png)
-        </p>
+        <p className="text-sm text-stone-500">{t("volumeManager.empty")}</p>
       </div>
     );
   }
@@ -232,7 +229,7 @@ export default function VolumeManager({
         </label>
       </div>
 
-      <div className="border-b border-stone-200 bg-stone-50/70 px-4 py-3">
+      <div className="hidden border-b border-stone-200 bg-stone-50/70 px-4 py-3 sm:block">
         <div className="grid grid-cols-[minmax(0,1fr)_220px] gap-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-500">
           <p>Volume</p>
           <p className="text-right">Actions</p>
@@ -291,7 +288,7 @@ export default function VolumeManager({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-[minmax(0,1fr)_220px] items-center gap-4">
+                <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:gap-4">
                   <div className="min-w-0">
                     <Link
                       href={`/novels/${novelId}/volumes/${volume.id}`}
@@ -311,7 +308,7 @@ export default function VolumeManager({
                       )}
                     </p>
                   </div>
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex flex-wrap items-center justify-end gap-1">
                     <Link
                       href={`/novels/${novelId}/volumes/${volume.id}`}
                       prefetch={false}

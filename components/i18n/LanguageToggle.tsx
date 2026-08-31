@@ -8,7 +8,7 @@ export default function LanguageToggle() {
   const { language, setLanguage, t } = useI18n()
 
   return (
-    <div className="fixed right-4 top-4 z-40 flex items-center gap-1 rounded-full border border-stone-200 bg-white/85 p-1 shadow-lg backdrop-blur">
+    <div className="flex items-center justify-end gap-1 border-b border-stone-200 bg-white/85 px-4 py-2 backdrop-blur sm:fixed sm:right-4 sm:top-4 sm:z-40 sm:justify-start sm:rounded-full sm:border sm:border-stone-200 sm:border-b-0 sm:p-1 sm:shadow-lg">
       <button
         type="button"
         onClick={() => setLanguage('en')}
