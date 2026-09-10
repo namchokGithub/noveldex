@@ -44,4 +44,4 @@ Firestore rules and indexes are defined at the repository root in `firestore.rul
 - [Current project context](docs/ai/CONTEXT.md)
 - [Architecture decisions](docs/engineering/DECISIONS.md)
 - [Progress and backlog](docs/engineering/PROGRESS.md)
-- [Contributor guidance](CLAUDE.md)
+- [Contributor guidance](docs/ai/CLAUDE.md)

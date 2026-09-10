@@ -1,0 +1,35 @@
+# NovelDex contributor guide
+
+## Commands
+
+```powershell
+make dev
+make web
+make firebase-emulators
+corepack pnpm lint
+corepack pnpm test
+corepack pnpm build
+```
+
+`make dev` starts local PostgreSQL only for legacy backup/recovery work and then starts the Next.js app. The production application reads and writes Firestore directly; do not add a Go API, Redis, or `NEXT_PUBLIC_API_URL` dependency.
+
+> **Platform note:** `make stop` and the `pnpm dev` browser auto-open step (`scripts/open-dev-url.ps1`) call PowerShell and only work on Windows. On macOS/Linux, run `next dev` directly and stop the process manually (e.g. find the port with `lsof -i :3000` and `kill` it).
+
+## Architecture
+
+The repository root is the sole runtime application. Domain access lives in `libs/firebase`; `libs/api/index.ts` is a compatibility export surface, not an HTTP client.
+
+Firestore data is nested under `novels/{novelId}` for volumes, chapters, characters, tags, events, and chapter-number markers. Global character roles live in `character_roles`. Chapters carry an embedded `notes[]` list (timestamped entries with `[[Name]]` mention tracking and character auto-linking); the legacy `summary` field is still populated as a join of note content for older callers.
+
+The Firestore rules are temporarily public until Phase 5 authentication. Full-text search on Firestore is deferred — a client-side scoped quick search (Ctrl+Shift+K command palette, matching chapters/characters/events already loaded) already ships and is not the same thing.
+
+## Guardrails
+
+- Use App Router and Server Components by default.
+- Use `ConfirmDialog` for destructive UI actions and `Snackbar` for mutation results.
+- Keep list pagination in URL search parameters.
+- Never commit `.env.local` or Firebase service-account credentials.
+- PostgreSQL backups remain recovery material; do not treat them as a live application database.
+- Finishing a `docs/engineering/PROGRESS.md` item? Move it to `docs/_complete_logs.md` in the same change (check for a duplicate entry first) — see `docs/ai/AGENTS.md`.
+
+See `docs/ai/AGENTS.md` for agent-specific instructions and `docs/engineering/PROGRESS.md` for current work.

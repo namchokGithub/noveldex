@@ -1,6 +1,7 @@
 'use client'
 
 import { secondaryButtonClassName } from '@/app/novels/ui'
+import { CommandPaletteTrigger } from '@/components/commands/CommandPalette'
 
 import { useI18n } from './I18nProvider'
 
@@ -9,6 +10,8 @@ export default function LanguageToggle() {
 
   return (
     <div className="flex items-center justify-end gap-1 border-b border-stone-200 bg-white/85 px-4 py-2 backdrop-blur sm:fixed sm:right-4 sm:top-4 sm:z-40 sm:justify-start sm:rounded-full sm:border sm:border-stone-200 sm:border-b-0 sm:p-1 sm:shadow-lg">
+      <CommandPaletteTrigger iconOnly />
+      <span aria-hidden="true" className="mx-1 h-5 w-px bg-stone-200" />
       <button
         type="button"
         onClick={() => setLanguage('en')}

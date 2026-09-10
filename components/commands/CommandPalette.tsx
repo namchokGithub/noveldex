@@ -34,8 +34,23 @@ function requestChapterSource(): ChapterSearchSource | null {
   return source
 }
 
-export function CommandPaletteTrigger() {
+export function CommandPaletteTrigger({ iconOnly = false }: { iconOnly?: boolean }) {
   const { t } = useI18n()
+  if (iconOnly) return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
+      aria-label={t('novels.quickSearch')}
+      aria-haspopup="dialog"
+      title={`${t('novels.quickSearch')} (Ctrl+Shift+K)`}
+      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+    >
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="10.5" cy="10.5" r="6.5" />
+        <path d="m16 16 4.5 4.5" />
+      </svg>
+    </button>
+  )
   return <button type="button" onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/80 px-4 py-3 text-left text-sm text-stone-500 shadow-sm transition hover:border-stone-300 hover:bg-white"><span className="min-w-0 flex-1"><span className="block truncate font-medium text-stone-700">{t('novels.quickSearch')}</span><span className="block truncate text-xs text-stone-500">{t('novels.quickSearchHelp')}</span></span><kbd className="shrink-0 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600">Ctrl ⇧ K</kbd></button>
 }
 

@@ -20,11 +20,11 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 **Why:** The active data model is already document-shaped, removes the unused Go/Redis layer, and supports the current UI with Firestore collection-group indexes.
 
-**Trade-offs:** Firestore indexes must be deployed with `firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability.
+**Trade-offs:** Firestore indexes must be deployed with `firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability. A client-side scoped quick search (command palette) already covers already-loaded chapters/characters/events and is not a substitute for full-text search.
 
 ---
 
-## ADR-007: Public rules until authentication
+## ADR-003: Public rules until authentication
 
 **Decision:** Firestore rules remain public temporarily.
 
@@ -39,3 +39,13 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Decision:** `story_date` remains text.
 
 **Why:** Fictional dates can be non-standard or approximate. Sorting is explicit through event `sort_order`.
+
+---
+
+## ADR-008: Chapter notes replace chapter summary
+
+**Decision:** Chapters store an ordered `notes[]` list (timestamped entries) instead of a single free-text `summary`. The legacy `summary` field is still populated — a join of note content — for older callers.
+
+**Why:** Chapter write-ups needed incremental, timestamped entries with per-note `[[Name]]` mention tracking and character auto-linking; a single summary string could not carry that.
+
+**Trade-offs:** Notes written before this change are hydrated lazily for mention/character-link data (`hydrateLegacyNoteRelations` in `libs/firebase/chapters.ts`) the first time they're read.

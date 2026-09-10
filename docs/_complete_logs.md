@@ -47,6 +47,8 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Timeline API endpoints (GET/POST/PATCH/DELETE /novels/:id/events, character link/unlink)
 - [x] Timeline page — vertical rail UI, add/edit/delete, chapter badge, character chips
 - [x] Client-side filter by character
+- [x] Timeline location + event characters — [plan](../superpowers/plans/2026-08-29-timeline-location-and-event-characters.md): events grouped by volume → chapter → page (`chapter_id`/`chapter_volume_id`/`page_number` in `libs/firebase/events.ts`) instead of by year; quick-create a character straight from the event form (`timeline/page.tsx` `onAddCharacter`/`quickAdd`)
+- [x] Handle unknown / approximate dates — superseded, not separately implemented: the location migration above dropped `story_date`-based sorting/grouping entirely (timeline now sorts by `sort_order` and groups by volume/chapter), so the ambiguous-date problem no longer applies to the timeline UI
 
 ## Phase 4: Search + Tags
 
@@ -57,7 +59,7 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Chapter↔tag link/unlink endpoints
 - [x] GET /novels/:id/chapters/:id now includes tags[] in response
 - [x] Search API endpoint (GET /novels/:id/search?q=&type=all|chapters|characters|events)
-- [x] Search UI — global Cmd/Ctrl+K palette with chapter/character/event results
+- [x] Search UI — global Ctrl+K palette with chapter/character/event results
 - [x] Chapter tag UI — add/remove tags from chapter detail page
 - [x] Tag filter UI on chapters list
 - [x] Web chapter detail moved to volume-aware route `/novels/:id/volumes/:volumeId/chapters/:chapterId`
@@ -77,6 +79,16 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 
 - [x] paginator
 - [x] Update Role + Charactor
+- [x] Charactors Paginator (URL search params, `app/novels/[id]/characters/page.tsx` + `CharacterList.tsx`) — same work as "paginator" above; removed from PROGRESS.md as a duplicate open item
+
+## Phase 3: Chapter Notes (ships ahead of full-text search)
+
+- [x] Chapter summary replaced by an editable, timestamped `notes[]` list — see ADR-008 in `docs/engineering/DECISIONS.md`
+- [x] `[[Name]]` mention tracking and character auto-linking from note content (`libs/firebase/mentions.ts`, `libs/firebase/chapters.ts`)
+- [x] Chapter notes pagination
+- [x] Scoped quick search (Ctrl+Shift+K command palette) across chapters/characters/events — client-side only, not the full-text search still tracked in PROGRESS.md
+- [x] Command palette shortcut made layout-independent (`event.code === 'KeyK'` alongside `event.key`)
+- [x] Chapter page widened (`maxWidth`) and summary/notes textareas resize to content instead of fixed `rows`
 
 ## Phase 6: Polish (partial — remaining items still in PROGRESS.md)
 

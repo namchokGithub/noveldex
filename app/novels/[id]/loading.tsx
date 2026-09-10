@@ -3,7 +3,7 @@ import { PageLoadingState } from '../ui'
 export default function Loading() {
   return (
     <PageLoadingState
-      maxWidth="max-w-6xl"
+      maxWidth="w-[60vw]"
       backLinkWidth="h-8 w-36"
       headerWidths={['h-7 w-20', 'h-12 w-96', 'h-4 w-full max-w-2xl']}
       sidebar

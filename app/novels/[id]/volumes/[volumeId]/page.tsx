@@ -44,7 +44,7 @@ export default async function VolumePage({
           );
 
   return (
-    <DashboardPage maxWidth="max-w-5xl">
+    <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
         <Link href={`/novels/${id}`} className={backLinkClassName}>
           ← Back to {novel.title}

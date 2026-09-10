@@ -11,6 +11,8 @@ Firestore structure:
 - nested `characters`, `events`, and `tags`
 - global `character_roles`
 
+Chapters carry an embedded `notes[]` list (timestamped entries, `[[Name]]` mention tracking, character auto-linking, pagination) — see ADR-008 in `docs/engineering/DECISIONS.md`. The legacy `summary` field is still populated as a join of note content for older callers; do not remove it without a migration.
+
 `chapters` collection-group queries require the definitions in `firestore.indexes.json`, including the `novel_id` collection-group field override.
 
 ## Development
@@ -28,6 +30,6 @@ PostgreSQL is only for restoring or inspecting legacy backups. `make db`, `make 
 ## Product boundaries
 
 - Rules are temporarily public until authentication work in Phase 5.
-- Full-text search is deferred; the retired command palette must not call an HTTP search endpoint.
+- Full-text search on Firestore is deferred; the command palette must not call an HTTP search endpoint. A client-side scoped quick search (Ctrl+Shift+K) already ships — it matches already-loaded chapters/characters/events and is not full-text search.
 - `AddNovelForm` remains disabled by design/pre-existing state.
 - See `docs/engineering/PROGRESS.md` for the backlog and `docs/engineering/DECISIONS.md` for architecture rationale.
