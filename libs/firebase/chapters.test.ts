@@ -168,6 +168,36 @@ describe("chapters", () => {
     expect(fetched.number).toBe(1);
   });
 
+  it("creates and updates a chapter description, defaulting to an empty string", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const chapter = await createChapter("novel-1", "vol-1", {
+      number: 1,
+      title: "One",
+      description: "A short recap.",
+    });
+    expect(chapter.description).toBe("A short recap.");
+
+    const withoutDescription = await createChapter("novel-1", "vol-1", {
+      number: 2,
+      title: "Two",
+    });
+    expect(withoutDescription.description).toBe("");
+
+    await updateChapter("novel-1", "vol-1", chapter.id, {
+      description: "Revised recap.",
+    });
+    const fetched = await getChapter("novel-1", "vol-1", chapter.id);
+    expect(fetched.description).toBe("Revised recap.");
+    expect(fetched.title).toBe("One");
+  });
+
+  it("rejects a chapter description longer than 500 characters", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await expect(
+      createChapter("novel-1", "vol-1", { number: 1, title: "One", description: "x".repeat(501) }),
+    ).rejects.toThrow("description must be 500 characters or fewer");
+  });
+
   it("stores notes independently and keeps legacy summary only as a compatibility field", async () => {
     await seedVolume("novel-1", "vol-1");
     const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One", summary: "Old summary" });

@@ -168,6 +168,10 @@ const en = {
   "volumeManager.deleting": "Deleting…",
   "volumeManager.notFound": "Volume not found.",
 
+  "volume.descriptionPlaceholder": "Short volume description",
+  "volume.saveDescription": "Save description",
+  "volume.descriptionSaved": "Description saved successfully.",
+
   "chapter.filters.tags": "Tags:",
   "chapter.filters.addTag": "+ Add tag filter",
   "chapter.filters.noMatch": "No chapters match selected tags.",
@@ -178,6 +182,8 @@ const en = {
   "chapter.saveTitle": "Save title",
   "chapter.titleSaved": "Title saved",
   "chapter.saveSummary": "Save summary",
+  "chapter.saveDescription": "Save description",
+  "chapter.descriptionPlaceholder": "Short chapter description",
   "chapter.notes": "Notes",
   "chapter.addNote": "+ Add note",
   "chapter.noteNumber": "Note {number}",
@@ -205,6 +211,7 @@ const en = {
   "chapter.deleting": "Deleting…",
   "chapter.deleteSuccess": "Chapter deleted successfully.",
   "chapter.summarySaved": "Summary saved successfully.",
+  "chapter.descriptionSaved": "Description saved successfully.",
   "chapter.dateSaved": "Read date saved successfully.",
   "chapter.reorder": "Reorder",
   "chapter.saveOrder": "Save order",

@@ -22,8 +22,17 @@ import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 interface VolumeDoc {
   number: number;
   title: string;
+  description?: string;
   created_at: Timestamp;
   updated_at: Timestamp;
+}
+
+const MAX_DESCRIPTION_LENGTH = 500;
+
+function validateDescription(description: string | undefined) {
+  if (description !== undefined && description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer`);
+  }
 }
 
 const ALLOWED_PER_PAGE = [5, 10, 20, 50];
@@ -56,6 +65,7 @@ async function toVolume(novelId: string, id: string, data: VolumeDoc): Promise<V
     novel_id: novelId,
     number: data.number,
     title: data.title,
+    description: data.description ?? "",
     chapter_count,
     read_count,
     created_at: tsToIso(data.created_at),
@@ -63,9 +73,16 @@ async function toVolume(novelId: string, id: string, data: VolumeDoc): Promise<V
   };
 }
 
-export interface VolumePayload {
+export interface VolumeCreatePayload {
   number: number;
   title: string;
+  description?: string;
+}
+
+export interface VolumePayload {
+  number?: number;
+  title?: string;
+  description?: string;
 }
 
 export async function getVolumes(
@@ -116,8 +133,12 @@ export async function getVolume(novelId: string, volumeId: string): Promise<Volu
   return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
 }
 
-export async function createVolume(novelId: string, payload: VolumePayload): Promise<Volume> {
-  const ref = await addDoc(volumesCol(novelId), withCreateTimestamps(payload));
+export async function createVolume(novelId: string, payload: VolumeCreatePayload): Promise<Volume> {
+  validateDescription(payload.description);
+  const ref = await addDoc(
+    volumesCol(novelId),
+    withCreateTimestamps({ ...payload, description: payload.description ?? "" }),
+  );
   const snapshot = await getDoc(ref);
   return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
 }
@@ -127,6 +148,7 @@ export async function updateVolume(
   volumeId: string,
   payload: VolumePayload,
 ): Promise<Volume> {
+  validateDescription(payload.description);
   const ref = doc(db, "novels", novelId, "volumes", volumeId) as DocumentReference<
     VolumeDoc,
     VolumeDoc

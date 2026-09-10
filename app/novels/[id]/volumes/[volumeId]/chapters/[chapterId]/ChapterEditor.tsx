@@ -13,6 +13,7 @@ import {
   secondaryButtonClassName,
   smallLabelClassName,
   tagClassName,
+  textareaClassName,
   toDateTimeLocalInputValue,
 } from "@/app/novels/ui";
 import { useI18n } from "@/components/i18n/I18nProvider";
@@ -50,6 +51,12 @@ export default function ChapterEditor({
   const [summary, setSummary] = useState(chapter.summary ?? "");
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [summarySaving, setSummarySaving] = useState(false);
+
+  const [description, setDescription] = useState(chapter.description ?? "");
+  const [savedDescription, setSavedDescription] = useState(chapter.description ?? "");
+  const [descriptionEditing, setDescriptionEditing] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
+  const [descriptionSaving, setDescriptionSaving] = useState(false);
 
   const [readAt, setReadAt] = useState(toDateTimeLocalInputValue(chapter.read_at));
   const [readAtError, setReadAtError] = useState<string | null>(null);
@@ -265,6 +272,28 @@ export default function ChapterEditor({
     }
   }
 
+  async function saveDescription() {
+    setDescriptionError(null);
+    setDescriptionSaving(true);
+    try {
+      await updateChapter(novelId, volumeId, chapter.id, { description });
+      setSavedDescription(description);
+      setDescriptionEditing(false);
+      setSnackbar({
+        tone: "success",
+        message: t("chapter.descriptionSaved"),
+      });
+      router.refresh();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : t("common.networkError");
+      setDescriptionError(message);
+      setSnackbar({ tone: "error", message });
+    } finally {
+      setDescriptionSaving(false);
+    }
+  }
+
   async function saveTitle() {
     const normalizedTitle = title.trim();
     if (!normalizedTitle) {
@@ -342,6 +371,31 @@ export default function ChapterEditor({
             {titleSaving ? t("common.saving") : t("chapter.saveTitle")}
           </button>
         </div>
+      </div>
+
+      <div className={cardClassName}>
+        <div className="flex items-start justify-between gap-3">
+          <label className={smallLabelClassName}>{t("common.description")}</label>
+          {!descriptionEditing && <button type="button" onClick={() => setDescriptionEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
+        </div>
+        {descriptionEditing ? <>
+          <textarea
+            value={description}
+            onChange={(event) => setDescription(event.target.value.slice(0, 500))}
+            maxLength={500}
+            rows={3}
+            className={textareaClassName}
+            placeholder={t("chapter.descriptionPlaceholder")}
+          />
+          <div className="mt-1 flex justify-end">
+            <p className="text-xs text-stone-400">{description.length}/500</p>
+          </div>
+          {descriptionError && <p className="mt-2 text-sm text-rose-600">{descriptionError}</p>}
+          <div className="mt-2 flex justify-end gap-2">
+            <button type="button" onClick={() => { setDescription(savedDescription); setDescriptionError(null); setDescriptionEditing(false); }} disabled={descriptionSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
+            <button type="button" onClick={() => void saveDescription()} disabled={descriptionSaving} className={primaryButtonClassName}>{descriptionSaving ? t("common.saving") : t("chapter.saveDescription")}</button>
+          </div>
+        </> : <p className={`whitespace-pre-wrap break-words text-sm leading-7 ${savedDescription ? "text-stone-700" : "italic text-stone-400"}`}>{savedDescription || t("novels.noDescription")}</p>}
       </div>
 
       {showSummary && <div className={cardClassName}>

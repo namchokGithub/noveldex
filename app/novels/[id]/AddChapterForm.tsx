@@ -64,7 +64,7 @@ export default function AddChapterForm({
     const data = {
       number: Number((form.elements.namedItem('number') as HTMLInputElement).value),
       title: (form.elements.namedItem('title') as HTMLInputElement).value,
-      summary: (form.elements.namedItem('summary') as HTMLTextAreaElement).value,
+      description: (form.elements.namedItem('description') as HTMLTextAreaElement).value,
       read_at: normalizeDateTimeLocalToISOString(readAtRaw),
     }
 
@@ -128,12 +128,13 @@ export default function AddChapterForm({
                 />
               </div>
               <div>
-                <label className={smallLabelClassName}>{t('addChapter.summary')}</label>
+                <label className={smallLabelClassName}>{t('common.description')}</label>
                 <textarea
-                  name="summary"
+                  name="description"
                   rows={3}
+                  maxLength={500}
                   className={inputClassName}
-                  placeholder={t('addChapter.summaryPlaceholder')}
+                  placeholder={t('chapter.descriptionPlaceholder')}
                 />
               </div>
               <div>

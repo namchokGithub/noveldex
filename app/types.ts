@@ -14,6 +14,7 @@ export interface Volume {
   novel_id: string
   number: number
   title: string
+  description: string
   chapter_count: number
   read_count: number
   created_at: string
@@ -51,6 +52,7 @@ export interface Chapter {
   number: number
   title: string
   summary: string
+  description: string
   notes: ChapterNote[]
   read_at: string | null
   tags: Tag[]

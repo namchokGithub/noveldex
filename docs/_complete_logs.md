@@ -90,6 +90,10 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Command palette shortcut made layout-independent (`event.code === 'KeyK'` alongside `event.key`)
 - [x] Chapter page widened (`maxWidth`) and summary/notes textareas resize to content instead of fixed `rows`
 
+## Phase 4.6: Volume + Chapter Description
+
+- [x] Optional `description` field (max 500 characters) on both `Volume` and `Chapter`, editable only on their detail pages — not shown on list/card views, not part of the Ctrl+Shift+K quick search
+
 ## Phase 6: Polish (partial — remaining items still in PROGRESS.md)
 
 - [x] Confirm Dialog or Modal when Action Success/Fail

@@ -11,7 +11,7 @@ Firestore structure:
 - nested `characters`, `events`, and `tags`
 - global `character_roles`
 
-Chapters carry an embedded `notes[]` list (timestamped entries, `[[Name]]` mention tracking, character auto-linking, pagination) — see ADR-008 in `docs/engineering/DECISIONS.md`. The legacy `summary` field is still populated as a join of note content for older callers; do not remove it without a migration.
+Chapters carry an embedded `notes[]` list (timestamped entries, `[[Name]]` mention tracking, character auto-linking, pagination) — see ADR-008 in `docs/engineering/DECISIONS.md`. The legacy `summary` field is still populated as a join of note content for older callers; do not remove it without a migration. Volumes and chapters also carry an optional `description` string (max 500 characters), shown only on their detail pages.
 
 `chapters` collection-group queries require the definitions in `firestore.indexes.json`, including the `novel_id` collection-group field override.
 

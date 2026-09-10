@@ -7,7 +7,7 @@ export { getTags, createTag } from "@/libs/firebase/tags";
 
 // Volumes domain via Firestore
 export { getVolumes, getVolume, createVolume, updateVolume, deleteVolume } from "@/libs/firebase/volumes";
-export type { VolumePayload } from "@/libs/firebase/volumes";
+export type { VolumeCreatePayload, VolumePayload } from "@/libs/firebase/volumes";
 
 // Chapters domain via Firestore
 export {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddChapterForm from "../../AddChapterForm";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
+import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import {
   backLinkClassName,
   cardClassName,
@@ -55,6 +56,12 @@ export default async function VolumePage({
           title={volume.title}
           description={`Manage chapters inside this volume. Updated ${formatDisplayDate(volume.updated_at) ?? volume.updated_at}.`}
           action={<AddChapterForm novelId={id} volumeId={volume.id} />}
+        />
+
+        <VolumeDescriptionEditor
+          novelId={id}
+          volumeId={volume.id}
+          initialDescription={volume.description}
         />
 
         <div className={cardClassName}>

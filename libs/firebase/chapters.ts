@@ -26,6 +26,7 @@ interface ChapterDoc {
   number: number;
   title: string;
   summary: string;
+  description?: string;
   notes?: ChapterNoteDoc[];
   read_at: Timestamp | null;
   novel_id: string;
@@ -37,6 +38,14 @@ interface ChapterDoc {
   mentioned_character_name_counts?: Record<string, number>;
   created_at: Timestamp;
   updated_at: Timestamp;
+}
+
+const MAX_DESCRIPTION_LENGTH = 500;
+
+function validateDescription(description: string | undefined) {
+  if (description !== undefined && description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer`);
+  }
 }
 
 interface ChapterNoteDoc {
@@ -83,6 +92,7 @@ function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
     title: data.title,
     // Keep the legacy field populated for older callers, but make notes canonical.
     summary: notes.map((note) => note.content).join("\n") || data.summary || "",
+    description: data.description ?? "",
     notes,
     read_at: data.read_at ? tsToIso(data.read_at) : null,
     tags,
@@ -217,6 +227,7 @@ export interface ChapterCreatePayload {
   number: number;
   title: string;
   summary?: string;
+  description?: string;
   notes?: ChapterNote[];
   read_at?: string | null;
 }
@@ -226,6 +237,7 @@ export async function createChapter(
   volumeId: string,
   payload: ChapterCreatePayload,
 ): Promise<Chapter> {
+  validateDescription(payload.description);
   const chapterRefNew = doc(chaptersCol(novelId, volumeId));
   const marker = markerRef(novelId, payload.number);
 
@@ -243,6 +255,7 @@ export async function createChapter(
         number: payload.number,
         title: payload.title,
         summary: payload.summary ?? "",
+        description: payload.description ?? "",
         notes: notesToDoc(notes),
         read_at: payload.read_at ? Timestamp.fromDate(new Date(payload.read_at)) : null,
         novel_id: novelId,
@@ -263,6 +276,7 @@ export async function createChapter(
 export interface ChapterPayload {
   title?: string;
   summary?: string;
+  description?: string;
   notes?: ChapterNote[];
   read_at?: string | null;
 }
@@ -273,9 +287,11 @@ export async function updateChapter(
   chapterId: string,
   payload: ChapterPayload,
 ): Promise<void> {
+  validateDescription(payload.description);
   const update: Record<string, unknown> = {};
   if (payload.title !== undefined) update.title = payload.title;
   if (payload.summary !== undefined) update.summary = payload.summary;
+  if (payload.description !== undefined) update.description = payload.description;
   if (payload.read_at !== undefined) {
     update.read_at = payload.read_at ? Timestamp.fromDate(new Date(payload.read_at)) : null;
   }

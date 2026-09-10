@@ -172,6 +172,10 @@ const th = {
   "volumeManager.deleting": "กำลังลบ…",
   "volumeManager.notFound": "ไม่พบเล่มนี้",
 
+  "volume.descriptionPlaceholder": "คำอธิบายสั้น ๆ ของเล่มนี้",
+  "volume.saveDescription": "บันทึกคำอธิบาย",
+  "volume.descriptionSaved": "บันทึกคำอธิบายสำเร็จ",
+
   "chapter.filters.tags": "แท็ก:",
   "chapter.filters.addTag": "+ เพิ่มตัวกรองแท็ก",
   "chapter.filters.noMatch": "ไม่มีตอนที่ตรงกับแท็กที่เลือก",
@@ -182,6 +186,8 @@ const th = {
   "chapter.saveTitle": "บันทึกชื่อ",
   "chapter.titleSaved": "บันทึกชื่อตอนสำเร็จ",
   "chapter.saveSummary": "บันทึกสรุป",
+  "chapter.saveDescription": "บันทึกคำอธิบาย",
+  "chapter.descriptionPlaceholder": "คำอธิบายสั้น ๆ ของตอนนี้",
   "chapter.notes": "โน้ต",
   "chapter.addNote": "+ เพิ่มโน้ต",
   "chapter.noteNumber": "โน้ต {number}",
@@ -208,6 +214,7 @@ const th = {
   "chapter.deleting": "กำลังลบ…",
   "chapter.deleteSuccess": "ลบตอนสำเร็จ",
   "chapter.summarySaved": "บันทึกสรุปสำเร็จ",
+  "chapter.descriptionSaved": "บันทึกคำอธิบายสำเร็จ",
   "chapter.dateSaved": "บันทึกวันที่อ่านสำเร็จ",
   "chapter.reorder": "เรียงลำดับ",
   "chapter.saveOrder": "บันทึกลำดับ",
