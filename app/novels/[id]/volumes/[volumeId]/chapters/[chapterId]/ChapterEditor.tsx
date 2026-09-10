@@ -80,6 +80,17 @@ export default function ChapterEditor({
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
+  const resizeSummary = useCallback((el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => {
+    if (!showSummary) return;
+    resizeSummary(textareaRef.current);
+  }, [resizeSummary, showSummary, summary]);
+
   useEffect(() => {
     if (!showSummary) return;
     const handler = (event: Event) => {
@@ -342,7 +353,7 @@ export default function ChapterEditor({
             onChange={(e) => setSummary(e.target.value)}
             onKeyUp={handleKeyUp}
             rows={6}
-            className={`${inputClassName} min-h-45`}
+            className={`${inputClassName} min-h-45 resize-none overflow-hidden`}
             placeholder={t("addChapter.summaryPlaceholder")}
           />
           {suggestion && suggestion.names.length > 0 && (

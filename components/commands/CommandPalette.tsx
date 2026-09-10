@@ -82,7 +82,7 @@ export default function CommandPalette() {
   }, [chapterPage, entityCommands, localCommands, navigationCommands, query])
 
   function openPalette() { setQuery(''); setChapterSource(chapterPage ? requestChapterSource() : null); setOpen(true) }
-  useEffect(() => { const listener = () => openPalette(); const key = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLocaleLowerCase() === 'k') { event.preventDefault(); openPalette() } if (event.key === 'Escape') setOpen(false) }; window.addEventListener(OPEN_EVENT, listener); window.addEventListener('keydown', key); return () => { window.removeEventListener(OPEN_EVENT, listener); window.removeEventListener('keydown', key) } })
+  useEffect(() => { const listener = () => openPalette(); const key = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.code === 'KeyK' || event.key.toLocaleLowerCase() === 'k')) { event.preventDefault(); openPalette() } if (event.key === 'Escape') setOpen(false) }; window.addEventListener(OPEN_EVENT, listener); window.addEventListener('keydown', key); return () => { window.removeEventListener(OPEN_EVENT, listener); window.removeEventListener('keydown', key) } })
   useEffect(() => { if (!open) return; const frame = window.requestAnimationFrame(() => inputRef.current?.focus()); return () => window.cancelAnimationFrame(frame) }, [open])
   function select(command: Command) { setOpen(false); if (command.onSelect) command.onSelect(); else if (command.href) router.push(command.href) }
   const placeholder = chapterPage ? t('command.chapterPlaceholder') : t('command.placeholder')

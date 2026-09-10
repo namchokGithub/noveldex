@@ -51,7 +51,7 @@ export default async function ChapterPage({
   }
 
   return (
-    <DashboardPage maxWidth="max-w-4xl">
+    <DashboardPage maxWidth="max-w-5xl">
       <div className="space-y-5">
         <Link
           href={`/novels/${id}/volumes/${volumeId}`}
