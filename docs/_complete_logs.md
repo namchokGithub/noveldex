@@ -93,6 +93,8 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 ## Phase 4.6: Volume + Chapter Description
 
 - [x] Optional `description` field (max 500 characters) on both `Volume` and `Chapter`, editable only on their detail pages — not shown on list/card views, not part of the Ctrl+Shift+K quick search
+- [x] Chapter entry types and reading order — Prologue, Epilogue, Afterword, Side Story, and custom entries use `sort_order` without changing regular Chapter numbers
+- [x] Chapter entry migration and error-message consistency — `backfill:chapter-entry-order` supports `--dry-run` and `--apply`; form errors use localized validation messages instead of Firestore error text
 
 ## Phase 6: Polish (partial — remaining items still in PROGRESS.md)
 

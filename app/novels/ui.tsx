@@ -44,6 +44,14 @@ export const textareaClassName = `${inputClassName} min-h-[120px]`;
 
 export const selectClassName = inputClassName;
 
+export function FormError({ children }: { children: ReactNode }) {
+  return (
+    <p role="alert" className="mt-2 text-sm text-rose-600">
+      {children}
+    </p>
+  );
+}
+
 export const smallLabelClassName =
   "mb-1.5 block text-xs font-medium uppercase tracking-[0.18em] text-stone-500";
 

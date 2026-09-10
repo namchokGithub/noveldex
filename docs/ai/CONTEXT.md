@@ -13,6 +13,10 @@ Firestore structure:
 
 Chapters carry an embedded `notes[]` list (timestamped entries, `[[Name]]` mention tracking, character auto-linking, pagination) — see ADR-008 in `docs/engineering/DECISIONS.md`. The legacy `summary` field is still populated as a join of note content for older callers; do not remove it without a migration. Volumes and chapters also carry an optional `description` string (max 500 characters), shown only on their detail pages.
 
+Chapter entries use ADR-009: `sort_order` controls reading order only within a volume. Regular `chapter` entries retain their novel-wide unique positive `number` and a `chapterNumbers` marker. `prologue`, `epilogue`, `afterword`, `side_story`, and `other` entries store `number: null`; only `other` needs a nonempty `custom_label`. Use `formatChapterLabel` from `libs/chapterLabel.ts` for every user-facing label, and run `pnpm backfill:chapter-entry-order -- --project <id> --dry-run` before its `--apply` counterpart when upgrading existing Firestore data.
+
+User-facing form errors use `FormError` from `app/novels/ui.tsx`. Client code must pass caught Firebase errors through `userErrorMessage` from `libs/userErrorMessage.ts` rather than rendering raw error text.
+
 `chapters` collection-group queries require the definitions in `firestore.indexes.json`, including the `novel_id` collection-group field override.
 
 ## Development

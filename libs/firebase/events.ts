@@ -108,7 +108,7 @@ async function resolveChapterFields(
   if (!snapshot.exists()) {
     throw new Error("Request failed.");
   }
-  const chapterData = snapshot.data() as { title: string; number: number };
+  const chapterData = snapshot.data() as { title: string; number: number | null };
   return {
     chapter_id: chapterId,
     chapter_volume_id: volumeId,

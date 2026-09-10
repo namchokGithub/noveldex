@@ -13,6 +13,7 @@ import {
 } from "../ui";
 import { createVolume, getLastOrderNos } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { userErrorMessage } from "@/libs/userErrorMessage";
 
 interface VolumeDraft {
   number: number;
@@ -79,10 +80,7 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
       });
       router.refresh();
     } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : t("common.networkError");
+      const message = userErrorMessage(nextError, t);
 
       setError(message);
       setConfirmOpen(false);

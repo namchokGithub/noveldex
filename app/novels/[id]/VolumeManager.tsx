@@ -19,6 +19,7 @@ import {
 } from "../ui";
 import { deleteVolume, updateVolume } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { userErrorMessage } from "@/libs/userErrorMessage";
 
 interface VolumeItem extends Volume {
   chapterCount: number;
@@ -116,10 +117,7 @@ export default function VolumeManager({
       });
       router.refresh();
     } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : t("common.networkError");
+      const message = userErrorMessage(nextError, t);
 
       setError(message);
       setConfirmState(null);
@@ -154,10 +152,7 @@ export default function VolumeManager({
       });
       router.refresh();
     } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : t("common.networkError");
+      const message = userErrorMessage(nextError, t);
 
       setError(message);
       setConfirmState(null);

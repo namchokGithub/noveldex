@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useI18n } from '@/components/i18n/I18nProvider'
 import { getAllCharacters, getChaptersFlat, getEvents, getNovels } from '@/libs/api'
+import { formatChapterLabel } from '@/libs/chapterLabel'
+import { useChapterKindLabels } from '@/components/chapters/ChapterLabel'
 
 const OPEN_EVENT = 'noveldex:open-command-palette'
 export const CHAPTER_SEARCH_SOURCE_EVENT = 'noveldex:chapter-search-source'
@@ -56,6 +58,7 @@ export function CommandPaletteTrigger({ iconOnly = false }: { iconOnly?: boolean
 
 export default function CommandPalette() {
   const { t } = useI18n(); const pathname = usePathname(); const router = useRouter(); const inputRef = useRef<HTMLInputElement>(null)
+  const kindLabels = useChapterKindLabels()
   const [open, setOpen] = useState(false), [query, setQuery] = useState(''), [entityCommands, setEntityCommands] = useState<Command[]>([]), [chapterSource, setChapterSource] = useState<ChapterSearchSource | null>(null)
   const chapterPage = isChapterPage(pathname); const novelId = currentNovelId(pathname)
   const navigationCommands = useMemo<Command[]>(() => chapterPage ? [] : [
@@ -74,13 +77,13 @@ export default function CommandPalette() {
         return [
           { id: `novel:${novel.id}`, label: novel.title, hint: t('command.novelResult'), href: `/novels/${novel.id}`, keywords: `${novel.title} ${novel.author} ${novel.description} novel นิยาย` },
           ...characters.map((character) => ({ id: `character:${novel.id}:${character.id}`, label: character.name, hint: `${t('command.characterResult')} · ${novel.title}`, href: `/novels/${novel.id}/characters/${character.id}`, keywords: `${character.name} ${character.aliases.join(' ')} ${character.description} character ตัวละคร` })),
-          ...chapters.map((chapter) => ({ id: `chapter:${novel.id}:${chapter.id}`, label: chapter.title, hint: `${t('command.chapterResult')} ${chapter.number} · ${novel.title}`, href: `/novels/${novel.id}/volumes/${chapter.volume_id}/chapters/${chapter.id}`, keywords: `${chapter.title} ${chapter.summary ?? ''} chapter บท ${chapter.number} ${(chapter.character_ids ?? []).map((id) => names.get(id) ?? '').join(' ')}` })),
+          ...chapters.map((chapter) => ({ id: `chapter:${novel.id}:${chapter.id}`, label: formatChapterLabel(chapter, kindLabels), hint: `${t('command.chapterResult')} · ${novel.title}`, href: `/novels/${novel.id}/volumes/${chapter.volume_id}/chapters/${chapter.id}`, keywords: `${chapter.title} ${chapter.summary ?? ''} ${formatChapterLabel(chapter, kindLabels)} ${(chapter.character_ids ?? []).map((id) => names.get(id) ?? '').join(' ')}` })),
           ...events.map((event) => ({ id: `event:${novel.id}:${event.id}`, label: event.title, hint: `${t('command.eventResult')} · ${novel.title}`, href: `/novels/${novel.id}/timeline#event-${event.id}`, keywords: `${event.title} ${event.description} event timeline เหตุการณ์` })),
         ]
       })
     })().then((next) => { if (active) setEntityCommands(next) }).catch(() => { if (active) setEntityCommands([]) })
     return () => { active = false }
-  }, [chapterPage, t])
+  }, [chapterPage, kindLabels, t])
 
   const localCommands = useMemo<Command[]>(() => {
     if (!chapterPage || !chapterSource || !query.trim()) return []

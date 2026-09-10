@@ -12,7 +12,8 @@
     "emulators": "firebase emulators:start --only firestore --project demo-noveldex",
     "migrate:firestore": "tsx --env-file=.env.local scripts/migrate-postgres-to-firestore.ts",
     "backfill:event-locations": "tsx --env-file=.env.local scripts/backfill-event-locations.ts",
-    "backfill:chapter-notes": "tsx --env-file=.env.local scripts/backfill-chapter-notes.ts"
+    "backfill:chapter-notes": "tsx --env-file=.env.local scripts/backfill-chapter-notes.ts",
+    "backfill:chapter-entry-order": "tsx --env-file=.env.local scripts/backfill-chapter-entry-order.ts"
   },
   "dependencies": {
     "firebase": "^11.10.0",

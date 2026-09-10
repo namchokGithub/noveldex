@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import type { Chapter, Tag } from "@/app/types";
+import type { Chapter, ChapterKind, Tag } from "@/app/types";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { ChapterLabel, useChapterKindLabels } from "@/components/chapters/ChapterLabel";
+import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import {
   cardClassName,
   ConfirmDialog,
@@ -20,7 +22,8 @@ import {
   Snackbar,
   tagClassName,
 } from "../ui";
-import { deleteChapter, reorderChapters } from "@/libs/api";
+import { deleteChapter, reorderChapters, updateChapter } from "@/libs/api";
+import { userErrorMessage } from "@/libs/userErrorMessage";
 
 export default function ChapterListWithFilters({
   novelId,
@@ -34,6 +37,7 @@ export default function ChapterListWithFilters({
   availableTags: Tag[];
 }) {
   const { t } = useI18n();
+  const kindLabels = useChapterKindLabels();
   const router = useRouter();
 
   // ── filter state ──────────────────────────────────────────────────────────
@@ -106,8 +110,7 @@ export default function ChapterListWithFilters({
     } catch (error) {
       setSnackbar({
         tone: "error",
-        message:
-          error instanceof Error ? error.message : t("common.networkError"),
+        message: userErrorMessage(error, t),
       });
     } finally {
       setDeletingId(null);
@@ -149,16 +152,85 @@ export default function ChapterListWithFilters({
     dragIndex.current = null;
   }
 
+  function updateReorderEntry(chapterId: string, update: Partial<Chapter>) {
+    setOrderedChapters((current) =>
+      current.map((chapter) =>
+        chapter.id === chapterId ? { ...chapter, ...update } : chapter,
+      ),
+    );
+  }
+
+  function changeReorderEntryKind(chapterId: string, kind: ChapterKind) {
+    const current = orderedChapters.find((chapter) => chapter.id === chapterId);
+    const original = visibleChapters.find((chapter) => chapter.id === chapterId);
+    if (!current) return;
+
+    updateReorderEntry(chapterId, {
+      kind,
+      number: kind === "chapter" ? current.number ?? original?.number ?? null : null,
+      custom_label: kind === "other" ? current.custom_label ?? "" : null,
+    });
+  }
+
   async function handleSaveOrder() {
+    const invalidNumber = orderedChapters.some(
+      (chapter) =>
+        chapter.kind === "chapter" &&
+        (!Number.isInteger(chapter.number) || (chapter.number ?? 0) < 1),
+    );
+    if (invalidNumber) {
+      setSnackbar({ tone: "error", message: t("chapter.entryNumberRequired") });
+      return;
+    }
+    const hasDuplicateNumber = new Set(
+      orderedChapters
+        .filter((chapter) => chapter.kind === "chapter")
+        .map((chapter) => chapter.number),
+    ).size !== orderedChapters.filter((chapter) => chapter.kind === "chapter").length;
+    if (hasDuplicateNumber) {
+      setSnackbar({ tone: "error", message: t("chapter.entryNumberDuplicate") });
+      return;
+    }
+    const invalidCustomLabel = orderedChapters.some(
+      (chapter) => chapter.kind === "other" && !chapter.custom_label?.trim(),
+    );
+    if (invalidCustomLabel) {
+      setSnackbar({ tone: "error", message: t("chapter.entryOtherRequired") });
+      return;
+    }
+
     setReorderSaving(true);
     try {
-      // Distribute existing numbers (sorted asc) to new positions so no novel-scope conflicts.
-      const sortedNumbers = [...orderedChapters]
-        .map((ch) => ch.number)
-        .sort((a, b) => a - b);
+      const changedEntries = orderedChapters.filter((chapter) => {
+        const original = visibleChapters.find(({ id }) => id === chapter.id);
+        return original && (
+          original.kind !== chapter.kind ||
+          original.number !== chapter.number ||
+          original.custom_label !== chapter.custom_label
+        );
+      });
+      const saveEntry = (chapter: Chapter) =>
+        updateChapter(novelId, volumeId, chapter.id, {
+          kind: chapter.kind,
+          number: chapter.kind === "chapter" ? chapter.number : null,
+          custom_label: chapter.kind === "other" ? chapter.custom_label : null,
+        });
+
+      // Free marker numbers before assigning a number that was just released.
+      const releasesNumber = changedEntries.filter((chapter) => {
+        const original = visibleChapters.find(({ id }) => id === chapter.id);
+        return original?.number !== null && chapter.number === null;
+      });
+      await Promise.all(releasesNumber.map(saveEntry));
+      await Promise.all(
+        changedEntries
+          .filter((chapter) => !releasesNumber.some(({ id }) => id === chapter.id))
+          .map(saveEntry),
+      );
+
       const entries = orderedChapters.map((ch, i) => ({
         id: ch.id,
-        number: sortedNumbers[i],
+        sort_order: i + 1,
       }));
       await reorderChapters(novelId, volumeId, entries);
       setReorderMode(false);
@@ -167,8 +239,7 @@ export default function ChapterListWithFilters({
     } catch (error) {
       setSnackbar({
         tone: "error",
-        message:
-          error instanceof Error ? error.message : t("common.networkError"),
+        message: userErrorMessage(error, t),
       });
     } finally {
       setReorderSaving(false);
@@ -269,7 +340,67 @@ export default function ChapterListWithFilters({
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-stone-900">
-                      Ch. {chapter.number} — {chapter.title}
+                      <ChapterLabel chapter={chapter} />
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <label className="sr-only" htmlFor={`chapter-kind-${chapter.id}`}>
+                        {t("addChapter.entryType")}
+                      </label>
+                      <select
+                        id={`chapter-kind-${chapter.id}`}
+                        value={chapter.kind}
+                        disabled={reorderSaving}
+                        draggable={false}
+                        onDragStart={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          changeReorderEntryKind(
+                            chapter.id,
+                            event.target.value as ChapterKind,
+                          )
+                        }
+                        className={`${inputClassName} w-auto py-1.5 text-xs`}>
+                        {CHAPTER_KINDS.map((kind) => (
+                          <option key={kind} value={kind}>
+                            {kindLabels[kind]}
+                          </option>
+                        ))}
+                      </select>
+                      {chapter.kind === "chapter" && visibleChapters.find(({ id }) => id === chapter.id)?.number === null ? (
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          inputMode="numeric"
+                          value={chapter.number ?? ""}
+                          placeholder={t("addChapter.numberRequired")}
+                          disabled={reorderSaving}
+                          draggable={false}
+                          onDragStart={(event) => event.stopPropagation()}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            updateReorderEntry(chapter.id, {
+                              number: value === "" ? null : Number(value),
+                            });
+                          }}
+                          className={`${inputClassName} w-32 py-1.5 text-xs`}
+                        />
+                      ) : null}
+                      {chapter.kind === "other" ? (
+                        <input
+                          value={chapter.custom_label ?? ""}
+                          placeholder={t("addChapter.customLabelPlaceholder")}
+                          maxLength={80}
+                          disabled={reorderSaving}
+                          draggable={false}
+                          onDragStart={(event) => event.stopPropagation()}
+                          onChange={(event) =>
+                            updateReorderEntry(chapter.id, {
+                              custom_label: event.target.value,
+                            })
+                          }
+                          className={`${inputClassName} w-48 py-1.5 text-xs`}
+                        />
+                      ) : null}
                     </div>
                     {chapter.tags.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -299,7 +430,7 @@ export default function ChapterListWithFilters({
                   href={`/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapter.id}`}
                   className="min-w-0 flex-1 rounded-2xl outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
                   <div className="text-sm font-medium text-stone-900 transition hover:text-stone-700">
-                    Ch. {chapter.number} — {chapter.title}
+                    <ChapterLabel chapter={chapter} />
                   </div>
                   {chapter.tags.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -323,7 +454,7 @@ export default function ChapterListWithFilters({
                     disabled={deletingId === chapter.id}
                     className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
                     aria-label={t("chapter.deleteAria", {
-                      number: chapter.number,
+                      number: chapter.number ?? chapter.kind,
                     })}>
                     🗑️
                   </button>

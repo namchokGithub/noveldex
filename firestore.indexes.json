@@ -12,6 +12,23 @@
       "collectionGroup": "chapters",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
+        { "fieldPath": "novel_id", "order": "ASCENDING" },
+        { "fieldPath": "sort_order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "chapters",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "novel_id", "order": "ASCENDING" },
+        { "fieldPath": "character_ids", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "sort_order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "chapters",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
         { "fieldPath": "volume_id", "order": "ASCENDING" },
         { "fieldPath": "number", "order": "DESCENDING" }
       ]

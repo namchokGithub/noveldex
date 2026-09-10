@@ -31,11 +31,11 @@ export async function getLastOrderNos(params: {
   }
 
   let chapter = 0;
-  if (params.volume_id) {
+  if (params.novel_id || params.volume_id) {
     const snapshot = await getDocs(
       query(
         collectionGroup(db, "chapters"),
-        where("volume_id", "==", params.volume_id),
+        where(params.novel_id ? "novel_id" : "volume_id", "==", params.novel_id ?? params.volume_id),
         orderBy("number", "desc"),
         limit(1),
       ),

@@ -165,11 +165,10 @@ export async function deleteVolume(novelId: string, volumeId: string): Promise<v
     const chunk = chapterDocs.docs.slice(i, i + BATCH_CHUNK_SIZE);
     const batch = writeBatch(db);
     chunk.forEach((chapterDoc) => {
-      const number = (chapterDoc.data() as { number: number }).number;
+      const number = (chapterDoc.data() as { number: number | null }).number;
       batch.delete(chapterDoc.ref);
-      batch.delete(doc(db, "novels", novelId, "chapterNumbers", String(number)));
+      if (number !== null) batch.delete(doc(db, "novels", novelId, "chapterNumbers", String(number)));
     });
-    // eslint-disable-next-line no-await-in-loop
     await batch.commit();
   }
 

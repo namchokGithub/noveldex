@@ -10,6 +10,7 @@ import {
 } from "@/app/novels/ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { getChapter } from "@/libs/api";
+import { formatChapterPrefix } from "@/libs/chapterLabel";
 
 export async function generateMetadata({
   params,
@@ -60,9 +61,7 @@ export default async function ChapterPage({
         </Link>
 
         <SectionHeading
-          eyebrow={
-            <T k="chapter.pageEyebrow" values={{ number: chapter.number }} />
-          }
+          eyebrow={formatChapterPrefix(chapter, { chapter: "Ch.", prologue: "Prologue", epilogue: "Epilogue", afterword: "Afterword", side_story: "Side Story", other: "Other" })}
           title={chapter.title}
           description={<T k="chapter.pageDescription" />}
         />

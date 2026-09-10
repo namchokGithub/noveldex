@@ -18,6 +18,7 @@ import {
   smallLabelClassName,
 } from '../../../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
+import { ChapterLabel } from '@/components/chapters/ChapterLabel'
 import { updateCharacter } from '@/libs/api'
 
 export default function CharacterDetail({
@@ -222,7 +223,7 @@ export default function CharacterDetail({
                   className={`${listRowClassName} flex-wrap`}
                 >
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
-                    Ch. {ch.number} — {ch.title}
+                    <ChapterLabel chapter={ch} />
                   </span>
                   {ch.read_at && (
                     <span className="shrink-0 text-xs text-stone-500">{ch.read_at}</span>

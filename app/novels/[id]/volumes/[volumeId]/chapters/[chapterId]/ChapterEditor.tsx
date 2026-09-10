@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ChapterWithCharacters, Tag } from "@/app/types";
+import type { ChapterKind, ChapterWithCharacters, Tag } from "@/app/types";
+import { CHAPTER_KINDS } from "@/libs/chapterLabel";
+import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import LinkedCharactersPanel from "./LinkedCharactersPanel";
 import {
   cardClassName,
+  FormError,
   inputClassName,
   normalizeDateTimeLocalToISOString,
   primaryButtonClassName,
@@ -17,6 +20,7 @@ import {
   toDateTimeLocalInputValue,
 } from "@/app/novels/ui";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { userErrorMessage } from "@/libs/userErrorMessage";
 import { CHAPTER_SEARCH_SOURCE_EVENT, type ChapterSearchSource } from "@/components/commands/CommandPalette";
 import {
   createTag,
@@ -40,6 +44,7 @@ export default function ChapterEditor({
   showSummary?: boolean;
 }) {
   const { t } = useI18n();
+  const kindLabels = useChapterKindLabels();
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -47,6 +52,12 @@ export default function ChapterEditor({
   const [title, setTitle] = useState(chapter.title ?? "");
   const [titleError, setTitleError] = useState<string | null>(null);
   const [titleSaving, setTitleSaving] = useState(false);
+
+  const [kind, setKind] = useState<ChapterKind>(chapter.kind);
+  const [number, setNumber] = useState(chapter.number === null ? "" : String(chapter.number));
+  const [customLabel, setCustomLabel] = useState(chapter.custom_label ?? "");
+  const [entryError, setEntryError] = useState<string | null>(null);
+  const [entrySaving, setEntrySaving] = useState(false);
 
   const [summary, setSummary] = useState(chapter.summary ?? "");
   const [summaryError, setSummaryError] = useState<string | null>(null);
@@ -181,9 +192,7 @@ export default function ChapterEditor({
       setAllTags(await getTags(novelId));
       setTagListFetched(true);
     } catch (error) {
-      setTagError(
-        error instanceof Error ? error.message : t("common.networkError"),
-      );
+      setTagError(userErrorMessage(error, t));
     } finally {
       setTagLoading(false);
     }
@@ -226,9 +235,7 @@ export default function ChapterEditor({
       setTagQuery("");
       setTagPickerOpen(false);
     } catch (error) {
-      setTagError(
-        error instanceof Error ? error.message : t("chapter.failedAddTag"),
-      );
+      setTagError(userErrorMessage(error, t));
     } finally {
       setTagSaving(false);
     }
@@ -241,9 +248,7 @@ export default function ChapterEditor({
       await unlinkChapterTag(novelId, volumeId, chapter.id, tagId);
       setTags((current) => current.filter((tag) => tag.id !== tagId));
     } catch (error) {
-      setTagError(
-        error instanceof Error ? error.message : t("common.networkError"),
-      );
+      setTagError(userErrorMessage(error, t));
     } finally {
       setTagSaving(false);
     }
@@ -260,8 +265,7 @@ export default function ChapterEditor({
       });
       router.refresh();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : t("common.networkError");
+      const message = userErrorMessage(error, t);
       setSummaryError(message);
       setSnackbar({
         tone: "error",
@@ -285,8 +289,7 @@ export default function ChapterEditor({
       });
       router.refresh();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : t("common.networkError");
+      const message = userErrorMessage(error, t);
       setDescriptionError(message);
       setSnackbar({ tone: "error", message });
     } finally {
@@ -297,7 +300,7 @@ export default function ChapterEditor({
   async function saveTitle() {
     const normalizedTitle = title.trim();
     if (!normalizedTitle) {
-      setTitleError(t("addChapter.chapterTitlePlaceholder"));
+      setTitleError(t("chapter.titleRequired"));
       return;
     }
 
@@ -314,8 +317,7 @@ export default function ChapterEditor({
       });
       router.refresh();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : t("common.networkError");
+      const message = userErrorMessage(error, t);
       setTitleError(message);
       setSnackbar({
         tone: "error",
@@ -323,6 +325,35 @@ export default function ChapterEditor({
       });
     } finally {
       setTitleSaving(false);
+    }
+  }
+
+  async function saveEntry() {
+    const nextNumber = kind === "chapter" ? Number(number) : 0;
+    if (kind === "chapter" && (!Number.isInteger(nextNumber) || nextNumber < 1)) {
+      setEntryError(t("chapter.entryNumberRequired"));
+      return;
+    }
+    if (kind === "other" && !customLabel.trim()) {
+      setEntryError(t("chapter.entryOtherRequired"));
+      return;
+    }
+    setEntryError(null);
+    setEntrySaving(true);
+    try {
+      await updateChapter(novelId, volumeId, chapter.id, {
+        kind,
+        number: nextNumber,
+        custom_label: kind === "other" ? customLabel.trim() : null,
+      });
+      setSnackbar({ tone: "success", message: t("chapter.entrySaved") });
+      router.refresh();
+    } catch (error) {
+      const message = userErrorMessage(error, t);
+      setEntryError(message);
+      setSnackbar({ tone: "error", message });
+    } finally {
+      setEntrySaving(false);
     }
   }
 
@@ -339,8 +370,7 @@ export default function ChapterEditor({
       });
       router.refresh();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : t("common.networkError");
+      const message = userErrorMessage(error, t);
       setReadAtError(message);
       setSnackbar({
         tone: "error",
@@ -362,7 +392,7 @@ export default function ChapterEditor({
           className={inputClassName}
           placeholder={t("addChapter.chapterTitlePlaceholder")}
         />
-        {titleError && <p className="mt-2 text-sm text-rose-600">{titleError}</p>}
+        {titleError && <FormError>{titleError}</FormError>}
         <div className="mt-2 flex justify-end">
           <button
             onClick={saveTitle}
@@ -371,6 +401,17 @@ export default function ChapterEditor({
             {titleSaving ? t("common.saving") : t("chapter.saveTitle")}
           </button>
         </div>
+      </div>
+
+      <div className={cardClassName}>
+        <label className={smallLabelClassName}>{t("chapter.editEntry")}</label>
+        <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} className={inputClassName}>
+          {CHAPTER_KINDS.map((entryKind) => <option key={entryKind} value={entryKind}>{kindLabels[entryKind]}</option>)}
+        </select>
+        {kind === "chapter" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.numberRequired")}</label><input type="number" min={1} value={number} onChange={(event) => setNumber(event.target.value)} className={inputClassName} /></div>}
+        {kind === "other" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.customLabel")}</label><input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} maxLength={80} className={inputClassName} placeholder={t("addChapter.customLabelPlaceholder")} /></div>}
+        {entryError && <FormError>{entryError}</FormError>}
+        <div className="mt-2 flex justify-end"><button type="button" onClick={() => void saveEntry()} disabled={entrySaving} className={primaryButtonClassName}>{entrySaving ? t("common.saving") : t("chapter.saveEntry")}</button></div>
       </div>
 
       <div className={cardClassName}>
@@ -390,7 +431,7 @@ export default function ChapterEditor({
           <div className="mt-1 flex justify-end">
             <p className="text-xs text-stone-400">{description.length}/500</p>
           </div>
-          {descriptionError && <p className="mt-2 text-sm text-rose-600">{descriptionError}</p>}
+          {descriptionError && <FormError>{descriptionError}</FormError>}
           <div className="mt-2 flex justify-end gap-2">
             <button type="button" onClick={() => { setDescription(savedDescription); setDescriptionError(null); setDescriptionEditing(false); }} disabled={descriptionSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
             <button type="button" onClick={() => void saveDescription()} disabled={descriptionSaving} className={primaryButtonClassName}>{descriptionSaving ? t("common.saving") : t("chapter.saveDescription")}</button>
@@ -429,7 +470,7 @@ export default function ChapterEditor({
           )}
         </div>
         {summaryError && (
-          <p className="mt-2 text-sm text-rose-600">{summaryError}</p>
+          <FormError>{summaryError}</FormError>
         )}
         <div className="mt-2 flex justify-end">
           <button
@@ -454,7 +495,7 @@ export default function ChapterEditor({
             className={inputClassName}
           />
           {readAtError && (
-            <p className="mt-2 text-sm text-rose-600">{readAtError}</p>
+            <FormError>{readAtError}</FormError>
           )}
           <div className="mt-3 flex justify-end">
             <button
@@ -571,7 +612,7 @@ export default function ChapterEditor({
             </div>
           )}
         </div>
-        {tagError && <p className="mt-2 text-sm text-rose-600">{tagError}</p>}
+        {tagError && <FormError>{tagError}</FormError>}
       </div>
 
       <Snackbar

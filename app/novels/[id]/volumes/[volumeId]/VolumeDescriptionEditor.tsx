@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   cardClassName,
+  FormError,
   primaryButtonClassName,
   secondaryButtonClassName,
   Snackbar,
@@ -12,6 +13,7 @@ import {
 } from "@/app/novels/ui";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { updateVolume } from "@/libs/api";
+import { userErrorMessage } from "@/libs/userErrorMessage";
 
 const MAX_DESCRIPTION_LENGTH = 500;
 
@@ -52,7 +54,7 @@ export default function VolumeDescriptionEditor({
       setSnackbar({ tone: "success", message: t("volume.descriptionSaved") });
       router.refresh();
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : t("common.networkError");
+      const message = userErrorMessage(cause, t);
       setError(message);
       setSnackbar({ tone: "error", message });
     } finally {
@@ -85,7 +87,7 @@ export default function VolumeDescriptionEditor({
               {description.length}/{MAX_DESCRIPTION_LENGTH}
             </p>
           </div>
-          {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
+          {error && <FormError>{error}</FormError>}
           <div className="mt-2 flex justify-end gap-2">
             <button type="button" onClick={() => { setDescription(savedDescription); setError(null); setEditing(false); }} disabled={saving} className={secondaryButtonClassName}>
               {t("common.cancel")}

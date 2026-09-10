@@ -49,3 +49,13 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Why:** Chapter write-ups needed incremental, timestamped entries with per-note `[[Name]]` mention tracking and character auto-linking; a single summary string could not carry that.
 
 **Trade-offs:** Notes written before this change are hydrated lazily for mention/character-link data (`hydrateLegacyNoteRelations` in `libs/firebase/chapters.ts`) the first time they're read.
+
+---
+
+## ADR-009: Chapter reading order is separate from chapter numbering
+
+**Decision:** Every entry in a volume stores `sort_order` for reading order. Regular chapters retain a positive, novel-wide unique `number`; Prologue, Epilogue, Afterword, Side Story, and custom entries use `number: null` with a `kind`. Custom entries require `custom_label`.
+
+**Why:** Story structure needs entries before, between, and after numbered chapters. Reordering those entries must not renumber ordinary chapters or invalidate their `chapterNumbers/{number}` markers.
+
+**Trade-offs:** New entries append to their volume and then move through Reorder. Existing chapters require a one-time `backfill:chapter-entry-order` migration before relying on `sort_order` in Firestore queries. Cross-volume views sort by volume number, then entry `sort_order`.

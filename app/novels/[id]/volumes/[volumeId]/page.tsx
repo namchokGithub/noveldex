@@ -85,7 +85,7 @@ export default async function VolumePage({
           <ChapterListWithFilters
             novelId={id}
             volumeId={volumeId}
-            chapters={[...chapters].sort((a, b) => a.number - b.number)}
+            chapters={chapters}
             availableTags={availableTags}
           />
         )}

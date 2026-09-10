@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import type {
   Character,
+  ChapterKind,
   ChapterSummary,
   PaginatedCharacters,
 } from "@/app/types";
@@ -53,13 +54,15 @@ async function characterChapters(
     collectionGroup(db, "chapters"),
     where("novel_id", "==", novelId),
     where("character_ids", "array-contains", characterId),
-    orderBy("number", "asc"),
   );
   const snapshot = await getDocs(q);
   const chapters: ChapterSummary[] = snapshot.docs.map((d) => {
     const data = d.data() as {
       volume_id: string;
-      number: number;
+      number: number | null;
+      sort_order?: number;
+      kind?: ChapterKind;
+      custom_label?: string | null;
       title: string;
       read_at: Timestamp | null;
     };
@@ -67,10 +70,14 @@ async function characterChapters(
       id: d.id,
       volume_id: data.volume_id,
       number: data.number,
+      sort_order: data.sort_order ?? data.number ?? 0,
+      kind: data.kind ?? "chapter",
+      custom_label: data.custom_label ?? null,
       title: data.title,
       read_at: data.read_at ? tsToIso(data.read_at) : null,
     };
   });
+  chapters.sort((a, b) => a.sort_order - b.sort_order);
   return { chapter_count: chapters.length, chapters };
 }
 

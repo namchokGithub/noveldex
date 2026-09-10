@@ -46,10 +46,15 @@ export interface Tag {
   name: string
 }
 
+export type ChapterKind = 'chapter' | 'prologue' | 'epilogue' | 'afterword' | 'side_story' | 'other'
+
 export interface Chapter {
   id: string
   volume_id: string
-  number: number
+  number: number | null
+  sort_order: number
+  kind: ChapterKind
+  custom_label: string | null
   title: string
   summary: string
   description: string
@@ -63,7 +68,10 @@ export interface Chapter {
 export interface ChapterSummary {
   id: string
   volume_id: string
-  number: number
+  number: number | null
+  sort_order: number
+  kind: ChapterKind
+  custom_label: string | null
   title: string
   summary?: string
   read_at: string | null
@@ -129,7 +137,7 @@ export interface ChapterWithCharacters extends Chapter {
 export interface SearchChapterResult {
   id: string
   volume_id: string
-  number: number
+  number: number | null
   title: string
   summary_snippet: string
 }

@@ -76,14 +76,14 @@ describe("chapters", () => {
     ).rejects.toThrow();
   });
 
-  it("lists chapters for a volume ordered by number", async () => {
+  it("lists chapters for a volume in reading order", async () => {
     await seedVolume("novel-1", "vol-1");
     await createChapter("novel-1", "vol-1", { number: 2, title: "Two" });
     await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
 
     const chapters = await getChaptersByVolume("novel-1", "vol-1");
 
-    expect(chapters.map((c) => c.number)).toEqual([1, 2]);
+    expect(chapters.map((c) => c.number)).toEqual([2, 1]);
   });
 
   it("gets a chapter with hydrated tags and characters", async () => {
@@ -255,28 +255,23 @@ describe("chapters", () => {
 });
 
 describe("reorderChapters", () => {
-  it("renumbers chapters and moves their chapterNumbers markers atomically", async () => {
+  it("changes reading order without changing chapter numbers or their markers", async () => {
     await seedVolume("novel-1", "vol-1");
     const a = await createChapter("novel-1", "vol-1", { number: 1, title: "A" });
     const b = await createChapter("novel-1", "vol-1", { number: 2, title: "B" });
     const c = await createChapter("novel-1", "vol-1", { number: 3, title: "C" });
 
     const newOrder: ReorderEntry[] = [
-      { id: c.id, number: 1 },
-      { id: a.id, number: 2 },
-      { id: b.id, number: 3 },
+      { id: c.id, sort_order: 1 },
+      { id: a.id, sort_order: 2 },
+      { id: b.id, sort_order: 3 },
     ];
     await reorderChapters("novel-1", "vol-1", newOrder);
 
     const chapters = await getChaptersByVolume("novel-1", "vol-1");
-    expect(chapters.map((ch) => ({ id: ch.id, number: ch.number }))).toEqual([
-      { id: c.id, number: 1 },
-      { id: a.id, number: 2 },
-      { id: b.id, number: 3 },
-    ]);
+    expect(chapters.map((ch) => ({ id: ch.id, number: ch.number }))).toEqual([{ id: c.id, number: 3 }, { id: a.id, number: 1 }, { id: b.id, number: 2 }]);
 
-    for (const entry of newOrder) {
-      // eslint-disable-next-line no-await-in-loop
+    for (const entry of [a, b, c]) {
       const marker = await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", String(entry.number)));
       expect(marker.data()).toEqual({ chapter_id: entry.id });
     }
@@ -287,15 +282,57 @@ describe("reorderChapters", () => {
     const a = await createChapter("novel-1", "vol-1", { number: 1, title: "A" });
     const b = await createChapter("novel-1", "vol-1", { number: 2, title: "B" });
 
-    await reorderChapters("novel-1", "vol-1", [{ id: a.id, number: 2 }, { id: b.id, number: 1 }]);
+    await reorderChapters("novel-1", "vol-1", [{ id: b.id, sort_order: 1 }, { id: a.id, sort_order: 2 }]);
 
     const chapters = await getChaptersByVolume("novel-1", "vol-1");
     expect(chapters.map((ch) => ch.id)).toEqual([b.id, a.id]);
   });
 });
 
+describe("special chapter entries", () => {
+  it("creates a special entry without a chapter marker", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const prologue = await createChapter("novel-1", "vol-1", { kind: "prologue", title: "Beginning" });
+    expect(prologue.number).toBeNull();
+    expect(prologue.kind).toBe("prologue");
+    expect((await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "0"))).exists()).toBe(false);
+  });
+
+  it("requires a custom label for Other", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await expect(createChapter("novel-1", "vol-1", { kind: "other", title: "Bonus" })).rejects.toThrow("custom label");
+  });
+
+  it("changes between a numbered chapter and a special entry while maintaining markers", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const chapter = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
+    await updateChapter("novel-1", "vol-1", chapter.id, { kind: "epilogue" });
+    expect((await getChapter("novel-1", "vol-1", chapter.id)).number).toBeNull();
+    expect((await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "1"))).exists()).toBe(false);
+
+    await updateChapter("novel-1", "vol-1", chapter.id, { kind: "chapter", number: 2 });
+    expect((await getChapter("novel-1", "vol-1", chapter.id)).number).toBe(2);
+    expect((await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "2"))).data()).toEqual({ chapter_id: chapter.id });
+  });
+
+  it("orders a prologue before numbered chapters without renumbering them", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const first = await createChapter("novel-1", "vol-1", { number: 1, title: "One" });
+    const second = await createChapter("novel-1", "vol-1", { number: 2, title: "Two" });
+    const prologue = await createChapter("novel-1", "vol-1", { kind: "prologue", title: "Before" });
+    await reorderChapters("novel-1", "vol-1", [
+      { id: prologue.id, sort_order: 1 },
+      { id: first.id, sort_order: 2 },
+      { id: second.id, sort_order: 3 },
+    ]);
+    const chapters = await getChaptersByVolume("novel-1", "vol-1");
+    expect(chapters.map((entry) => entry.id)).toEqual([prologue.id, first.id, second.id]);
+    expect(chapters.slice(1).map((entry) => entry.number)).toEqual([1, 2]);
+  });
+});
+
 describe("getChaptersFlat", () => {
-  it("returns every chapter across all volumes in a novel, ordered by number", async () => {
+  it("returns every chapter across all volumes in a novel", async () => {
     await seedVolume("novel-1", "vol-1");
     await seedVolume("novel-1", "vol-2");
     await createChapter("novel-1", "vol-2", { number: 3, title: "Three" });
@@ -304,8 +341,8 @@ describe("getChaptersFlat", () => {
 
     const flat = await getChaptersFlat("novel-1");
 
-    expect(flat.map((c) => c.number)).toEqual([1, 2, 3]);
-    expect(flat[2].volume_id).toBe("vol-2");
+    expect(flat.map((c) => c.number).sort()).toEqual([1, 2, 3]);
+    expect(flat.find((chapter) => chapter.number === 3)?.volume_id).toBe("vol-2");
   });
 
   it("returns an empty array for a novel with no chapters", async () => {
