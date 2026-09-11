@@ -121,6 +121,34 @@ describe("volumes", () => {
     expect(updated.title).toBe("New Title");
   });
 
+  it("creates and updates a volume description, defaulting to an empty string", async () => {
+    const volume = await createVolume("novel-1", {
+      number: 1,
+      title: "Volume One",
+      description: "A quiet arrival.",
+    });
+    expect(volume.description).toBe("A quiet arrival.");
+
+    const withoutDescription = await createVolume("novel-1", {
+      number: 2,
+      title: "Volume Two",
+    });
+    expect(withoutDescription.description).toBe("");
+
+    const updated = await updateVolume("novel-1", volume.id, {
+      description: "Revised opening.",
+    });
+    expect(updated.description).toBe("Revised opening.");
+    expect(updated.title).toBe("Volume One");
+    expect(updated.number).toBe(1);
+  });
+
+  it("rejects a volume description longer than 500 characters", async () => {
+    await expect(
+      createVolume("novel-1", { number: 1, title: "Volume One", description: "x".repeat(501) }),
+    ).rejects.toThrow("description must be 500 characters or fewer");
+  });
+
   it("throws when getting a volume that does not exist", async () => {
     await expect(getVolume("novel-1", "does-not-exist")).rejects.toThrow();
   });

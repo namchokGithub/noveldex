@@ -1,4 +1,4 @@
-# NovelDex — Docs
+# Novelndex — Docs
 
 Navigation index. All project documentation lives here.
 
@@ -14,6 +14,7 @@ Documentation for AI-assisted workflows and session context.
 
 | File | Purpose |
 |------|---------|
+| [CLAUDE.md](ai/CLAUDE.md) | Contributor guide — commands, architecture, guardrails. Moved here from repo root; root `README.md` links to this path. |
 | [AGENTS.md](ai/AGENTS.md) | Agent instructions — rules, constraints, commands. Read before touching code. |
 | [CONTEXT.md](ai/CONTEXT.md) | Session restore context — stack, routes, migrations, current status. Update after meaningful feature changes. |
 | [plans/](ai/plans/) | Implementation plans (date-prefixed, one per feature). Executed by agents. |

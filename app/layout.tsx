@@ -5,6 +5,7 @@ import "./globals.css";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import LanguageToggle from "@/components/i18n/LanguageToggle";
 import CommandPalette from "@/components/commands/CommandPalette";
+import { SearchIndexProvider } from "@/libs/search/SearchIndexProvider";
 
 const googleSans = localFont({
   src: [
@@ -33,7 +34,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NovelDex",
+  title: "Novelndex",
   description: "Novel indexing app",
 };
 
@@ -46,11 +47,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${googleSans.variable} ${notoSansThai.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+      <body suppressHydrationWarning className="min-h-full flex flex-col">
         <I18nProvider>
-          <LanguageToggle />
-          <CommandPalette />
-          {children}
+          <SearchIndexProvider>
+            <LanguageToggle />
+            <CommandPalette />
+            {children}
+          </SearchIndexProvider>
         </I18nProvider>
       </body>
     </html>

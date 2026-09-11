@@ -3,15 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ChapterEditor from "./ChapterEditor";
 import ChapterNotesEditor from "./ChapterNotesEditor";
-import SummaryRenderer from "./SummaryRenderer";
 import {
   backLinkClassName,
-  cardClassName,
   DashboardPage,
   SectionHeading,
 } from "@/app/novels/ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { getChapter } from "@/libs/api";
+import { formatChapterPrefix } from "@/libs/chapterLabel";
 
 export async function generateMetadata({
   params,
@@ -39,10 +38,10 @@ export default async function ChapterPage({
   searchParams,
 }: {
   params: Promise<{ id: string; volumeId: string; chapterId: string }>;
-  searchParams: Promise<{ find?: string }>;
+  searchParams: Promise<{ find?: string; note?: string }>;
 }) {
   const { id, volumeId, chapterId } = await params;
-  const { find = "" } = await searchParams;
+  const { find = "", note = "" } = await searchParams;
 
   let chapter;
 
@@ -53,7 +52,7 @@ export default async function ChapterPage({
   }
 
   return (
-    <DashboardPage maxWidth="max-w-4xl">
+    <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
         <Link
           href={`/novels/${id}/volumes/${volumeId}`}
@@ -62,31 +61,12 @@ export default async function ChapterPage({
         </Link>
 
         <SectionHeading
-          eyebrow={
-            <T k="chapter.pageEyebrow" values={{ number: chapter.number }} />
-          }
+          eyebrow={formatChapterPrefix(chapter, { chapter: "Ch.", prologue: "Prologue", epilogue: "Epilogue", afterword: "Afterword", side_story: "Side Story", other: "Other" })}
           title={chapter.title}
           description={<T k="chapter.pageDescription" />}
         />
 
-        <div className={cardClassName}>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-            Preview
-          </h2>
-          <SummaryRenderer
-            summary={chapter.summary}
-            notes={chapter.notes}
-            novelId={id}
-            characters={chapter.characters}
-            highlightQuery={find}
-          />
-        </div>
-
-        {/* <div className={cardClassName}>
-          <LinkedCharactersPanel characters={chapter.characters} novelId={id} />
-        </div> */}
-
-        <ChapterNotesEditor notes={chapter.notes} characters={chapter.characters} novelId={id} volumeId={volumeId} chapterId={chapter.id} initialFind={find} />
+        <ChapterNotesEditor notes={chapter.notes} characters={chapter.characters} tags={chapter.tags} novelId={id} volumeId={volumeId} chapterId={chapter.id} initialFind={find} initialNoteId={note} />
         <ChapterEditor chapter={chapter} novelId={id} volumeId={volumeId} showSummary={false} />
       </div>
     </DashboardPage>

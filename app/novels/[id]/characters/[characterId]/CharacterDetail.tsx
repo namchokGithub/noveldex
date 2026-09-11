@@ -18,7 +18,12 @@ import {
   smallLabelClassName,
 } from '../../../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
+import { ChapterLabel } from '@/components/chapters/ChapterLabel'
 import { updateCharacter } from '@/libs/api'
+import { useSearchIndex } from '@/libs/search/SearchIndexProvider'
+import { normalizeEntity } from '@/libs/search/normalize'
+import { dependentRefreshes } from '@/libs/search/refresh'
+import { buildEntityId } from '@/libs/entities/keys'
 
 export default function CharacterDetail({
   character,
@@ -30,6 +35,7 @@ export default function CharacterDetail({
   roles: CharacterRole[]
 }) {
   const { t } = useI18n()
+  const { documents, dependents, entityMap, upsertMany } = useSearchIndex()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -52,13 +58,17 @@ export default function CharacterDetail({
     setSaving(true)
     setError(null)
     try {
-      await updateCharacter(novelId, character.id, {
+      const updated = await updateCharacter(novelId, character.id, {
         name,
         role_id: roleId,
         profile_image_url: profileImageUrl.trim() || null,
         description,
         aliases: aliases ? aliases.split(',').map(s => s.trim()).filter(Boolean) : [],
       })
+      const entity = { id: buildEntityId(novelId, 'character', updated.id), novelId, type: 'character' as const, name: updated.name, aliases: updated.aliases, description: updated.description }
+      const nextEntities = new Map(entityMap)
+      nextEntities.set(entity.id, entity)
+      upsertMany([normalizeEntity(entity), ...dependentRefreshes(entity.id, dependents, documents, nextEntities)])
       setEditing(false)
       setSnackbar({ tone: 'success', message: t('character.saveSuccess') })
       router.refresh()
@@ -219,13 +229,13 @@ export default function CharacterDetail({
               <li key={ch.id}>
                 <Link
                   href={`/novels/${novelId}/volumes/${ch.volume_id}/chapters/${ch.id}`}
-                  className={listRowClassName}
+                  className={`${listRowClassName} flex-wrap`}
                 >
-                  <span className="text-sm font-medium text-stone-900">
-                    Ch. {ch.number} — {ch.title}
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
+                    <ChapterLabel chapter={ch} />
                   </span>
                   {ch.read_at && (
-                    <span className="text-xs text-stone-500">{ch.read_at}</span>
+                    <span className="shrink-0 text-xs text-stone-500">{ch.read_at}</span>
                   )}
                 </Link>
               </li>

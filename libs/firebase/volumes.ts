@@ -22,8 +22,17 @@ import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 interface VolumeDoc {
   number: number;
   title: string;
+  description?: string;
   created_at: Timestamp;
   updated_at: Timestamp;
+}
+
+const MAX_DESCRIPTION_LENGTH = 500;
+
+function validateDescription(description: string | undefined) {
+  if (description !== undefined && description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer`);
+  }
 }
 
 const ALLOWED_PER_PAGE = [5, 10, 20, 50];
@@ -56,6 +65,7 @@ async function toVolume(novelId: string, id: string, data: VolumeDoc): Promise<V
     novel_id: novelId,
     number: data.number,
     title: data.title,
+    description: data.description ?? "",
     chapter_count,
     read_count,
     created_at: tsToIso(data.created_at),
@@ -63,9 +73,16 @@ async function toVolume(novelId: string, id: string, data: VolumeDoc): Promise<V
   };
 }
 
-export interface VolumePayload {
+export interface VolumeCreatePayload {
   number: number;
   title: string;
+  description?: string;
+}
+
+export interface VolumePayload {
+  number?: number;
+  title?: string;
+  description?: string;
 }
 
 export async function getVolumes(
@@ -108,6 +125,29 @@ export async function getVolumes(
   };
 }
 
+export interface VolumeSearchSource {
+  id: string;
+  novel_id: string;
+  number: number;
+  title: string;
+  description: string;
+}
+
+// Search does not need the chapter/read aggregates calculated by getVolumes().
+export async function getVolumesFlat(novelId: string): Promise<VolumeSearchSource[]> {
+  const snapshot = await getDocs(query(volumesCol(novelId), orderBy("number", "asc")));
+  return snapshot.docs.map((snapshot) => {
+    const data = snapshot.data() as VolumeDoc;
+    return {
+      id: snapshot.id,
+      novel_id: novelId,
+      number: data.number,
+      title: data.title,
+      description: data.description ?? "",
+    };
+  });
+}
+
 export async function getVolume(novelId: string, volumeId: string): Promise<Volume> {
   const snapshot = await getDoc(doc(db, "novels", novelId, "volumes", volumeId));
   if (!snapshot.exists()) {
@@ -116,8 +156,12 @@ export async function getVolume(novelId: string, volumeId: string): Promise<Volu
   return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
 }
 
-export async function createVolume(novelId: string, payload: VolumePayload): Promise<Volume> {
-  const ref = await addDoc(volumesCol(novelId), withCreateTimestamps(payload));
+export async function createVolume(novelId: string, payload: VolumeCreatePayload): Promise<Volume> {
+  validateDescription(payload.description);
+  const ref = await addDoc(
+    volumesCol(novelId),
+    withCreateTimestamps({ ...payload, description: payload.description ?? "" }),
+  );
   const snapshot = await getDoc(ref);
   return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
 }
@@ -127,6 +171,7 @@ export async function updateVolume(
   volumeId: string,
   payload: VolumePayload,
 ): Promise<Volume> {
+  validateDescription(payload.description);
   const ref = doc(db, "novels", novelId, "volumes", volumeId) as DocumentReference<
     VolumeDoc,
     VolumeDoc
@@ -143,11 +188,10 @@ export async function deleteVolume(novelId: string, volumeId: string): Promise<v
     const chunk = chapterDocs.docs.slice(i, i + BATCH_CHUNK_SIZE);
     const batch = writeBatch(db);
     chunk.forEach((chapterDoc) => {
-      const number = (chapterDoc.data() as { number: number }).number;
+      const number = (chapterDoc.data() as { number: number | null }).number;
       batch.delete(chapterDoc.ref);
-      batch.delete(doc(db, "novels", novelId, "chapterNumbers", String(number)));
+      if (number !== null) batch.delete(doc(db, "novels", novelId, "chapterNumbers", String(number)));
     });
-    // eslint-disable-next-line no-await-in-loop
     await batch.commit();
   }
 

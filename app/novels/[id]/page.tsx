@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddVolumeForm from "./AddVolumeForm";
 import NovelCover from "../NovelCover";
+import NovelDescriptionCard from "./NovelDescriptionCard";
 import VolumeManager from "./VolumeManager";
 import { T } from "@/components/i18n/I18nProvider";
 import {
@@ -48,7 +49,7 @@ export default async function NovelPage({
   const readCount = volumes.summary.read_count;
 
   return (
-    <DashboardPage maxWidth="max-w-6xl">
+    <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link href="/novels" className={backLinkClassName}>
@@ -139,7 +140,9 @@ export default async function NovelPage({
           </aside>
 
           <div className="space-y-4">
-            <div
+            <NovelDescriptionCard
+              title={novel.title}
+              description={novel.description}
               className={`${cardClassName} overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(246,241,232,0.9))]`}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="relative shrink-0 self-start">
@@ -169,7 +172,7 @@ export default async function NovelPage({
                   </p>
                 </div>
               </div>
-            </div>
+            </NovelDescriptionCard>
 
             <VolumeManager
               novelId={id}
@@ -178,6 +181,7 @@ export default async function NovelPage({
                 novel_id: volume.novel_id,
                 number: volume.number,
                 title: volume.title,
+                description: volume.description,
                 chapter_count: volume.chapter_count,
                 read_count: volume.read_count,
                 created_at: volume.created_at,

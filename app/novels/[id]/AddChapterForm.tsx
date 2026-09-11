@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ghostButtonClassName,
+  FormError,
   inputClassName,
   modalBackdropClassName,
   modalPanelClassName,
@@ -14,6 +15,12 @@ import {
 } from '../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
 import { createChapter, getLastOrderNos } from '@/libs/api'
+import type { ChapterKind } from '@/app/types'
+import { CHAPTER_KINDS } from '@/libs/chapterLabel'
+import { userErrorMessage } from '@/libs/userErrorMessage'
+import { normalizeChapter } from '@/libs/search/normalize'
+import { useSearchIndex } from '@/libs/search/SearchIndexProvider'
+import { useChapterKindLabels } from '@/components/chapters/ChapterLabel'
 
 export default function AddChapterForm({
   novelId,
@@ -23,6 +30,8 @@ export default function AddChapterForm({
   volumeId: string
 }) {
   const { t } = useI18n()
+  const { entityMap, upsert } = useSearchIndex()
+  const kindLabels = useChapterKindLabels()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -30,6 +39,8 @@ export default function AddChapterForm({
   const [snackbar, setSnackbar] = useState<{ tone: 'success' | 'error'; message: string } | null>(null)
   const [nextNumber, setNextNumber] = useState<number | null>(null)
   const [fetchingNumber, setFetchingNumber] = useState(false)
+  const [kind, setKind] = useState<ChapterKind>('chapter')
+  const [customLabel, setCustomLabel] = useState('')
 
   useEffect(() => {
     if (!snackbar) return
@@ -44,7 +55,7 @@ export default function AddChapterForm({
   async function handleOpenForm() {
     setFetchingNumber(true)
     try {
-      const nos = await getLastOrderNos({ volume_id: volumeId })
+      const nos = await getLastOrderNos({ novel_id: novelId, volume_id: volumeId })
       setNextNumber(nos.chapter + 1)
     } catch {
       setNextNumber(null) // silent fallback — user types manually
@@ -62,21 +73,26 @@ export default function AddChapterForm({
     const form = e.currentTarget
     const readAtRaw = (form.elements.namedItem('read_at') as HTMLInputElement).value
     const data = {
-      number: Number((form.elements.namedItem('number') as HTMLInputElement).value),
+      kind,
+      number: kind === 'chapter' ? Number((form.elements.namedItem('number') as HTMLInputElement).value) : null,
+      custom_label: kind === 'other' ? customLabel : null,
       title: (form.elements.namedItem('title') as HTMLInputElement).value,
-      summary: (form.elements.namedItem('summary') as HTMLTextAreaElement).value,
+      description: (form.elements.namedItem('description') as HTMLTextAreaElement).value,
       read_at: normalizeDateTimeLocalToISOString(readAtRaw),
     }
 
     try {
-      await createChapter(novelId, volumeId, data)
+      const chapter = await createChapter(novelId, volumeId, data)
+      upsert(normalizeChapter(novelId, chapter, entityMap, kindLabels))
       form.reset()
       setNextNumber(null)
+      setKind('chapter')
+      setCustomLabel('')
       setOpen(false)
       setSnackbar({ tone: 'success', message: t('addChapter.success') })
       router.refresh()
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('common.networkError')
+      const message = userErrorMessage(err, t)
       setError(message)
       setSnackbar({ tone: 'error', message })
     } finally {
@@ -107,6 +123,12 @@ export default function AddChapterForm({
             </div>
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <div>
+                <label className={smallLabelClassName}>{t('addChapter.entryType')}</label>
+                <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} className={inputClassName}>
+                  {CHAPTER_KINDS.map((entryKind) => <option key={entryKind} value={entryKind}>{t(`chapter.kind.${entryKind === 'side_story' ? 'sideStory' : entryKind}` as 'chapter.kind.chapter')}</option>)}
+                </select>
+              </div>
+              {kind === 'chapter' && <div>
                 <label className={smallLabelClassName}>{t('addChapter.numberRequired')}</label>
                 <input
                   name="number"
@@ -117,7 +139,11 @@ export default function AddChapterForm({
                   defaultValue={nextNumber ?? undefined}
                   placeholder="1"
                 />
-              </div>
+              </div>}
+              {kind === 'other' && <div>
+                <label className={smallLabelClassName}>{t('addChapter.customLabel')}</label>
+                <input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} required maxLength={80} className={inputClassName} placeholder={t('addChapter.customLabelPlaceholder')} />
+              </div>}
               <div>
                 <label className={smallLabelClassName}>{t('common.titleRequired')}</label>
                 <input
@@ -128,12 +154,13 @@ export default function AddChapterForm({
                 />
               </div>
               <div>
-                <label className={smallLabelClassName}>{t('addChapter.summary')}</label>
+                <label className={smallLabelClassName}>{t('common.description')}</label>
                 <textarea
-                  name="summary"
+                  name="description"
                   rows={3}
+                  maxLength={500}
                   className={inputClassName}
-                  placeholder={t('addChapter.summaryPlaceholder')}
+                  placeholder={t('chapter.descriptionPlaceholder')}
                 />
               </div>
               <div>
@@ -145,7 +172,7 @@ export default function AddChapterForm({
                   className={inputClassName}
                 />
               </div>
-              {error && <p className="text-sm text-rose-600">{error}</p>}
+              {error && <FormError>{error}</FormError>}
               <div className="mt-1 flex justify-end gap-2">
                 <button
                   type="button"
@@ -153,6 +180,8 @@ export default function AddChapterForm({
                     setOpen(false)
                     setError(null)
                     setNextNumber(null)
+                    setKind('chapter')
+                    setCustomLabel('')
                   }}
                   className={ghostButtonClassName}
                 >

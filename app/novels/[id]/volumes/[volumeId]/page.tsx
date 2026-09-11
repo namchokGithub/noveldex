@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddChapterForm from "../../AddChapterForm";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
+import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import {
   backLinkClassName,
   cardClassName,
@@ -44,7 +45,7 @@ export default async function VolumePage({
           );
 
   return (
-    <DashboardPage maxWidth="max-w-5xl">
+    <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
         <Link href={`/novels/${id}`} className={backLinkClassName}>
           ← Back to {novel.title}
@@ -55,6 +56,12 @@ export default async function VolumePage({
           title={volume.title}
           description={`Manage chapters inside this volume. Updated ${formatDisplayDate(volume.updated_at) ?? volume.updated_at}.`}
           action={<AddChapterForm novelId={id} volumeId={volume.id} />}
+        />
+
+        <VolumeDescriptionEditor
+          novelId={id}
+          volumeId={volume.id}
+          initialDescription={volume.description}
         />
 
         <div className={cardClassName}>
@@ -78,7 +85,7 @@ export default async function VolumePage({
           <ChapterListWithFilters
             novelId={id}
             volumeId={volumeId}
-            chapters={[...chapters].sort((a, b) => a.number - b.number)}
+            chapters={chapters}
             availableTags={availableTags}
           />
         )}

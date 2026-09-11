@@ -13,6 +13,9 @@ import {
 } from "../ui";
 import { createVolume, getLastOrderNos } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { userErrorMessage } from "@/libs/userErrorMessage";
+import { normalizeVolume } from "@/libs/search/normalize";
+import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
 
 interface VolumeDraft {
   number: number;
@@ -26,6 +29,7 @@ interface SnackbarState {
 
 export default function AddVolumeForm({ novelId }: { novelId: string }) {
   const { t } = useI18n();
+  const { upsert } = useSearchMutations();
   const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -68,7 +72,8 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
     setSubmitting(true);
 
     try {
-      await createVolume(novelId, draft);
+      const volume = await createVolume(novelId, draft);
+      upsert(normalizeVolume(volume));
       formRef.current?.reset();
       setDraft(null);
       setConfirmOpen(false);
@@ -79,10 +84,7 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
       });
       router.refresh();
     } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : t("common.networkError");
+      const message = userErrorMessage(nextError, t);
 
       setError(message);
       setConfirmOpen(false);
