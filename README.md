@@ -29,6 +29,8 @@ corepack pnpm lint
 corepack pnpm test
 corepack pnpm build
 corepack pnpm emulators
+corepack pnpm build:cloudflare
+corepack pnpm preview:cloudflare
 ```
 
 If `make` is available, `make web` starts the application and `make firebase-emulators` starts the Firestore emulator. The PostgreSQL-related Make targets are retained solely for legacy backup and recovery work; the application does not use PostgreSQL at runtime.
@@ -56,3 +58,4 @@ corepack pnpm backfill:chapter-entry-order -- --project <project-id> --apply
 - [Architecture decisions](docs/engineering/DECISIONS.md)
 - [Progress and backlog](docs/engineering/PROGRESS.md)
 - [Contributor guidance](docs/ai/CLAUDE.md)
+- [Cloudflare Workers deployment](docs/engineering/cloudflare-workers.md)

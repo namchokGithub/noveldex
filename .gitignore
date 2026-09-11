@@ -49,5 +49,8 @@ yarn-debug.log*
 
 # Deployment
 /.vercel/
+/.open-next/
+/.wrangler/
+cloudflare-env.d.ts
 *.pem
 _todo.md

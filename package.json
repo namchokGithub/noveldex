@@ -14,8 +14,12 @@
     "backfill:event-locations": "tsx --env-file=.env.local scripts/one-off/backfill-event-locations.ts",
     "backfill:chapter-notes": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-notes.ts",
     "backfill:chapter-entry-order": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-entry-order.ts",
-    "backfill:entity-references": "tsx --env-file=.env.local scripts/one-off/backfill-entity-references.ts"
-    ,"benchmark:search": "node --expose-gc --import tsx scripts/one-off/benchmark-search-index.ts"
+    "backfill:entity-references": "tsx --env-file=.env.local scripts/one-off/backfill-entity-references.ts",
+    "benchmark:search": "node --expose-gc --import tsx scripts/one-off/benchmark-search-index.ts",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types cloudflare-env.d.ts --env-interface CloudflareEnv"
   },
   "dependencies": {
     "firebase": "^11.10.0",
@@ -25,6 +29,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
@@ -41,7 +46,8 @@
     "tsx": "^4.23.12",
     "typescript": "^5",
     "vitest": "^2",
-    "wait-on": "^8.0.5"
+    "wait-on": "^8.0.5",
+    "wrangler": "^4.131.0"
   },
   "packageManager": "pnpm@11.24.0+sha512.bd27e345e976dcb0be0b7a1228217b049a817e21b1f355c90dbe7dc46671895a8bc1e6d06c24554505ea93ea0b45f489a27ec1bfbc8de6a9659fca0f16fa0000"
 }
