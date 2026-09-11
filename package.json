@@ -3,17 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\open-dev-url.ps1 http://localhost:3000\"",
+    "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && node scripts/open-dev-url.mjs http://localhost:3000\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
     "emulators": "firebase emulators:start --only firestore --project demo-noveldex",
-    "migrate:firestore": "tsx --env-file=.env.local scripts/migrate-postgres-to-firestore.ts",
-    "backfill:event-locations": "tsx --env-file=.env.local scripts/backfill-event-locations.ts",
-    "backfill:chapter-notes": "tsx --env-file=.env.local scripts/backfill-chapter-notes.ts",
-    "backfill:chapter-entry-order": "tsx --env-file=.env.local scripts/backfill-chapter-entry-order.ts"
+    "migrate:firestore": "tsx --env-file=.env.local scripts/one-off/migrate-postgres-to-firestore.ts",
+    "backfill:event-locations": "tsx --env-file=.env.local scripts/one-off/backfill-event-locations.ts",
+    "backfill:chapter-notes": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-notes.ts",
+    "backfill:chapter-entry-order": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-entry-order.ts"
   },
   "dependencies": {
     "firebase": "^11.10.0",
