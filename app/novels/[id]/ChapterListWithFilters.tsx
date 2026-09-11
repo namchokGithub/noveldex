@@ -24,6 +24,8 @@ import {
 } from "../ui";
 import { deleteChapter, reorderChapters, updateChapter } from "@/libs/api";
 import { userErrorMessage } from "@/libs/userErrorMessage";
+import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
+import { descendantsOf } from "@/libs/search/cascadeDelete";
 
 export default function ChapterListWithFilters({
   novelId,
@@ -39,6 +41,7 @@ export default function ChapterListWithFilters({
   const { t } = useI18n();
   const kindLabels = useChapterKindLabels();
   const router = useRouter();
+  const { documents, discardMany } = useSearchIndex();
 
   // ── filter state ──────────────────────────────────────────────────────────
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
@@ -103,6 +106,7 @@ export default function ChapterListWithFilters({
     setDeletingId(confirmChapter.id);
     try {
       await deleteChapter(novelId, confirmChapter.volume_id, confirmChapter.id);
+      discardMany(descendantsOf({ type: "chapter", novelId, volumeId: confirmChapter.volume_id, chapterId: confirmChapter.id }, documents));
       setDeletedChapterIds((cur) => [...cur, confirmChapter.id]);
       setConfirmChapter(null);
       setSnackbar({ tone: "success", message: t("chapter.deleteSuccess") });

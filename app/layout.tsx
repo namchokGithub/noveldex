@@ -47,7 +47,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${googleSans.variable} ${notoSansThai.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+      <body suppressHydrationWarning className="min-h-full flex flex-col">
         <I18nProvider>
           <SearchIndexProvider>
             <LanguageToggle />

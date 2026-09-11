@@ -21,7 +21,8 @@ import { deleteVolume, updateVolume } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { normalizeVolume } from "@/libs/search/normalize";
-import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
+import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
+import { descendantsOf } from "@/libs/search/cascadeDelete";
 
 interface VolumeItem extends Volume {
   chapterCount: number;
@@ -49,7 +50,7 @@ export default function VolumeManager({
   pagination: PaginationMeta;
 }) {
   const { t } = useI18n();
-  const { upsert, discard } = useSearchMutations();
+  const { documents, discardMany, upsert } = useSearchIndex();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -149,7 +150,7 @@ export default function VolumeManager({
 
     try {
       await deleteVolume(novelId, volume.id);
-      discard(`volume:${novelId}:${volume.id}`);
+      discardMany(descendantsOf({ type: "volume", novelId, volumeId: volume.id }, documents));
       setConfirmState(null);
       setSnackbar({
         tone: "success",

@@ -19,7 +19,7 @@ import type { ChapterKind } from '@/app/types'
 import { CHAPTER_KINDS } from '@/libs/chapterLabel'
 import { userErrorMessage } from '@/libs/userErrorMessage'
 import { normalizeChapter } from '@/libs/search/normalize'
-import { useSearchMutations } from '@/libs/search/SearchIndexProvider'
+import { useSearchIndex } from '@/libs/search/SearchIndexProvider'
 import { useChapterKindLabels } from '@/components/chapters/ChapterLabel'
 
 export default function AddChapterForm({
@@ -30,7 +30,7 @@ export default function AddChapterForm({
   volumeId: string
 }) {
   const { t } = useI18n()
-  const { upsert } = useSearchMutations()
+  const { entityMap, upsert } = useSearchIndex()
   const kindLabels = useChapterKindLabels()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -83,7 +83,7 @@ export default function AddChapterForm({
 
     try {
       const chapter = await createChapter(novelId, volumeId, data)
-      upsert(normalizeChapter(novelId, chapter, new Map(), kindLabels))
+      upsert(normalizeChapter(novelId, chapter, entityMap, kindLabels))
       form.reset()
       setNextNumber(null)
       setKind('chapter')

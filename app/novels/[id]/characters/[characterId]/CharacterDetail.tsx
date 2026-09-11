@@ -20,6 +20,10 @@ import {
 import { useI18n } from '@/components/i18n/I18nProvider'
 import { ChapterLabel } from '@/components/chapters/ChapterLabel'
 import { updateCharacter } from '@/libs/api'
+import { useSearchIndex } from '@/libs/search/SearchIndexProvider'
+import { normalizeEntity } from '@/libs/search/normalize'
+import { dependentRefreshes } from '@/libs/search/refresh'
+import { buildEntityId } from '@/libs/entities/keys'
 
 export default function CharacterDetail({
   character,
@@ -31,6 +35,7 @@ export default function CharacterDetail({
   roles: CharacterRole[]
 }) {
   const { t } = useI18n()
+  const { documents, dependents, entityMap, upsertMany } = useSearchIndex()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -53,13 +58,17 @@ export default function CharacterDetail({
     setSaving(true)
     setError(null)
     try {
-      await updateCharacter(novelId, character.id, {
+      const updated = await updateCharacter(novelId, character.id, {
         name,
         role_id: roleId,
         profile_image_url: profileImageUrl.trim() || null,
         description,
         aliases: aliases ? aliases.split(',').map(s => s.trim()).filter(Boolean) : [],
       })
+      const entity = { id: buildEntityId(novelId, 'character', updated.id), novelId, type: 'character' as const, name: updated.name, aliases: updated.aliases, description: updated.description }
+      const nextEntities = new Map(entityMap)
+      nextEntities.set(entity.id, entity)
+      upsertMany([normalizeEntity(entity), ...dependentRefreshes(entity.id, dependents, documents, nextEntities)])
       setEditing(false)
       setSnackbar({ tone: 'success', message: t('character.saveSuccess') })
       router.refresh()

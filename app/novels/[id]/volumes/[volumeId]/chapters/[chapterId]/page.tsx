@@ -38,10 +38,10 @@ export default async function ChapterPage({
   searchParams,
 }: {
   params: Promise<{ id: string; volumeId: string; chapterId: string }>;
-  searchParams: Promise<{ find?: string }>;
+  searchParams: Promise<{ find?: string; note?: string }>;
 }) {
   const { id, volumeId, chapterId } = await params;
-  const { find = "" } = await searchParams;
+  const { find = "", note = "" } = await searchParams;
 
   let chapter;
 
@@ -66,7 +66,7 @@ export default async function ChapterPage({
           description={<T k="chapter.pageDescription" />}
         />
 
-        <ChapterNotesEditor notes={chapter.notes} characters={chapter.characters} novelId={id} volumeId={volumeId} chapterId={chapter.id} initialFind={find} />
+        <ChapterNotesEditor notes={chapter.notes} characters={chapter.characters} tags={chapter.tags} novelId={id} volumeId={volumeId} chapterId={chapter.id} initialFind={find} initialNoteId={note} />
         <ChapterEditor chapter={chapter} novelId={id} volumeId={volumeId} showSummary={false} />
       </div>
     </DashboardPage>

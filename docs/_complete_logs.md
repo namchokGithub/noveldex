@@ -2,6 +2,13 @@
 
 Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRESS.md) to keep that file focused on outstanding work. History only — do not edit completed entries here; add new completions as items finish in PROGRESS.md.
 
+## Phase 3: Timeline + Search
+
+- [x] Generic Entity Reference System — six entity types with stable qualified IDs, aliases, typed and backward-compatible character references, persisted occurrences, and compatibility projections for existing character features
+- [x] One derived client-side MiniSearch index — normalized novels, volumes, chapters, notes, entities, and events; one provider/session; `SearchScope`; staged exact/prefix/fuzzy ranking; result limits; no Firestore reads per keystroke
+- [x] Search maintenance and UX — Thai/English tokenizer, incremental document/reference/tag refreshes, deletion cascades, chunked initial builds, vacuum scheduling, note deep links with read-mode highlights, and accessible command-palette navigation
+- [x] Growth benchmark — deterministic 5k/10k/25k/50k synthetic checkpoints with build, exact/fuzzy latency, memory, dataset-size, and mutation-maintenance measurements; IndexedDB and Web Worker remain deferred
+
 ## Firebase Migration and Cutover
 
 - [x] Plan 1 — Firebase foundation and `novels` domain

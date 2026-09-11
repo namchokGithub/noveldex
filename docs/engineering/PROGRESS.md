@@ -2,16 +2,11 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Phase 3: Timeline + Search ← current
-
-Current implementation: 3A+3C adds timeline ordering, generic entity references, entity management UI, and one derived MiniSearch provider with purpose-built loaders and incremental primitives. Firestore integration verification remains pending a running emulator. Phase 3D–3F still owns scoped/ranked command-palette search, tokenizer validation, benchmarks, and maintenance cascades.
-- [ ] Implement the approved Phase 3 client-side MiniSearch plan: generic entity references, one derived global index, scoped search, ranking, and growth benchmarks. Firestore remains the source of truth; no Firestore full-text queries or external search service.
-
 ## Phase 4.6: My Polish
 
-- [ ] Enhance Appears in (1) in Charactors
+- [ ] Enhance Appears in (1) in Characters
 
-## Phase 5: Auth
+## Phase 5: Auth + Guest only view
 
 - [ ] users table + migration
 - [ ] JWT-based login/register

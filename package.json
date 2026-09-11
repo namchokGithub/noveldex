@@ -15,6 +15,7 @@
     "backfill:chapter-notes": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-notes.ts",
     "backfill:chapter-entry-order": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-entry-order.ts",
     "backfill:entity-references": "tsx --env-file=.env.local scripts/one-off/backfill-entity-references.ts"
+    ,"benchmark:search": "node --expose-gc --import tsx scripts/one-off/benchmark-search-index.ts"
   },
   "dependencies": {
     "firebase": "^11.10.0",

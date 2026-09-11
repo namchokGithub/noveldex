@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildIndex } from "./buildIndex";
+import { buildIndex, buildIndexAsync } from "./buildIndex";
 import type { SearchDocument } from "./types";
 
 function doc(overrides: Partial<SearchDocument>): SearchDocument {
@@ -20,5 +20,10 @@ describe("buildIndex", () => {
     expect(index.search("Alpha")).toHaveLength(0);
     index.discard("d1");
     expect(index.search("Beta")).toHaveLength(0);
+  });
+
+  it("builds small datasets through the chunked path", async () => {
+    const index = await buildIndexAsync([doc({ title: "Chunked" })]);
+    expect(index.search("Chunked")).toHaveLength(1);
   });
 });

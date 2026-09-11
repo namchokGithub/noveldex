@@ -61,3 +61,13 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Why:** Story structure needs entries before, between, and after numbered chapters. Reordering those entries must not renumber ordinary chapters or invalidate their `chapterNumbers/{number}` markers.
 
 **Trade-offs:** New entries append to their volume and then move through Reorder. Existing chapters require a one-time `backfill:chapter-entry-order` migration before relying on `sort_order` in Firestore queries. Cross-volume views sort by volume number, then entry `sort_order`.
+
+---
+
+## ADR-010: Client-side MiniSearch is the Phase 3 search engine
+
+**Decision:** Build one disposable MiniSearch index per application session from Firestore data. Search scopes filter the same global index; Firestore remains the sole source of truth.
+
+**Why:** Firestore has no native full-text search and Phase 3 does not add a server-side search service. The recorded synthetic checkpoints keep engine p95 below 100 ms through 50,000 documents, while chunked builds prevent long initial indexing tasks from blocking the browser.
+
+**Trade-offs:** The index, document map, entity map, and dependency map use client memory and are rebuilt after reload. Benchmark results require renewed review at later growth checkpoints. IndexedDB and a Web Worker remain deferred until measured cold-start, main-thread, or memory costs justify their added complexity.
