@@ -23,7 +23,8 @@ const en = {
   "common.titleRequired": "Title *",
   "common.networkError": "Network error. Please try again.",
   "common.requestFailed": "Request failed: {status}",
-  "common.descriptionTooLong": "Description must be {limit} characters or fewer.",
+  "common.descriptionTooLong":
+    "Description must be {limit} characters or fewer.",
 
   "status.reading": "Reading",
   "status.completed": "Completed",
@@ -73,7 +74,7 @@ const en = {
   "command.matchInSummary": "Summary match",
 
   "novels.dashboard": "Dashboard",
-  "novels.libraryTitle": "NovelDex Library",
+  "novels.libraryTitle": "Novelndex Library",
   "novels.heroDescription":
     "Track reading progress, jump into chapter maps, and keep every story in one clean dashboard.",
   "novels.count.one": "{count} novel",
@@ -195,7 +196,8 @@ const en = {
   "chapter.entryNumberRequired": "Enter a positive chapter number.",
   "chapter.entryNumberDuplicate": "Chapter numbers must be unique.",
   "chapter.entryOtherRequired": "Enter a custom label for Other.",
-  "chapter.entryCustomLabelTooLong": "Custom label must be {limit} characters or fewer.",
+  "chapter.entryCustomLabelTooLong":
+    "Custom label must be {limit} characters or fewer.",
   "chapter.titleRequired": "Enter a chapter title.",
   "chapter.saveTitle": "Save title",
   "chapter.titleSaved": "Title saved",

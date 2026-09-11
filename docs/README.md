@@ -1,4 +1,4 @@
-# NovelDex — Docs
+# Novelndex — Docs
 
 Navigation index. All project documentation lives here.
 

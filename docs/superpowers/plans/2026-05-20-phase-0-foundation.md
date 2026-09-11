@@ -543,7 +543,7 @@ export default async function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gray-950 text-white">
-      <h1 className="text-4xl font-bold tracking-tight">NovelDex</h1>
+      <h1 className="text-4xl font-bold tracking-tight">Novelndex</h1>
       <div className="flex items-center gap-2 rounded-lg border border-gray-800 px-4 py-2 text-sm">
         <span className="text-gray-400">API</span>
         {health ? (

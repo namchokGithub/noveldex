@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add an optional, 500-character `description` field to both `Volume` and `Chapter` in NovelDex, editable only on their respective detail pages.
+**Goal:** Add an optional, 500-character `description` field to both `Volume` and `Chapter` in Novelndex, editable only on their respective detail pages.
 
 **Architecture:** Firestore is schemaless, so this is a pure additive field on two existing documents (`novels/{novelId}/volumes/{volumeId}` and `.../chapters/{chapterId}`) plus one new small edit form for volumes (which currently has no edit UI on its detail page) and one new field block inside the existing chapter editor. No new collections, no migration, no index/rules changes.
 

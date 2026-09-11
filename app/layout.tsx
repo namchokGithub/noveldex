@@ -33,7 +33,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NovelDex",
+  title: "Novelndex",
   description: "Novel indexing app",
 };
 

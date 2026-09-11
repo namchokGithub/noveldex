@@ -1,4 +1,4 @@
-# NovelDex — Current Context
+# Novelndex — Current Context
 
 ## Runtime
 

@@ -1,4 +1,4 @@
-# NovelDex contributor guide
+# Novelndex contributor guide
 
 ## Commands
 

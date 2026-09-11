@@ -1,6 +1,6 @@
-# NovelDex
+# Novelndex
 
-NovelDex is a Next.js application for organizing novels, volumes, chapters, characters, events, and tags. It uses Cloud Firestore directly through the Firebase Web SDK.
+Novelndex is a Next.js application for organizing novels, volumes, chapters, characters, events, and tags. It uses Cloud Firestore directly through the Firebase Web SDK.
 
 ## Requirements
 

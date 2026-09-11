@@ -1,4 +1,4 @@
-# NovelDex — Architecture Decisions
+# Novelndex — Architecture Decisions
 
 ## ADR-001: Single repository
 

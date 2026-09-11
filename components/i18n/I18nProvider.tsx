@@ -16,7 +16,8 @@ export type Locale = 'en' | 'th'
 export type TranslationKey = keyof typeof en
 type TranslationValues = Record<string, string | number>
 
-const STORAGE_KEY = 'noveldex-locale'
+const STORAGE_KEY = 'novelndex-locale'
+const LEGACY_STORAGE_KEY = 'noveldex-locale'
 
 const dictionaries = {
   en,
@@ -48,7 +49,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
+    const stored = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY)
     const frame = window.requestAnimationFrame(() => {
       if (stored === 'en' || stored === 'th') setLanguageState(stored)
       setHydrated(true)
@@ -59,6 +60,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return
     window.localStorage.setItem(STORAGE_KEY, language)
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY)
     document.documentElement.lang = language
   }, [hydrated, language])
 

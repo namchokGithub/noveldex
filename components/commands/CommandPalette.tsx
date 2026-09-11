@@ -7,8 +7,8 @@ import { getAllCharacters, getChaptersFlat, getEvents, getNovels } from '@/libs/
 import { formatChapterLabel } from '@/libs/chapterLabel'
 import { useChapterKindLabels } from '@/components/chapters/ChapterLabel'
 
-const OPEN_EVENT = 'noveldex:open-command-palette'
-export const CHAPTER_SEARCH_SOURCE_EVENT = 'noveldex:chapter-search-source'
+const OPEN_EVENT = 'novelndex:open-command-palette'
+export const CHAPTER_SEARCH_SOURCE_EVENT = 'novelndex:chapter-search-source'
 
 type Command = { id: string; label: string; hint: string; href?: string; keywords: string; onSelect?: () => void }
 export type ChapterSearchSource = {

@@ -1,4 +1,4 @@
-# NovelDex — Complete Logs
+# Novelndex — Complete Logs
 
 Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRESS.md) to keep that file focused on outstanding work. History only — do not edit completed entries here; add new completions as items finish in PROGRESS.md.
 

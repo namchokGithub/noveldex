@@ -79,7 +79,7 @@ const th = {
   "command.matchInSummary": "พบในสรุป",
 
   "novels.dashboard": "แดชบอร์ด",
-  "novels.libraryTitle": "NovelDex Library",
+  "novels.libraryTitle": "Novelndex Library",
   "novels.heroDescription":
     "ติดตามความคืบหน้าการอ่าน กระโดดไปดูแผนผังตอน และรวมทุกเรื่องไว้ในแดชบอร์ดเดียว",
   "novels.count.one": "{count} เรื่อง",

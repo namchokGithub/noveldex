@@ -1,4 +1,4 @@
-# NovelDex — Progress
+# Novelndex — Progress
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 

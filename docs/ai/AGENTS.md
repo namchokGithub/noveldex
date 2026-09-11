@@ -1,4 +1,4 @@
-# NovelDex — Agent Instructions
+# Novelndex — Agent Instructions
 
 Read `docs/ai/CLAUDE.md`, `docs/ai/CONTEXT.md`, and `docs/engineering/PROGRESS.md` before changing the project.
 
