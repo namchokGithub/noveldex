@@ -125,6 +125,29 @@ export async function getVolumes(
   };
 }
 
+export interface VolumeSearchSource {
+  id: string;
+  novel_id: string;
+  number: number;
+  title: string;
+  description: string;
+}
+
+// Search does not need the chapter/read aggregates calculated by getVolumes().
+export async function getVolumesFlat(novelId: string): Promise<VolumeSearchSource[]> {
+  const snapshot = await getDocs(query(volumesCol(novelId), orderBy("number", "asc")));
+  return snapshot.docs.map((snapshot) => {
+    const data = snapshot.data() as VolumeDoc;
+    return {
+      id: snapshot.id,
+      novel_id: novelId,
+      number: data.number,
+      title: data.title,
+      description: data.description ?? "",
+    };
+  });
+}
+
 export async function getVolume(novelId: string, volumeId: string): Promise<Volume> {
   const snapshot = await getDoc(doc(db, "novels", novelId, "volumes", volumeId));
   if (!snapshot.exists()) {

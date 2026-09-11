@@ -12,6 +12,9 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import type { NovelEvent } from "@/app/types";
+import { firestoreEntityLookup } from "@/libs/entities/firestoreLookup";
+import { reconcileReferenceOccurrences } from "@/libs/entities/reconcile";
+import type { ReferenceOccurrence } from "@/libs/entities/references";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getAllCharacters } from "./characters";
@@ -27,6 +30,7 @@ interface EventDoc {
   chapter_number: number | null;
   page_number?: number | null;
   character_ids: string[];
+  description_references?: ReferenceOccurrence[];
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -64,6 +68,7 @@ function toEvent(
     sort_order: data.sort_order,
     character_ids: characterIds,
     character_names: characterNames,
+    description_references: data.description_references ?? [],
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
   };
@@ -143,6 +148,7 @@ export async function createEvent(novelId: string, payload: EventPayload): Promi
       sort_order: payload.sort_order ?? 0,
       page_number: payload.page_number ?? null,
       character_ids: payload.character_ids ?? [],
+      description_references: await reconcileReferenceOccurrences(novelId, payload.description ?? "", null, firestoreEntityLookup()),
       ...chapterFields,
     }),
   );
@@ -159,7 +165,18 @@ export async function updateEvent(
 ): Promise<NovelEvent> {
   const update: Record<string, unknown> = {};
   if (payload.title !== undefined) update.title = payload.title;
-  if (payload.description !== undefined) update.description = payload.description;
+  if (payload.description !== undefined) {
+    update.description = payload.description;
+    const previous = await getDoc(eventRef(novelId, eventId));
+    if (!previous.exists()) throw new Error("Request failed.");
+    const data = previous.data() as EventDoc;
+    update.description_references = await reconcileReferenceOccurrences(
+      novelId,
+      payload.description,
+      { content: data.description, occurrences: data.description_references ?? [] },
+      firestoreEntityLookup(),
+    );
+  }
   if (payload.story_date !== undefined) update.story_date = payload.story_date;
   if (payload.sort_order !== undefined) update.sort_order = payload.sort_order;
   if (payload.page_number !== undefined) update.page_number = payload.page_number;

@@ -1,3 +1,5 @@
+import type { ReferenceOccurrence } from "@/libs/entities/references"
+
 export interface Novel {
   id: string
   title: string
@@ -83,6 +85,7 @@ export interface ChapterNote {
   content: string
   character_ids?: string[]
   mentioned_character_names?: string[]
+  references?: ReferenceOccurrence[]
   created_at: string
   updated_at: string
 }
@@ -101,6 +104,7 @@ export interface NovelEvent {
   sort_order: number
   character_ids: string[]
   character_names: string[]
+  description_references?: ReferenceOccurrence[]
   created_at: string
   updated_at: string
 }
@@ -134,28 +138,6 @@ export interface ChapterWithCharacters extends Chapter {
   mentioned_character_names: string[]
 }
 
-export interface SearchChapterResult {
-  id: string
-  volume_id: string
-  number: number | null
-  title: string
-  summary_snippet: string
-}
-
-export interface SearchCharacterResult {
-  id: string
-  name: string
-  role: string
-  description_snippet: string
-}
-
-export interface SearchEventResult {
-  id: string
-  title: string
-  description: string
-  story_date: string
-}
-
 export interface CharacterListSummary {
   total_characters: number
 }
@@ -164,10 +146,4 @@ export interface PaginatedCharacters {
   items: Character[]
   pagination: PaginationMeta
   summary: CharacterListSummary
-}
-
-export interface SearchResult {
-  chapters: SearchChapterResult[]
-  characters: SearchCharacterResult[]
-  events: SearchEventResult[]
 }

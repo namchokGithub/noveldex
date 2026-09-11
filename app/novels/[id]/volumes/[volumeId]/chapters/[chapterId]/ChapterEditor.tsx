@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ChapterKind, ChapterWithCharacters, Tag } from "@/app/types";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
+import { normalizeChapter } from "@/libs/search/normalize";
+import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import LinkedCharactersPanel from "./LinkedCharactersPanel";
 import {
@@ -45,6 +47,7 @@ export default function ChapterEditor({
 }) {
   const { t } = useI18n();
   const kindLabels = useChapterKindLabels();
+  const { upsert } = useSearchMutations();
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -258,7 +261,8 @@ export default function ChapterEditor({
     setSummaryError(null);
     setSummarySaving(true);
     try {
-      await updateChapter(novelId, volumeId, chapter.id, { summary });
+      const updated = await updateChapter(novelId, volumeId, chapter.id, { summary });
+      upsert(normalizeChapter(novelId, updated, new Map(), kindLabels));
       setSnackbar({
         tone: "success",
         message: t("chapter.summarySaved"),
@@ -280,7 +284,8 @@ export default function ChapterEditor({
     setDescriptionError(null);
     setDescriptionSaving(true);
     try {
-      await updateChapter(novelId, volumeId, chapter.id, { description });
+      const updated = await updateChapter(novelId, volumeId, chapter.id, { description });
+      upsert(normalizeChapter(novelId, updated, new Map(), kindLabels));
       setSavedDescription(description);
       setDescriptionEditing(false);
       setSnackbar({
@@ -307,9 +312,10 @@ export default function ChapterEditor({
     setTitleError(null);
     setTitleSaving(true);
     try {
-      await updateChapter(novelId, volumeId, chapter.id, {
+      const updated = await updateChapter(novelId, volumeId, chapter.id, {
         title: normalizedTitle,
       });
+      upsert(normalizeChapter(novelId, updated, new Map(), kindLabels));
       setTitle(normalizedTitle);
       setSnackbar({
         tone: "success",
@@ -341,11 +347,12 @@ export default function ChapterEditor({
     setEntryError(null);
     setEntrySaving(true);
     try {
-      await updateChapter(novelId, volumeId, chapter.id, {
+      const updated = await updateChapter(novelId, volumeId, chapter.id, {
         kind,
         number: nextNumber,
         custom_label: kind === "other" ? customLabel.trim() : null,
       });
+      upsert(normalizeChapter(novelId, updated, new Map(), kindLabels));
       setSnackbar({ tone: "success", message: t("chapter.entrySaved") });
       router.refresh();
     } catch (error) {
@@ -361,9 +368,10 @@ export default function ChapterEditor({
     setReadAtError(null);
     setReadAtSaving(true);
     try {
-      await updateChapter(novelId, volumeId, chapter.id, {
+      const updated = await updateChapter(novelId, volumeId, chapter.id, {
         read_at: normalizeDateTimeLocalToISOString(readAt),
       });
+      upsert(normalizeChapter(novelId, updated, new Map(), kindLabels));
       setSnackbar({
         tone: "success",
         message: t("chapter.dateSaved"),

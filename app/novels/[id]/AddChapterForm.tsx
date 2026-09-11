@@ -18,6 +18,9 @@ import { createChapter, getLastOrderNos } from '@/libs/api'
 import type { ChapterKind } from '@/app/types'
 import { CHAPTER_KINDS } from '@/libs/chapterLabel'
 import { userErrorMessage } from '@/libs/userErrorMessage'
+import { normalizeChapter } from '@/libs/search/normalize'
+import { useSearchMutations } from '@/libs/search/SearchIndexProvider'
+import { useChapterKindLabels } from '@/components/chapters/ChapterLabel'
 
 export default function AddChapterForm({
   novelId,
@@ -27,6 +30,8 @@ export default function AddChapterForm({
   volumeId: string
 }) {
   const { t } = useI18n()
+  const { upsert } = useSearchMutations()
+  const kindLabels = useChapterKindLabels()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,7 +82,8 @@ export default function AddChapterForm({
     }
 
     try {
-      await createChapter(novelId, volumeId, data)
+      const chapter = await createChapter(novelId, volumeId, data)
+      upsert(normalizeChapter(novelId, chapter, new Map(), kindLabels))
       form.reset()
       setNextNumber(null)
       setKind('chapter')

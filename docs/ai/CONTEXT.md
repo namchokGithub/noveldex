@@ -8,10 +8,10 @@ Firestore structure:
 
 - `novels/{novelId}`
 - nested `volumes/{volumeId}/chapters/{chapterId}` and `chapterNumbers/{number}`
-- nested `characters`, `events`, and `tags`
+- nested `characters`, `entities`, `events`, and `tags`; `entities` stores locations, skills, organizations, items, and concepts while characters retain their existing collection
 - global `character_roles`
 
-Chapters carry an embedded `notes[]` list (timestamped entries, `[[Name]]` mention tracking, character auto-linking, pagination) — see ADR-008 in `docs/engineering/DECISIONS.md`. The legacy `summary` field is still populated as a join of note content for older callers; do not remove it without a migration. Volumes and chapters also carry an optional `description` string (max 500 characters), shown only on their detail pages.
+Chapters carry an embedded `notes[]` list with timestamped entries and persisted generic entity-reference occurrences. `[[Name]]` remains a character reference for compatibility; typed references support locations, skills, organizations, items, and concepts. Legacy character fields remain for existing filters and counts. The legacy `summary` field is still populated as a join of note content for older callers; do not remove it without a migration. Volumes and chapters also carry an optional `description` string (max 500 characters), shown only on their detail pages.
 
 Chapter entries use ADR-009: `sort_order` controls reading order only within a volume. Regular `chapter` entries retain their novel-wide unique positive `number` and a `chapterNumbers` marker. `prologue`, `epilogue`, `afterword`, `side_story`, and `other` entries store `number: null`; only `other` needs a nonempty `custom_label`. Use `formatChapterLabel` from `libs/chapterLabel.ts` for every user-facing label, and run `pnpm backfill:chapter-entry-order -- --project <id> --dry-run` before its `--apply` counterpart when upgrading existing Firestore data.
 
@@ -34,6 +34,7 @@ PostgreSQL is only for restoring or inspecting legacy backups. `make db`, `make 
 ## Product boundaries
 
 - Rules are temporarily public until authentication work in Phase 5.
-- Full-text search on Firestore is deferred; the command palette must not call an HTTP search endpoint. A client-side scoped quick search (Ctrl+Shift+K) already ships — it matches already-loaded chapters/characters/events and is not full-text search.
+- Phase 3 is implementing one derived client-side MiniSearch index fed by Firestore, with generic entity references and global/novel/volume/chapter scopes. The command palette must not call Firestore on each keystroke or call an HTTP search endpoint; Firestore remains the source of truth.
+- Phase 3C supplies `libs/search/SearchIndexProvider.tsx`: it mounts once inside `I18nProvider`, builds one session-wide MiniSearch index from `loadSearchDataset`, and keeps a separate document map for routes/result data because MiniSearch uses `storeFields: []`. `getVolumesFlat` and `getChaptersFlatDetailed` are the search loaders; do not use aggregate-heavy list loaders for index builds. Scope, staged ranking, debounce, and command-palette replacement remain Phase 3D/3E work.
 - `AddNovelForm` remains disabled by design/pre-existing state.
 - See `docs/engineering/PROGRESS.md` for the backlog and `docs/engineering/DECISIONS.md` for architecture rationale.

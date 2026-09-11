@@ -20,6 +20,8 @@ import {
 import { deleteVolume, updateVolume } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { userErrorMessage } from "@/libs/userErrorMessage";
+import { normalizeVolume } from "@/libs/search/normalize";
+import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
 
 interface VolumeItem extends Volume {
   chapterCount: number;
@@ -47,6 +49,7 @@ export default function VolumeManager({
   pagination: PaginationMeta;
 }) {
   const { t } = useI18n();
+  const { upsert, discard } = useSearchMutations();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -105,10 +108,11 @@ export default function VolumeManager({
     setError(null);
 
     try {
-      await updateVolume(novelId, volumeId, {
+      const updated = await updateVolume(novelId, volumeId, {
         number: Number(number),
         title,
       });
+      upsert(normalizeVolume(updated));
       setConfirmState(null);
       setEditingId(null);
       setSnackbar({
@@ -145,6 +149,7 @@ export default function VolumeManager({
 
     try {
       await deleteVolume(novelId, volume.id);
+      discard(`volume:${novelId}:${volume.id}`);
       setConfirmState(null);
       setSnackbar({
         tone: "success",

@@ -4,7 +4,8 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 
 ## Phase 3: Timeline + Search ← current
 
-- [ ] Full-text search on Firestore (beyond the scoped quick search already shipped in the command palette) — Firestore has no native full-text search; decide between prefix matching and an external service before rebuilding it
+Current implementation: 3A+3C adds timeline ordering, generic entity references, entity management UI, and one derived MiniSearch provider with purpose-built loaders and incremental primitives. Firestore integration verification remains pending a running emulator. Phase 3D–3F still owns scoped/ranked command-palette search, tokenizer validation, benchmarks, and maintenance cascades.
+- [ ] Implement the approved Phase 3 client-side MiniSearch plan: generic entity references, one derived global index, scoped search, ranking, and growth benchmarks. Firestore remains the source of truth; no Firestore full-text queries or external search service.
 
 ## Phase 4.6: My Polish
 

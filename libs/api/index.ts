@@ -6,13 +6,14 @@ export type { NovelCreatePayload } from "@/libs/firebase/novels";
 export { getTags, createTag } from "@/libs/firebase/tags";
 
 // Volumes domain via Firestore
-export { getVolumes, getVolume, createVolume, updateVolume, deleteVolume } from "@/libs/firebase/volumes";
-export type { VolumeCreatePayload, VolumePayload } from "@/libs/firebase/volumes";
+export { getVolumes, getVolumesFlat, getVolume, createVolume, updateVolume, deleteVolume } from "@/libs/firebase/volumes";
+export type { VolumeCreatePayload, VolumePayload, VolumeSearchSource } from "@/libs/firebase/volumes";
 
 // Chapters domain via Firestore
 export {
   getChaptersByVolume,
   getChaptersFlat,
+  getChaptersFlatDetailed,
   getChapter,
   createChapter,
   updateChapter,
@@ -44,3 +45,6 @@ export type { CharacterCreatePayload, CharacterUpdatePayload } from "@/libs/fire
 // Events domain via Firestore
 export { getEvents, createEvent, updateEvent, deleteEvent } from "@/libs/firebase/events";
 export type { EventPayload } from "@/libs/firebase/events";
+export { createEntity, deleteEntity, getEntities, getEntity, updateEntity } from "@/libs/firebase/entities";
+export type { EntityCreatePayload, EntityUpdatePayload } from "@/libs/firebase/entities";
+export type { Entity, EntityId, EntityReference, EntityType, GenericEntityType } from "@/libs/entities/types";
