@@ -66,8 +66,24 @@ export default async function ChapterPage({
           description={<T k="chapter.pageDescription" />}
         />
 
-        <ChapterNotesEditor notes={chapter.notes} characters={chapter.characters} tags={chapter.tags} novelId={id} volumeId={volumeId} chapterId={chapter.id} initialFind={find} initialNoteId={note} />
-        <ChapterEditor chapter={chapter} novelId={id} volumeId={volumeId} showSummary={false} />
+        <ChapterEditor
+          chapter={chapter}
+          novelId={id}
+          volumeId={volumeId}
+          showSummary={false}
+          notesEditor={
+            <ChapterNotesEditor
+              notes={chapter.notes}
+              characters={chapter.characters}
+              tags={chapter.tags}
+              novelId={id}
+              volumeId={volumeId}
+              chapterId={chapter.id}
+              initialFind={find}
+              initialNoteId={note}
+            />
+          }
+        />
       </div>
     </DashboardPage>
   );

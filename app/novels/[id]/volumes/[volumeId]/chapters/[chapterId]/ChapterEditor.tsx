@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { ChapterKind, ChapterWithCharacters, Tag } from "@/app/types";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
@@ -39,12 +39,14 @@ export default function ChapterEditor({
   volumeId,
   initialFind = "",
   showSummary = true,
+  notesEditor,
 }: {
   chapter: ChapterWithCharacters;
   novelId: string;
   volumeId: string;
   initialFind?: string;
   showSummary?: boolean;
+  notesEditor?: ReactNode;
 }) {
   const { t } = useI18n();
   const kindLabels = useChapterKindLabels();
@@ -417,17 +419,6 @@ export default function ChapterEditor({
       </div>
 
       <div className={cardClassName}>
-        <label className={smallLabelClassName}>{t("chapter.editEntry")}</label>
-        <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} className={inputClassName}>
-          {CHAPTER_KINDS.map((entryKind) => <option key={entryKind} value={entryKind}>{kindLabels[entryKind]}</option>)}
-        </select>
-        {kind === "chapter" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.numberRequired")}</label><input type="number" min={1} value={number} onChange={(event) => setNumber(event.target.value)} className={inputClassName} /></div>}
-        {kind === "other" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.customLabel")}</label><input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} maxLength={80} className={inputClassName} placeholder={t("addChapter.customLabelPlaceholder")} /></div>}
-        {entryError && <FormError>{entryError}</FormError>}
-        <div className="mt-2 flex justify-end"><button type="button" onClick={() => void saveEntry()} disabled={entrySaving} className={primaryButtonClassName}>{entrySaving ? t("common.saving") : t("chapter.saveEntry")}</button></div>
-      </div>
-
-      <div className={cardClassName}>
         <div className="flex items-start justify-between gap-3">
           <label className={smallLabelClassName}>{t("common.description")}</label>
           {!descriptionEditing && <button type="button" onClick={() => setDescriptionEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
@@ -495,7 +486,7 @@ export default function ChapterEditor({
         </div>
       </div>}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid gap-4 md:grid-cols-2">
         <div className={cardClassName}>
           <label className={smallLabelClassName}>
             {t("addChapter.dateRead")}
@@ -521,19 +512,23 @@ export default function ChapterEditor({
         </div>
 
         <div className={cardClassName}>
-          <LinkedCharactersPanel
-            characters={chapter.characters}
-            mentionedCharacterNames={chapter.mentioned_character_names}
-            novelId={novelId}
-          />
+          <label className={smallLabelClassName}>{t("chapter.editEntry")}</label>
+          <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} className={inputClassName}>
+            {CHAPTER_KINDS.map((entryKind) => <option key={entryKind} value={entryKind}>{kindLabels[entryKind]}</option>)}
+          </select>
+          {kind === "chapter" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.numberRequired")}</label><input type="number" min={1} value={number} onChange={(event) => setNumber(event.target.value)} className={inputClassName} /></div>}
+          {kind === "other" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.customLabel")}</label><input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} maxLength={80} className={inputClassName} placeholder={t("addChapter.customLabelPlaceholder")} /></div>}
+          {entryError && <FormError>{entryError}</FormError>}
+          <div className="mt-3 flex justify-end"><button type="button" onClick={() => void saveEntry()} disabled={entrySaving} className={primaryButtonClassName}>{entrySaving ? t("common.saving") : t("chapter.saveEntry")}</button></div>
         </div>
       </div>
 
-      <div className={cardClassName}>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
-          {t("chapter.tags")}
-        </h2>
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className={cardClassName}>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
+            {t("chapter.tags")}
+          </h2>
+          <div className="flex flex-wrap items-center gap-2">
           {tags.map((tag) => (
             <span key={tag.id} className={tagClassName}>
               {tag.name}
@@ -624,9 +619,20 @@ export default function ChapterEditor({
               </div>
             </div>
           )}
+          </div>
+          {tagError && <FormError>{tagError}</FormError>}
         </div>
-        {tagError && <FormError>{tagError}</FormError>}
+
+        <div className={cardClassName}>
+          <LinkedCharactersPanel
+            characters={chapter.characters}
+            mentionedCharacterNames={chapter.mentioned_character_names}
+            novelId={novelId}
+          />
+        </div>
       </div>
+
+      {notesEditor}
 
       <Snackbar
         open={Boolean(snackbar)}
