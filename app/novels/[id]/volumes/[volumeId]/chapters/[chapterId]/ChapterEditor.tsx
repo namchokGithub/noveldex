@@ -23,6 +23,7 @@ import {
 } from "@/app/novels/ui";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { userErrorMessage } from "@/libs/userErrorMessage";
+import { chapterEditorInitialMode } from "@/libs/chapterEditor";
 import { CHAPTER_SEARCH_SOURCE_EVENT, type ChapterSearchSource } from "@/components/commands/CommandPalette";
 import {
   createTag,
@@ -56,12 +57,20 @@ export default function ChapterEditor({
   const titleRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState(chapter.title ?? "");
+  const [savedTitle, setSavedTitle] = useState(chapter.title ?? "");
+  const [titleEditing, setTitleEditing] = useState(() => chapterEditorInitialMode().title);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [titleSaving, setTitleSaving] = useState(false);
 
   const [kind, setKind] = useState<ChapterKind>(chapter.kind);
   const [number, setNumber] = useState(chapter.number === null ? "" : String(chapter.number));
   const [customLabel, setCustomLabel] = useState(chapter.custom_label ?? "");
+  const [savedEntry, setSavedEntry] = useState({
+    kind: chapter.kind,
+    number: chapter.number === null ? "" : String(chapter.number),
+    customLabel: chapter.custom_label ?? "",
+  });
+  const [entryEditing, setEntryEditing] = useState(() => chapterEditorInitialMode().entry);
   const [entryError, setEntryError] = useState<string | null>(null);
   const [entrySaving, setEntrySaving] = useState(false);
 
@@ -76,6 +85,8 @@ export default function ChapterEditor({
   const [descriptionSaving, setDescriptionSaving] = useState(false);
 
   const [readAt, setReadAt] = useState(toDateTimeLocalInputValue(chapter.read_at));
+  const [savedReadAt, setSavedReadAt] = useState(toDateTimeLocalInputValue(chapter.read_at));
+  const [readAtEditing, setReadAtEditing] = useState(() => chapterEditorInitialMode().readAt);
   const [readAtError, setReadAtError] = useState<string | null>(null);
   const [readAtSaving, setReadAtSaving] = useState(false);
 
@@ -324,6 +335,8 @@ export default function ChapterEditor({
       });
       upsert(normalizeChapter(novelId, updated, entityMap, kindLabels));
       setTitle(normalizedTitle);
+      setSavedTitle(normalizedTitle);
+      setTitleEditing(false);
       setSnackbar({
         tone: "success",
         message: t("chapter.titleSaved"),
@@ -360,6 +373,8 @@ export default function ChapterEditor({
         custom_label: kind === "other" ? customLabel.trim() : null,
       });
       upsert(normalizeChapter(novelId, updated, entityMap, kindLabels));
+      setSavedEntry({ kind, number, customLabel });
+      setEntryEditing(false);
       setSnackbar({ tone: "success", message: t("chapter.entrySaved") });
       router.refresh();
     } catch (error) {
@@ -379,6 +394,8 @@ export default function ChapterEditor({
         read_at: normalizeDateTimeLocalToISOString(readAt),
       });
       upsert(normalizeChapter(novelId, updated, entityMap, kindLabels));
+      setSavedReadAt(readAt);
+      setReadAtEditing(false);
       setSnackbar({
         tone: "success",
         message: t("chapter.dateSaved"),
@@ -399,23 +416,18 @@ export default function ChapterEditor({
   return (
     <div className="flex flex-col gap-8">
       <div className={cardClassName}>
-        <label className={smallLabelClassName}>{t("chapter.editTitle")}</label>
-        <input
-          ref={titleRef}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className={inputClassName}
-          placeholder={t("addChapter.chapterTitlePlaceholder")}
-        />
-        {titleError && <FormError>{titleError}</FormError>}
-        <div className="mt-2 flex justify-end">
-          <button
-            onClick={saveTitle}
-            disabled={titleSaving}
-            className={primaryButtonClassName}>
-            {titleSaving ? t("common.saving") : t("chapter.saveTitle")}
-          </button>
+        <div className="flex items-start justify-between gap-3">
+          <label className={smallLabelClassName}>{t("chapter.editTitle")}</label>
+          {!titleEditing && <button type="button" onClick={() => setTitleEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
         </div>
+        {titleEditing ? <>
+          <input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} className={inputClassName} placeholder={t("addChapter.chapterTitlePlaceholder")} />
+          {titleError && <FormError>{titleError}</FormError>}
+          <div className="mt-2 flex justify-end gap-2">
+            <button type="button" onClick={() => { setTitle(savedTitle); setTitleError(null); setTitleEditing(false); }} disabled={titleSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
+            <button type="button" onClick={() => void saveTitle()} disabled={titleSaving} className={primaryButtonClassName}>{titleSaving ? t("common.saving") : t("chapter.saveTitle")}</button>
+          </div>
+        </> : <p className="break-words text-sm leading-7 text-stone-700">{savedTitle}</p>}
       </div>
 
       <div className={cardClassName}>
@@ -488,38 +500,37 @@ export default function ChapterEditor({
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className={cardClassName}>
-          <label className={smallLabelClassName}>
-            {t("addChapter.dateRead")}
-          </label>
-          <input
-            type="datetime-local"
-            step={60}
-            value={readAt}
-            onChange={(e) => setReadAt(e.target.value)}
-            className={inputClassName}
-          />
-          {readAtError && (
-            <FormError>{readAtError}</FormError>
-          )}
-          <div className="mt-3 flex justify-end">
-            <button
-              onClick={saveReadAt}
-              disabled={readAtSaving}
-              className={primaryButtonClassName}>
-              {readAtSaving ? t("common.saving") : t("chapter.saveDate")}
-            </button>
+          <div className="flex items-start justify-between gap-3">
+            <label className={smallLabelClassName}>{t("addChapter.dateRead")}</label>
+            {!readAtEditing && <button type="button" onClick={() => setReadAtEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
           </div>
+          {readAtEditing ? <>
+            <input type="datetime-local" step={60} value={readAt} onChange={(e) => setReadAt(e.target.value)} className={inputClassName} />
+            {readAtError && <FormError>{readAtError}</FormError>}
+            <div className="mt-3 flex justify-end gap-2">
+              <button type="button" onClick={() => { setReadAt(savedReadAt); setReadAtError(null); setReadAtEditing(false); }} disabled={readAtSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
+              <button type="button" onClick={() => void saveReadAt()} disabled={readAtSaving} className={primaryButtonClassName}>{readAtSaving ? t("common.saving") : t("chapter.saveDate")}</button>
+            </div>
+          </> : <p className="text-sm leading-7 text-stone-700">{savedReadAt ? new Date(savedReadAt).toLocaleString() : "—"}</p>}
         </div>
 
         <div className={cardClassName}>
-          <label className={smallLabelClassName}>{t("chapter.editEntry")}</label>
-          <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} className={inputClassName}>
-            {CHAPTER_KINDS.map((entryKind) => <option key={entryKind} value={entryKind}>{kindLabels[entryKind]}</option>)}
-          </select>
-          {kind === "chapter" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.numberRequired")}</label><input type="number" min={1} value={number} onChange={(event) => setNumber(event.target.value)} className={inputClassName} /></div>}
-          {kind === "other" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.customLabel")}</label><input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} maxLength={80} className={inputClassName} placeholder={t("addChapter.customLabelPlaceholder")} /></div>}
-          {entryError && <FormError>{entryError}</FormError>}
-          <div className="mt-3 flex justify-end"><button type="button" onClick={() => void saveEntry()} disabled={entrySaving} className={primaryButtonClassName}>{entrySaving ? t("common.saving") : t("chapter.saveEntry")}</button></div>
+          <div className="flex items-start justify-between gap-3">
+            <label className={smallLabelClassName}>{t("chapter.editEntry")}</label>
+            {!entryEditing && <button type="button" onClick={() => setEntryEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
+          </div>
+          {entryEditing ? <>
+            <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} className={inputClassName}>
+              {CHAPTER_KINDS.map((entryKind) => <option key={entryKind} value={entryKind}>{kindLabels[entryKind]}</option>)}
+            </select>
+            {kind === "chapter" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.numberRequired")}</label><input type="number" min={1} value={number} onChange={(event) => setNumber(event.target.value)} className={inputClassName} /></div>}
+            {kind === "other" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.customLabel")}</label><input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} maxLength={80} className={inputClassName} placeholder={t("addChapter.customLabelPlaceholder")} /></div>}
+            {entryError && <FormError>{entryError}</FormError>}
+            <div className="mt-3 flex justify-end gap-2">
+              <button type="button" onClick={() => { setKind(savedEntry.kind); setNumber(savedEntry.number); setCustomLabel(savedEntry.customLabel); setEntryError(null); setEntryEditing(false); }} disabled={entrySaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
+              <button type="button" onClick={() => void saveEntry()} disabled={entrySaving} className={primaryButtonClassName}>{entrySaving ? t("common.saving") : t("chapter.saveEntry")}</button>
+            </div>
+          </> : <p className="break-words text-sm leading-7 text-stone-700">{savedEntry.kind === "chapter" ? `${kindLabels.chapter} ${savedEntry.number}` : savedEntry.kind === "other" ? savedEntry.customLabel : kindLabels[savedEntry.kind]}</p>}
         </div>
       </div>
 
