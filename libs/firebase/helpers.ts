@@ -1,4 +1,4 @@
-import { serverTimestamp, Timestamp, type FieldValue } from "firebase/firestore";
+import { serverTimestamp, Timestamp, type FieldValue } from "firebase/firestore/lite";
 
 export function tsToIso(value: Timestamp | FieldValue | null | undefined): string {
   return value instanceof Timestamp ? value.toDate().toISOString() : "";

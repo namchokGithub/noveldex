@@ -4,7 +4,7 @@ Novelndex is a Next.js application for organizing novels, volumes, chapters, cha
 
 ## Requirements
 
-- Node.js 20 or later
+- Node.js 22 or later
 - Corepack (included with supported Node.js releases)
 
 ## Getting started
