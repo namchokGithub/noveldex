@@ -24,6 +24,7 @@ export default function LinkedCharactersPanel({
 }: Props) {
   const { t } = useI18n();
   const listRef = useRef<HTMLUListElement>(null);
+  const listWidthRef = useRef(0);
   const [visibleCount, setVisibleCount] = useState(
     mentionedCharacterNames.length,
   );
@@ -34,8 +35,12 @@ export default function LinkedCharactersPanel({
     const container = list?.parentElement;
     if (!container) return;
 
-    const updateVisibleCharacters = () =>
+    const updateVisibleCharacters = () => {
+      const width = container.clientWidth;
+      if (width === listWidthRef.current) return;
+      listWidthRef.current = width;
       setVisibleCount(mentionedCharacterNames.length);
+    };
     updateVisibleCharacters();
     const observer = new ResizeObserver(updateVisibleCharacters);
     observer.observe(container);

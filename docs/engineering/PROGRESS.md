@@ -2,11 +2,7 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Phase 4.6: My Polish
-
-- [ ] Enhance Appears in (1) in Characters
-
-## Phase 5: Auth + Guest only view
+## Phase 5: Auth + Guest only view (Re-plan)
 
 - [ ] users table + migration
 - [ ] JWT-based login/register

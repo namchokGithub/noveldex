@@ -243,6 +243,7 @@ const th = {
   "chapter.tags": "แท็ก",
   "chapter.addTag": "+ เพิ่มแท็ก",
   "chapter.addTagPlaceholder": "เพิ่มแท็ก",
+  "chapter.tagNameTooLong": "ชื่อแท็กยาวได้ไม่เกิน {max} ตัวอักษร",
   "chapter.loadingTags": "กำลังโหลดแท็ก…",
   "chapter.createTagHint": "กด Enter เพื่อสร้างแท็กนี้",
   "chapter.noMoreTags": "ไม่มีแท็กให้เพิ่มแล้ว",

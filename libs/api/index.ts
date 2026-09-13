@@ -3,7 +3,13 @@ export { getNovels, getNovel, createNovel } from "@/libs/firebase/novels";
 export type { NovelCreatePayload } from "@/libs/firebase/novels";
 
 // Tags domain via Firestore
-export { getTags, createTag } from "@/libs/firebase/tags";
+export {
+  getTags,
+  getTagsPage,
+  createTag,
+  TAG_NAME_MAX_LENGTH,
+} from "@/libs/firebase/tags";
+export type { TagCursor } from "@/libs/firebase/tags";
 
 // Volumes domain via Firestore
 export { getVolumes, getVolumesFlat, getVolume, createVolume, updateVolume, deleteVolume } from "@/libs/firebase/volumes";

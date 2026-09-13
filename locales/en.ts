@@ -242,6 +242,7 @@ const en = {
   "chapter.tags": "Tags",
   "chapter.addTag": "+ Add tag",
   "chapter.addTagPlaceholder": "Add tag",
+  "chapter.tagNameTooLong": "Tag names cannot exceed {max} characters.",
   "chapter.loadingTags": "Loading tags…",
   "chapter.createTagHint": "Press Enter to create this tag.",
   "chapter.noMoreTags": "No more tags available.",

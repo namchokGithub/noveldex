@@ -71,3 +71,13 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Why:** Firestore has no native full-text search and Phase 3 does not add a server-side search service. The recorded synthetic checkpoints keep engine p95 below 100 ms through 50,000 documents, while chunked builds prevent long initial indexing tasks from blocking the browser.
 
 **Trade-offs:** The index, document map, entity map, and dependency map use client memory and are rebuilt after reload. Benchmark results require renewed review at later growth checkpoints. IndexedDB and a Web Worker remain deferred until measured cold-start, main-thread, or memory costs justify their added complexity.
+
+---
+
+## ADR-011: Typed entity-reference syntax
+
+**Decision:** Keep `[[Name]]` as the backward-compatible shorthand for a character reference. Use `[[type:Name]]` for an explicit reference, where `type` is one of `character`, `location`, `skill`, `organization`, `item`, or `concept`.
+
+**Why:** Different entity types can share a name. Explicit types make references unambiguous while preserving existing chapter notes that use the character-only shorthand.
+
+**Resolution:** Names and aliases resolve only within the owning novel and requested type. Untyped `[[Name]]` resolves as `character` only; it never infers another entity type. Unknown, malformed, or ambiguous tokens remain searchable text and are not silently linked.
