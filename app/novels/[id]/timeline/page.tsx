@@ -14,7 +14,6 @@ import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import {
   backLinkClassName,
   cardClassName,
-  ConfirmDialog,
   DashboardPage,
   iconButtonClassName,
   inputClassName,
@@ -26,6 +25,7 @@ import {
   timelineDotClassName,
   timelineRailClassName,
 } from "../../ui";
+import ConfirmDialog from "../../ConfirmDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   createCharacter,
@@ -281,7 +281,7 @@ export default function TimelinePage({
     }
   }
   return (
-    <DashboardPage maxWidth="max-w-5xl">
+    <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
         <Link href={`/novels/${novelId}`} className={backLinkClassName}>
           ← {t("nav.backToNovel")}

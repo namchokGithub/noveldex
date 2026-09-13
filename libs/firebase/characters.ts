@@ -54,6 +54,7 @@ async function characterChapters(
     collectionGroup(db, "chapters"),
     where("novel_id", "==", novelId),
     where("character_ids", "array-contains", characterId),
+    orderBy("number", "asc"),
   );
   const snapshot = await getDocs(q);
   const chapters: ChapterSummary[] = snapshot.docs.map((d) => {

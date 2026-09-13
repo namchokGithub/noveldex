@@ -18,6 +18,7 @@ import {
   secondaryButtonClassName,
   smallLabelClassName,
 } from "../ui";
+import ConfirmDialog from "../ConfirmDialog";
 import { deleteVolume, updateVolume } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { userErrorMessage } from "@/libs/userErrorMessage";
@@ -369,7 +370,7 @@ export default function VolumeManager({
         </div>
       </div>
 
-      {confirmState ? (
+      {confirmState?.action === "save" ? (
         <div className={`${modalBackdropClassName} z-60`}>
           <div className={`${modalPanelClassName} max-w-sm`}>
             <div className="space-y-2">
@@ -422,6 +423,23 @@ export default function VolumeManager({
           </div>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={confirmState?.action === "delete"}
+        eyebrow={t("volumeManager.confirmEyebrow")}
+        title={t("volumeManager.deleteConfirmTitle")}
+        description={t("volumeManager.deleteConfirmBody", {
+          title: confirmState?.title ?? "",
+        })}
+        confirmLabel={
+          deletingId ? t("volumeManager.deleting") : t("common.delete")
+        }
+        cancelLabel={t("common.cancel")}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmState(null)}
+        busy={deletingId !== null}
+        danger
+      />
 
       {snackbar ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-70 flex justify-center px-4">

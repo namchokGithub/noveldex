@@ -3,11 +3,7 @@ import { notFound } from "next/navigation";
 import AddCharacterForm from "./AddCharacterForm";
 import CharacterList from "./CharacterList";
 import { T } from "@/components/i18n/I18nProvider";
-import {
-  backLinkClassName,
-  DashboardPage,
-  SectionHeading,
-} from "../../ui";
+import { backLinkClassName, DashboardPage, SectionHeading } from "../../ui";
 import { getCharacters, getCharacterRoles, getNovel } from "@/libs/api";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
@@ -47,7 +43,7 @@ export default async function CharactersPage({
   }
 
   return (
-    <DashboardPage maxWidth="max-w-5xl">
+    <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
         <Link href={`/novels/${id}`} className={backLinkClassName}>
           ← {novel.title}

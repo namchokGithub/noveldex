@@ -13,7 +13,6 @@ import {
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import {
   cardClassName,
-  ConfirmDialog,
   dangerIconButtonClassName,
   formatDisplayDate,
   ghostButtonClassName,
@@ -25,6 +24,7 @@ import {
   Snackbar,
   tagClassName,
 } from "../ui";
+import ConfirmDialog from "../ConfirmDialog";
 import { deleteChapter, reorderChapters, updateChapter } from "@/libs/api";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
