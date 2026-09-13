@@ -5,13 +5,19 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 
 export default function ExpandableDescription({
   children,
+  collapsedLines = 2,
+  className,
 }: {
   children: ReactNode;
+  collapsedLines?: 2 | 3;
+  className?: string;
 }) {
   const { t } = useI18n();
   const textRef = useRef<HTMLParagraphElement | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [overflowing, setOverflowing] = useState(false);
+  const collapsedClass =
+    collapsedLines === 3 ? "line-clamp-3" : "line-clamp-2";
 
   useEffect(() => {
     const element = textRef.current;
@@ -20,15 +26,15 @@ export default function ExpandableDescription({
     function measure() {
       if (!element) return;
 
-      const wasExpanded = !element.classList.contains("line-clamp-2");
+      const wasExpanded = !element.classList.contains(collapsedClass);
       if (wasExpanded) {
-        element.classList.add("line-clamp-2");
+        element.classList.add(collapsedClass);
       }
 
       setOverflowing(element.scrollHeight > element.clientHeight + 1);
 
       if (wasExpanded) {
-        element.classList.remove("line-clamp-2");
+        element.classList.remove(collapsedClass);
       }
     }
 
@@ -40,14 +46,14 @@ export default function ExpandableDescription({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [children]);
+  }, [children, collapsedClass]);
 
   return (
-    <div className="max-w-2xl">
+    <div className={className ?? "max-w-2xl"}>
       <p
         ref={textRef}
         className={`text-sm leading-6 text-stone-600 sm:text-base ${
-          expanded ? "" : "line-clamp-2"
+          expanded ? "" : collapsedClass
         }`}>
         {children}
       </p>

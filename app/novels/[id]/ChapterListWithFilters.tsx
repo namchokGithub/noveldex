@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -35,11 +35,13 @@ export default function ChapterListWithFilters({
   volumeId,
   chapters,
   availableTags,
+  sidebar,
 }: {
   novelId: string;
   volumeId: string;
   chapters: Chapter[];
   availableTags: Tag[];
+  sidebar?: ReactNode;
 }) {
   const { t } = useI18n();
   const kindLabels = useChapterKindLabels();
@@ -279,7 +281,10 @@ export default function ChapterListWithFilters({
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <>
-      {reorderMode ? (
+      <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="space-y-4">
+          {sidebar}
+          {reorderMode ? (
         <div className={cardClassName}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-stone-500">{t("chapter.dragHint")}</p>
@@ -339,9 +344,11 @@ export default function ChapterListWithFilters({
             </button>
           </div>
         </div>
-      )}
+          )}
 
-      {reorderMode ? (
+        </aside>
+        <div className="min-w-0">
+          {reorderMode ? (
         orderedChapters.length === 0 ? null : (
           <ul className={`${listClassName} divide-y divide-stone-200`}>
             {orderedChapters.map((chapter, index) => (
@@ -497,7 +504,9 @@ export default function ChapterListWithFilters({
             </li>
           ))}
         </ul>
-      )}
+          )}
+        </div>
+      </div>
 
       <ConfirmDialog
         open={Boolean(confirmChapter)}
