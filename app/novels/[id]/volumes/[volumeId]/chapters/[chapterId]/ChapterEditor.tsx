@@ -54,13 +54,7 @@ export default function ChapterEditor({
   const { entityMap, upsert, upsertMany } = useSearchIndex();
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const titleRef = useRef<HTMLInputElement>(null);
-
-  const [title, setTitle] = useState(chapter.title ?? "");
-  const [savedTitle, setSavedTitle] = useState(chapter.title ?? "");
-  const [titleEditing, setTitleEditing] = useState(() => chapterEditorInitialMode().title);
-  const [titleError, setTitleError] = useState<string | null>(null);
-  const [titleSaving, setTitleSaving] = useState(false);
+  const title = chapter.title ?? "";
 
   const [kind, setKind] = useState<ChapterKind>(chapter.kind);
   const [number, setNumber] = useState(chapter.number === null ? "" : String(chapter.number));
@@ -108,7 +102,8 @@ export default function ChapterEditor({
   } | null>(null);
 
   const focusSearchMatch = useCallback((field: 'title' | 'summary', start: number, length: number) => {
-    const input = field === 'title' ? titleRef.current : textareaRef.current;
+    if (field === 'title') return;
+    const input = textareaRef.current;
     if (!input) return;
     input.focus();
     input.setSelectionRange(start, start + length);
@@ -320,40 +315,6 @@ export default function ChapterEditor({
     }
   }
 
-  async function saveTitle() {
-    const normalizedTitle = title.trim();
-    if (!normalizedTitle) {
-      setTitleError(t("chapter.titleRequired"));
-      return;
-    }
-
-    setTitleError(null);
-    setTitleSaving(true);
-    try {
-      const updated = await updateChapter(novelId, volumeId, chapter.id, {
-        title: normalizedTitle,
-      });
-      upsert(normalizeChapter(novelId, updated, entityMap, kindLabels));
-      setTitle(normalizedTitle);
-      setSavedTitle(normalizedTitle);
-      setTitleEditing(false);
-      setSnackbar({
-        tone: "success",
-        message: t("chapter.titleSaved"),
-      });
-      router.refresh();
-    } catch (error) {
-      const message = userErrorMessage(error, t);
-      setTitleError(message);
-      setSnackbar({
-        tone: "error",
-        message,
-      });
-    } finally {
-      setTitleSaving(false);
-    }
-  }
-
   async function saveEntry() {
     const nextNumber = kind === "chapter" ? Number(number) : 0;
     if (kind === "chapter" && (!Number.isInteger(nextNumber) || nextNumber < 1)) {
@@ -415,21 +376,6 @@ export default function ChapterEditor({
 
   return (
     <div className="flex flex-col gap-8">
-      <div className={cardClassName}>
-        <div className="flex items-start justify-between gap-3">
-          <label className={smallLabelClassName}>{t("chapter.editTitle")}</label>
-          {!titleEditing && <button type="button" onClick={() => setTitleEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
-        </div>
-        {titleEditing ? <>
-          <input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} className={inputClassName} placeholder={t("addChapter.chapterTitlePlaceholder")} />
-          {titleError && <FormError>{titleError}</FormError>}
-          <div className="mt-2 flex justify-end gap-2">
-            <button type="button" onClick={() => { setTitle(savedTitle); setTitleError(null); setTitleEditing(false); }} disabled={titleSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
-            <button type="button" onClick={() => void saveTitle()} disabled={titleSaving} className={primaryButtonClassName}>{titleSaving ? t("common.saving") : t("chapter.saveTitle")}</button>
-          </div>
-        </> : <p className="break-words text-sm leading-7 text-stone-700">{savedTitle}</p>}
-      </div>
-
       <div className={cardClassName}>
         <div className="flex items-start justify-between gap-3">
           <label className={smallLabelClassName}>{t("common.description")}</label>

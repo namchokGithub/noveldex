@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddChapterForm from "../../AddChapterForm";
+import BackToTopButton from "../../../BackToTopButton";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import {
@@ -47,7 +48,10 @@ export default async function VolumePage({
   return (
     <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
-        <Link href={`/novels/${id}`} className={backLinkClassName}>
+        <Link
+          id="volume-back-link"
+          href={`/novels/${id}`}
+          className={backLinkClassName}>
           ← Back to {novel.title}
         </Link>
 
@@ -83,6 +87,7 @@ export default async function VolumePage({
             </>
           }
         />
+        <BackToTopButton anchorId="volume-back-link" />
       </div>
     </DashboardPage>
   );
