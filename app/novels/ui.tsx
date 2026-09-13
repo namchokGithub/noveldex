@@ -37,6 +37,9 @@ export const ghostButtonClassName =
 export const iconButtonClassName =
   "rounded-full p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50";
 
+export const dangerIconButtonClassName =
+  "inline-flex items-center justify-center rounded-full p-2 text-stone-400 transition text-sm font-medium text-stone-500 hover:bg-stone-100 hover:text-rose-600 disabled:opacity-50";
+
 export const inputClassName =
   "w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder-stone-400 shadow-sm outline-none transition focus:border-stone-400 focus:ring-2 focus:ring-stone-200";
 

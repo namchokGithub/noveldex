@@ -6,14 +6,17 @@ import { useRouter } from "next/navigation";
 
 import type { Chapter, ChapterKind, Tag } from "@/app/types";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { ChapterLabel, useChapterKindLabels } from "@/components/chapters/ChapterLabel";
+import {
+  ChapterLabel,
+  useChapterKindLabels,
+} from "@/components/chapters/ChapterLabel";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import {
   cardClassName,
   ConfirmDialog,
+  dangerIconButtonClassName,
   formatDisplayDate,
   ghostButtonClassName,
-  iconButtonClassName,
   inputClassName,
   listClassName,
   listRowClassName,
@@ -106,7 +109,17 @@ export default function ChapterListWithFilters({
     setDeletingId(confirmChapter.id);
     try {
       await deleteChapter(novelId, confirmChapter.volume_id, confirmChapter.id);
-      discardMany(descendantsOf({ type: "chapter", novelId, volumeId: confirmChapter.volume_id, chapterId: confirmChapter.id }, documents));
+      discardMany(
+        descendantsOf(
+          {
+            type: "chapter",
+            novelId,
+            volumeId: confirmChapter.volume_id,
+            chapterId: confirmChapter.id,
+          },
+          documents,
+        ),
+      );
       setDeletedChapterIds((cur) => [...cur, confirmChapter.id]);
       setConfirmChapter(null);
       setSnackbar({ tone: "success", message: t("chapter.deleteSuccess") });
@@ -166,13 +179,18 @@ export default function ChapterListWithFilters({
 
   function changeReorderEntryKind(chapterId: string, kind: ChapterKind) {
     const current = orderedChapters.find((chapter) => chapter.id === chapterId);
-    const original = visibleChapters.find((chapter) => chapter.id === chapterId);
+    const original = visibleChapters.find(
+      (chapter) => chapter.id === chapterId,
+    );
     if (!current) return;
 
     updateReorderEntry(chapterId, {
       kind,
-      number: kind === "chapter" ? current.number ?? original?.number ?? null : null,
-      custom_label: kind === "other" ? current.custom_label ?? "" : null,
+      number:
+        kind === "chapter"
+          ? (current.number ?? original?.number ?? null)
+          : null,
+      custom_label: kind === "other" ? (current.custom_label ?? "") : null,
     });
   }
 
@@ -186,13 +204,18 @@ export default function ChapterListWithFilters({
       setSnackbar({ tone: "error", message: t("chapter.entryNumberRequired") });
       return;
     }
-    const hasDuplicateNumber = new Set(
-      orderedChapters
-        .filter((chapter) => chapter.kind === "chapter")
-        .map((chapter) => chapter.number),
-    ).size !== orderedChapters.filter((chapter) => chapter.kind === "chapter").length;
+    const hasDuplicateNumber =
+      new Set(
+        orderedChapters
+          .filter((chapter) => chapter.kind === "chapter")
+          .map((chapter) => chapter.number),
+      ).size !==
+      orderedChapters.filter((chapter) => chapter.kind === "chapter").length;
     if (hasDuplicateNumber) {
-      setSnackbar({ tone: "error", message: t("chapter.entryNumberDuplicate") });
+      setSnackbar({
+        tone: "error",
+        message: t("chapter.entryNumberDuplicate"),
+      });
       return;
     }
     const invalidCustomLabel = orderedChapters.some(
@@ -207,10 +230,11 @@ export default function ChapterListWithFilters({
     try {
       const changedEntries = orderedChapters.filter((chapter) => {
         const original = visibleChapters.find(({ id }) => id === chapter.id);
-        return original && (
-          original.kind !== chapter.kind ||
-          original.number !== chapter.number ||
-          original.custom_label !== chapter.custom_label
+        return (
+          original &&
+          (original.kind !== chapter.kind ||
+            original.number !== chapter.number ||
+            original.custom_label !== chapter.custom_label)
         );
       });
       const saveEntry = (chapter: Chapter) =>
@@ -228,7 +252,9 @@ export default function ChapterListWithFilters({
       await Promise.all(releasesNumber.map(saveEntry));
       await Promise.all(
         changedEntries
-          .filter((chapter) => !releasesNumber.some(({ id }) => id === chapter.id))
+          .filter(
+            (chapter) => !releasesNumber.some(({ id }) => id === chapter.id),
+          )
           .map(saveEntry),
       );
 
@@ -347,7 +373,9 @@ export default function ChapterListWithFilters({
                       <ChapterLabel chapter={chapter} />
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <label className="sr-only" htmlFor={`chapter-kind-${chapter.id}`}>
+                      <label
+                        className="sr-only"
+                        htmlFor={`chapter-kind-${chapter.id}`}>
                         {t("addChapter.entryType")}
                       </label>
                       <select
@@ -369,7 +397,9 @@ export default function ChapterListWithFilters({
                           </option>
                         ))}
                       </select>
-                      {chapter.kind === "chapter" && visibleChapters.find(({ id }) => id === chapter.id)?.number === null ? (
+                      {chapter.kind === "chapter" &&
+                      visibleChapters.find(({ id }) => id === chapter.id)
+                        ?.number === null ? (
                         <input
                           type="number"
                           min="1"
@@ -456,11 +486,11 @@ export default function ChapterListWithFilters({
                     type="button"
                     onClick={() => setConfirmChapter(chapter)}
                     disabled={deletingId === chapter.id}
-                    className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
+                    className={dangerIconButtonClassName}
                     aria-label={t("chapter.deleteAria", {
                       number: chapter.number ?? chapter.kind,
                     })}>
-                    🗑️
+                    Del
                   </button>
                 </div>
               </div>
