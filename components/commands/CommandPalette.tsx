@@ -116,9 +116,6 @@ export function CommandPaletteTrigger({
           {t("novels.quickSearchHelp")}
         </span>
       </span>
-      <kbd className="shrink-0 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600">
-        Ctrl ⇧ K
-      </kbd>
     </button>
   );
 }

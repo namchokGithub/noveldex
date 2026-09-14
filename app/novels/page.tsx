@@ -157,7 +157,9 @@ export default async function NovelsPage() {
                             <T k="common.updated" />
                           </p>
                           <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-stone-900">
-                            {featuredNovel.updated_at ? <LocalizedDate value={featuredNovel.updated_at} /> : (
+                            {featuredNovel.updated_at ? (
+                              <LocalizedDate value={featuredNovel.updated_at} />
+                            ) : (
                               <T k="novels.recentlyUpdated" />
                             )}
                           </p>
@@ -231,7 +233,9 @@ export default async function NovelsPage() {
                               <T k="common.updated" />
                             </p>
                             <p className="mt-1 font-medium text-stone-700">
-                              {novel.updated_at ? <LocalizedDate value={novel.updated_at} /> : (
+                              {novel.updated_at ? (
+                                <LocalizedDate value={novel.updated_at} />
+                              ) : (
                                 <T k="novels.recentlyUpdated" />
                               )}
                             </p>
