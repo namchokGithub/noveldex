@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { signInAdmin, signOutAdmin } from "@/libs/firebase/auth";
@@ -22,6 +22,8 @@ export default function SignInControl() {
   const [accountOpen, setAccountOpen] = useState(false);
   const accountTriggerRef = useRef<HTMLButtonElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const signInTriggerRef = useRef<HTMLButtonElement>(null);
+  const signInFormRef = useRef<HTMLFormElement>(null);
 
   function closeAccountMenu({ restoreFocus = true } = {}) {
     setAccountOpen(false);
@@ -42,6 +44,31 @@ export default function SignInControl() {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [accountOpen]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        !signInFormRef.current?.contains(event.target as Node) &&
+        !signInTriggerRef.current?.contains(event.target as Node)
+      ) {
+        setOpen(false);
+        setError(null);
+      }
+    };
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      setError(null);
+      window.requestAnimationFrame(() => signInTriggerRef.current?.focus());
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   if (loading) return null;
 
   function handleSignOut() {
@@ -60,7 +87,7 @@ export default function SignInControl() {
       .trim()
       .charAt(0)
       .toLocaleUpperCase();
-    const handleAccountMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const handleAccountMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
       if (event.key === "Escape") {
         event.preventDefault();
         closeAccountMenu();
@@ -153,66 +180,71 @@ export default function SignInControl() {
     }
   }
 
-  if (!open) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <span className="hidden text-xs font-medium text-stone-500 sm:inline">
-          {t("auth.guestMode")}
-        </span>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className={`${ghostButtonClassName} h-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400`}>
-          {t("auth.signIn")}
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <form
-      onSubmit={(event) => void handleSubmit(event)}
-      className="flex flex-wrap items-center justify-end gap-1.5">
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-        placeholder={t("auth.email")}
-        aria-label={t("auth.email")}
-        autoComplete="email"
-        className={`${inputClassName} w-32 py-1.5 text-sm`}
-      />
-      <input
-        type="password"
-        required
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        placeholder={t("auth.password")}
-        aria-label={t("auth.password")}
-        autoComplete="current-password"
-        className={`${inputClassName} w-28 py-1.5 text-sm`}
-      />
+    <div className="relative flex items-center gap-1.5">
+      <span className="hidden text-xs font-medium text-stone-500 sm:inline">
+        {t("auth.guestMode")}
+      </span>
       <button
-        type="submit"
-        disabled={submitting}
-        className={secondaryButtonClassName}>
-        {submitting ? t("common.saving") : t("auth.signIn")}
-      </button>
-      <button
+        ref={signInTriggerRef}
         type="button"
-        onClick={() => {
-          setOpen(false);
-          setError(null);
-        }}
-        className={ghostButtonClassName}>
-        {t("common.cancel")}
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        aria-controls="sign-in-form"
+        className={`${ghostButtonClassName} h-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400`}>
+        {t("auth.signIn")}
       </button>
-      {error ? (
-        <span role="alert" className="text-xs text-rose-600">
-          {error}
-        </span>
+      {open ? (
+        <form
+          ref={signInFormRef}
+          id="sign-in-form"
+          onSubmit={(event) => void handleSubmit(event)}
+          className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(20rem,calc(100vw-2rem))] space-y-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-[0_12px_28px_rgba(28,25,23,0.14)]">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder={t("auth.email")}
+            aria-label={t("auth.email")}
+            autoComplete="email"
+            className={`${inputClassName} py-2 text-sm`}
+          />
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder={t("auth.password")}
+            aria-label={t("auth.password")}
+            autoComplete="current-password"
+            className={`${inputClassName} py-2 text-sm`}
+          />
+          {error ? (
+            <p role="alert" className="text-xs text-rose-600">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => {
+                setOpen(false);
+                setError(null);
+              }}
+              className={ghostButtonClassName}>
+              {t("common.cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className={secondaryButtonClassName}>
+              {submitting ? t("common.saving") : t("auth.signIn")}
+            </button>
+          </div>
+        </form>
       ) : null}
-    </form>
+    </div>
   );
 }
