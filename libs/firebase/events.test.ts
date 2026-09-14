@@ -2,10 +2,10 @@ import { doc, setDoc, Timestamp, updateDoc } from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import { createEvent, deleteEvent, getEvents, updateEvent } from "./events";
-import { clearFirestoreEmulator, useEmulator } from "./testUtils";
+import { clearFirestoreEmulator, connectFirestoreTestEmulator } from "./testUtils";
 
-beforeAll(() => {
-  useEmulator();
+beforeAll(async () => {
+  await connectFirestoreTestEmulator();
 });
 
 beforeEach(async () => {

@@ -15,10 +15,10 @@ import {
   unlinkChapterTag,
   updateChapter,
 } from "./chapters";
-import { clearFirestoreEmulator, useEmulator } from "./testUtils";
+import { clearFirestoreEmulator, connectFirestoreTestEmulator } from "./testUtils";
 
-beforeAll(() => {
-  useEmulator();
+beforeAll(async () => {
+  await connectFirestoreTestEmulator();
 });
 
 beforeEach(async () => {

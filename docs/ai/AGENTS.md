@@ -7,7 +7,7 @@ Read `docs/ai/CLAUDE.md`, `docs/ai/CONTEXT.md`, and `docs/engineering/PROGRESS.m
 - Use `corepack pnpm` in `web`; run lint and focused tests after changes.
 - Do not commit or modify `.env.local`, service-account credentials, or production data without explicit approval.
 - Preserve existing Firestore schema and collection-group indexes unless a reviewed Phase 3 change requires an additive migration. Phase 3 search uses one derived client-side MiniSearch index; do not add Firestore full-text queries, an HTTP search endpoint, or a second authoritative datastore.
-- Phase 5 is authentication; do not add ownership/auth code before it is planned.
+- Phase 5 (ADR-012) is Firebase Auth with no self-registration UI; guest (unauthenticated) reads everything and writes nothing, while any authenticated user writes. Do not add roles, an email allowlist, or custom claims without a new ADR.
 - When a change finishes work tracked in `docs/engineering/PROGRESS.md`, move that item to `docs/_complete_logs.md` in the same change — check `_complete_logs.md` first so the item isn't already logged under different wording. Do not leave `PROGRESS.md` checklist items open once the code ships; stale open items are what caused this drift before.
 
 ## Working style

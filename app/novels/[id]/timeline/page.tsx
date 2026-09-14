@@ -27,6 +27,7 @@ import {
 } from "../../ui";
 import ConfirmDialog from "../../ConfirmDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   createCharacter,
   createEvent,
@@ -85,6 +86,7 @@ export default function TimelinePage({
   params: Promise<{ id: string }>;
 }) {
   const { t } = useI18n();
+  const { isAdmin } = useAuth();
   const { id: novelId } = use(params);
   const kindLabels = useChapterKindLabels();
   const { entityMap, upsert, discard } = useSearchIndex();
@@ -113,6 +115,15 @@ export default function TimelinePage({
       tone: "success" | "error";
       message: string;
     } | null>(null);
+  const [wasAdmin, setWasAdmin] = useState(isAdmin);
+  if (wasAdmin !== isAdmin) {
+    setWasAdmin(isAdmin);
+    if (!isAdmin) {
+      setShowAddForm(false);
+      setEditingId(null);
+      setConfirmDeleteEvent(null);
+    }
+  }
   async function loadEvents() {
     setEvents(await getEvents(novelId));
   }
@@ -291,16 +302,22 @@ export default function TimelinePage({
           title={t("timeline.title")}
           description={t("timeline.description")}
           action={
-            <button
-              onClick={() => setShowAddForm((x) => !x)}
-              className={
-                showAddForm ? secondaryButtonClassName : primaryButtonClassName
-              }>
-              {showAddForm ? t("common.cancel") : t("timeline.addEventToggle")}
-            </button>
+            isAdmin ? (
+              <button
+                onClick={() => setShowAddForm((x) => !x)}
+                className={
+                  showAddForm
+                    ? secondaryButtonClassName
+                    : primaryButtonClassName
+                }>
+                {showAddForm
+                  ? t("common.cancel")
+                  : t("timeline.addEventToggle")}
+              </button>
+            ) : undefined
           }
         />
-        {showAddForm && (
+        {showAddForm && isAdmin && (
           <form onSubmit={handleAdd} className={cardClassName}>
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
               {t("timeline.newEvent")}
@@ -420,7 +437,7 @@ export default function TimelinePage({
                           : `${t("timeline.page")} ${event.page_number}`}
                       </p>
                       <span className={timelineDotClassName} />
-                      {editingId === event.id ? (
+                      {editingId === event.id && isAdmin ? (
                         <form onSubmit={handleEdit} className={cardClassName}>
                           <EventFormFields
                             form={editForm}
@@ -461,6 +478,7 @@ export default function TimelinePage({
                           onEdit={startEdit}
                           onDelete={setConfirmDeleteEvent}
                           deleting={deletingId === event.id}
+                          isAdmin={isAdmin}
                           t={t}
                         />
                       )}
@@ -515,6 +533,7 @@ function EventCard({
   onEdit,
   onDelete,
   deleting,
+  isAdmin,
   t,
 }: {
   event: NovelEvent;
@@ -523,6 +542,7 @@ function EventCard({
   onEdit: (event: NovelEvent) => void;
   onDelete: (event: NovelEvent) => void;
   deleting: boolean;
+  isAdmin: boolean;
   t: ReturnType<typeof useI18n>["t"];
 }) {
   return (
@@ -531,21 +551,23 @@ function EventCard({
         <p className="text-[15px] font-semibold leading-snug text-stone-900">
           {event.title}
         </p>
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-          <button
-            onClick={() => onEdit(event)}
-            className={iconButtonClassName}
-            aria-label={t("common.edit")}>
-            ✏
-          </button>
-          <button
-            onClick={() => onDelete(event)}
-            disabled={deleting}
-            className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
-            aria-label={t("common.delete")}>
-            ×
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              onClick={() => onEdit(event)}
+              className={iconButtonClassName}
+              aria-label={t("common.edit")}>
+              ✏
+            </button>
+            <button
+              onClick={() => onDelete(event)}
+              disabled={deleting}
+              className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
+              aria-label={t("common.delete")}>
+              ×
+            </button>
+          </div>
+        )}
       </div>
       {event.description && (
         <p className="mb-3 line-clamp-2 text-[13px] leading-relaxed text-stone-600">

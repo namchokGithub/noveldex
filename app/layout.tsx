@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import LanguageToggle from "@/components/i18n/LanguageToggle";
 import CommandPalette from "@/components/commands/CommandPalette";
@@ -42,13 +43,15 @@ export default function RootLayout({
       lang="en"
       className={`${googleSans.variable} ${notoSansThai.variable} h-full antialiased`}>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
-        <I18nProvider>
-          <SearchIndexProvider>
-            <LanguageToggle />
-            <CommandPalette />
-            {children}
-          </SearchIndexProvider>
-        </I18nProvider>
+        <AuthProvider>
+          <I18nProvider>
+            <SearchIndexProvider>
+              <LanguageToggle />
+              <CommandPalette />
+              {children}
+            </SearchIndexProvider>
+          </I18nProvider>
+        </AuthProvider>
       </body>
     </html>
   );

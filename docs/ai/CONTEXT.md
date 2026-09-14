@@ -35,7 +35,7 @@ PostgreSQL is only for restoring or inspecting legacy backups. `make db`, `make 
 
 ## Product boundaries
 
-- Rules are temporarily public until authentication work in Phase 5.
+- Phase 5 (ADR-012): Firebase Auth with no self-registration UI. Guest (unauthenticated) reads everything; any authenticated request can write. `isAdmin = user !== null` client-side, read from `useAuth()` in `components/auth/AuthProvider.tsx`; every mutation UI trigger checks it inline.
 - Phase 3 is implementing one derived client-side MiniSearch index fed by Firestore, with generic entity references and global/novel/volume/chapter scopes. The command palette must not call Firestore on each keystroke or call an HTTP search endpoint; Firestore remains the source of truth.
 - Phase 3 supplies `libs/search/SearchIndexProvider.tsx`: it mounts once inside `I18nProvider`, builds one session-wide MiniSearch index from `loadSearchDataset`, and keeps separate document/entity/dependency maps because MiniSearch uses `storeFields: []`. It supports serialized incremental add/replace/discard batches, reference-projection refresh, and vacuum maintenance; Thai/English tokenization uses `Intl.Segmenter` with a fallback. `SearchScope`, staged ranking, and debounce live in the command palette. The synthetic benchmark report records the growth checkpoints; do not add IndexedDB or a Worker without renewed benchmark evidence.
 - `AddNovelForm` remains disabled by design/pre-existing state.

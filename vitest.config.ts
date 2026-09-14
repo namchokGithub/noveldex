@@ -10,5 +10,8 @@ export default defineConfig({
   test: {
     environment: "node",
     fileParallelism: false,
+    env: {
+      NEXT_PUBLIC_FIREBASE_API_KEY: "test-api-key",
+    },
   },
 });

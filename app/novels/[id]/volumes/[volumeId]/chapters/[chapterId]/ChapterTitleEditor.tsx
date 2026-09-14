@@ -7,6 +7,7 @@ import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { ghostButtonClassName, inputClassName, primaryButtonClassName, secondaryButtonClassName } from "@/app/novels/ui";
 import { updateChapter } from "@/libs/api";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { normalizeChapter } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { userErrorMessage } from "@/libs/userErrorMessage";
@@ -24,6 +25,7 @@ export default function ChapterTitleEditor({
   const router = useRouter();
   const kindLabels = useChapterKindLabels();
   const { entityMap, upsert } = useSearchIndex();
+  const { isAdmin } = useAuth();
   const [title, setTitle] = useState(chapter.title ?? "");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -57,13 +59,15 @@ export default function ChapterTitleEditor({
     return (
       <span className="inline-flex flex-wrap items-center gap-2">
         <span>{title}</span>
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className={`${ghostButtonClassName} px-2 py-1 text-sm`}
-          aria-label={t("chapter.editTitle")}>
-          {t("common.edit")}
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className={`${ghostButtonClassName} px-2 py-1 text-sm`}
+            aria-label={t("chapter.editTitle")}>
+            {t("common.edit")}
+          </button>
+        )}
       </span>
     );
   }

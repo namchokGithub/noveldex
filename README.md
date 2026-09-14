@@ -33,7 +33,9 @@ corepack pnpm build:cloudflare
 corepack pnpm preview:cloudflare
 ```
 
-If `make` is available, `make web` starts the application and `make firebase-emulators` starts the Firestore emulator. The PostgreSQL-related Make targets are retained solely for legacy backup and recovery work; the application does not use PostgreSQL at runtime.
+If `make` is available, `make web` starts the application and `make firebase-emulators` starts the Firestore and Auth emulators. The PostgreSQL-related Make targets are retained solely for legacy backup and recovery work; the application does not use PostgreSQL at runtime.
+
+To sign in as an admin locally, visit the Auth emulator UI at [http://127.0.0.1:4000/auth](http://127.0.0.1:4000/auth) while the emulators are running and use "Add user" to create a local admin account, then sign in with those credentials from the app's header bar.
 
 ## Data model
 

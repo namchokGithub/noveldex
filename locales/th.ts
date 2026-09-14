@@ -11,6 +11,13 @@ const th = {
   "language.switchToThai": "เปลี่ยนเป็นภาษาไทย",
   "language.toggleLabel": "ภาษา",
 
+  "auth.signIn": "เข้าสู่ระบบ",
+  "auth.signOut": "ออกจากระบบ",
+  "auth.email": "อีเมล",
+  "auth.password": "รหัสผ่าน",
+  "auth.signInError": "เข้าสู่ระบบไม่สำเร็จ ตรวจสอบอีเมลและรหัสผ่าน",
+  "auth.signOutError": "ออกจากระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+
   "common.add": "เพิ่ม",
   "common.save": "บันทึก",
   "common.saving": "กำลังบันทึก…",

@@ -15,6 +15,7 @@ import {
 } from '../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
 import { createChapter, getLastOrderNos } from '@/libs/api'
+import { useAuth } from '@/components/auth/AuthProvider'
 import type { ChapterKind } from '@/app/types'
 import { CHAPTER_KINDS } from '@/libs/chapterLabel'
 import { userErrorMessage } from '@/libs/userErrorMessage'
@@ -31,6 +32,7 @@ export default function AddChapterForm({
 }) {
   const { t } = useI18n()
   const { entityMap, upsert } = useSearchIndex()
+  const { isAdmin } = useAuth()
   const kindLabels = useChapterKindLabels()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -99,6 +101,8 @@ export default function AddChapterForm({
       setSubmitting(false)
     }
   }
+
+  if (!isAdmin) return null
 
   return (
     <>

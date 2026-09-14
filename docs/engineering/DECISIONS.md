@@ -14,23 +14,15 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 ---
 
-## ADR-006: Direct Firestore application architecture
-
-**Decision:** The Next.js app accesses Firestore directly through the Firebase Firestore Lite SDK. Domain modules in `libs/firebase` own reads and writes.
-
-**Why:** The active data model is already document-shaped, removes the unused Go/Redis layer, and supports the current UI with Firestore collection-group indexes.
-
-**Trade-offs:** Firestore indexes must be deployed with `firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability. Firestore Lite is REST-only, so it does not supply real-time listeners, offline persistence, or `getCountFromServer`; volume aggregates currently count returned query documents. A client-side scoped quick search (command palette) already covers already-loaded chapters/characters/events and is not a substitute for full-text search.
-
----
-
-## ADR-003: Public rules until authentication
+## ADR-003: Superseded — Public rules until authentication
 
 **Decision:** Firestore rules remain public temporarily.
 
 **Why:** Existing data is currently single-user/demo data. Phase 5 will introduce authentication and ownership-aware rules.
 
 **Trade-off:** Do not expose sensitive production data before Phase 5 rules replace the temporary policy.
+
+**Superseded by:** ADR-012 — Phase 5 ships the authenticated-writer/guest split this ADR anticipated.
 
 ---
 
@@ -41,6 +33,26 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Why:** Fictional dates can be non-standard or approximate. Timeline uses explicit story order: a linked event sorts by `volume.number`, then `chapter.sort_order`, then `page_number`, then event `sort_order`. Events without a linked chapter sort after placed events. This is story order, not chronological calendar order.
 
 **Trade-off:** Users cannot infer a date-based sequence from `story_date`. When a chapter is linked, the UI resolves its current label with `formatChapterLabel`; `chapter_number` on an event remains only as a backward-compatible snapshot.
+
+---
+
+## ADR-005: `Novel → Volume → Chapter`
+
+**Decision:** A novel owns volumes, and a volume owns chapters. Chapter documents live at `novels/{novelId}/volumes/{volumeId}/chapters/{chapterId}`. Each chapter retains `novel_id` and `volume_id` as denormalized query fields.
+
+**Why:** The hierarchy expresses story structure while allowing novel-scoped collection-group queries.
+
+**Trade-offs:** Chapter operations require both parent IDs; moving a chapter between volumes must be an explicit operation and preserve its query fields.
+
+---
+
+## ADR-006: Direct Firestore application architecture
+
+**Decision:** The Next.js app accesses Firestore directly through the Firebase Firestore Lite SDK. Domain modules in `libs/firebase` own reads and writes.
+
+**Why:** The active data model is already document-shaped, removes the unused Go/Redis layer, and supports the current UI with Firestore collection-group indexes.
+
+**Trade-offs:** Firestore indexes must be deployed with `firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability. Firestore Lite is REST-only, so it does not supply real-time listeners, offline persistence, or `getCountFromServer`; volume aggregates currently count returned query documents. A client-side scoped quick search (command palette) already covers already-loaded chapters/characters/events and is not a substitute for full-text search.
 
 ---
 
@@ -81,3 +93,13 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Why:** Different entity types can share a name. Explicit types make references unambiguous while preserving existing chapter notes that use the character-only shorthand.
 
 **Resolution:** Names and aliases resolve only within the owning novel and requested type. Untyped `[[Name]]` resolves as `character` only; it never infers another entity type. Unknown, malformed, or ambiguous tokens remain searchable text and are not silently linked.
+
+---
+
+## ADR-012: Authenticated writer + guest authentication (Firebase Auth)
+
+**Decision:** Firebase Auth uses email/password with no self-registration UI. `isAdmin = user !== null` intentionally means any signed-in Firebase Auth user can write. Firestore keeps `read: if true`; `write` becomes `if request.auth != null`.
+
+**Why:** The app needs an authenticated writer and a guest who only views. Firebase Auth's built-in session handling covers this without reintroducing the JWT/refresh-token machinery the Firestore migration removed.
+
+**Trade-offs:** UI hiding of mutation controls is a UX convenience only; the Firestore rule is the actual enforcement boundary. This deliberately does not distinguish among authenticated users; add roles, an allowlist, or custom claims only through a new ADR.

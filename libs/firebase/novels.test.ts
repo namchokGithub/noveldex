@@ -1,9 +1,9 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createNovel, getNovel, getNovels } from "./novels";
-import { clearFirestoreEmulator, useEmulator } from "./testUtils";
+import { clearFirestoreEmulator, connectFirestoreTestEmulator } from "./testUtils";
 
-beforeAll(() => {
-  useEmulator();
+beforeAll(async () => {
+  await connectFirestoreTestEmulator();
 });
 
 beforeEach(async () => {

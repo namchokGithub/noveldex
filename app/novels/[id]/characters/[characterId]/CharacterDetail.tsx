@@ -20,6 +20,8 @@ import {
 import { useI18n } from '@/components/i18n/I18nProvider'
 import { ChapterLabel } from '@/components/chapters/ChapterLabel'
 import { updateCharacter } from '@/libs/api'
+import { useAuth } from '@/components/auth/AuthProvider'
+import { useResetOnSignOut } from '@/components/auth/useResetOnSignOut'
 import { useSearchIndex } from '@/libs/search/SearchIndexProvider'
 import { normalizeEntity } from '@/libs/search/normalize'
 import { dependentRefreshes } from '@/libs/search/refresh'
@@ -36,6 +38,7 @@ export default function CharacterDetail({
 }) {
   const { t } = useI18n()
   const { documents, dependents, entityMap, upsertMany } = useSearchIndex()
+  const { isAdmin } = useAuth()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -47,6 +50,8 @@ export default function CharacterDetail({
   const [profileImageUrl, setProfileImageUrl] = useState(character.profile_image_url ?? '')
   const [description, setDescription] = useState(character.description)
   const [aliases, setAliases] = useState(character.aliases.join(', '))
+
+  useResetOnSignOut(isAdmin, cancel)
 
   useEffect(() => {
     if (!snackbar) return
@@ -129,11 +134,11 @@ export default function CharacterDetail({
                 {saving ? t('common.saving') : t('common.save')}
               </button>
             </div>
-          ) : (
+          ) : isAdmin ? (
             <button onClick={() => setEditing(true)} className={secondaryButtonClassName}>
               {t('common.edit')}
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 

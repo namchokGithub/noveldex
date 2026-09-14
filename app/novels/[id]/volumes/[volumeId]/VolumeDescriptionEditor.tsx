@@ -13,6 +13,8 @@ import {
 } from "@/app/novels/ui";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { updateVolume } from "@/libs/api";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import ExpandableDescription from "@/app/novels/ExpandableDescription";
 
@@ -30,6 +32,7 @@ export default function VolumeDescriptionEditor({
   collapsedLines?: 2 | 3;
 }) {
   const { t } = useI18n();
+  const { isAdmin } = useAuth();
   const router = useRouter();
   const [description, setDescription] = useState(initialDescription);
   const [savedDescription, setSavedDescription] = useState(initialDescription);
@@ -40,6 +43,11 @@ export default function VolumeDescriptionEditor({
     tone: "success" | "error";
     message: string;
   } | null>(null);
+
+  useResetOnSignOut(isAdmin, () => {
+    setDescription(savedDescription);
+    setEditing(false);
+  });
 
   useEffect(() => {
     if (!snackbar) return;
@@ -69,7 +77,7 @@ export default function VolumeDescriptionEditor({
     <div className={cardClassName}>
       <div className="flex items-start justify-between gap-3">
         <label className={smallLabelClassName}>{t("common.description")}</label>
-        {!editing && (
+        {!editing && isAdmin && (
           <button type="button" onClick={() => setEditing(true)} className={secondaryButtonClassName}>
             {t("common.edit")}
           </button>
