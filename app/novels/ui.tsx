@@ -155,13 +155,13 @@ export function SectionHeading({
   );
 }
 
-export function formatDisplayDate(value: string | null | undefined) {
+export function formatDisplayDate(value: string | null | undefined, locale = "en") {
   if (!value) return null;
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",

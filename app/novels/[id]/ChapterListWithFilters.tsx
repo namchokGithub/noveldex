@@ -114,7 +114,7 @@ export default function ChapterListWithFilters({
   availableTags: Tag[];
   sidebar?: ReactNode;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const kindLabels = useChapterKindLabels();
   const router = useRouter();
   const { documents, discardMany } = useSearchIndex();
@@ -641,7 +641,7 @@ export default function ChapterListWithFilters({
                     <div className="flex shrink-0 items-center gap-2">
                       {chapter.read_at ? (
                         <span className="text-xs text-stone-500">
-                          {formatDisplayDate(chapter.read_at) ??
+                          {formatDisplayDate(chapter.read_at, language) ??
                             chapter.read_at}
                         </span>
                       ) : null}

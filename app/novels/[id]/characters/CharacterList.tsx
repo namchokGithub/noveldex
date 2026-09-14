@@ -72,10 +72,10 @@ export default function CharacterList({
     <div className={listClassName}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
-          Showing {rangeStart}–{rangeEnd} of {pagination.total_items}
+          <T k="common.showing" values={{ start: rangeStart, end: rangeEnd, total: pagination.total_items }} />
         </p>
         <label className="flex items-center gap-2 text-sm text-stone-500">
-          Per page
+          <T k="common.perPage" />
           <select
             value={pagination.per_page}
             onChange={(e) => handlePerPageChange(Number(e.target.value))}
@@ -131,7 +131,7 @@ export default function CharacterList({
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
-          Page {pagination.page} of {pagination.total_pages}
+          <T k="common.pageOf" values={{ page: pagination.page, total: pagination.total_pages }} />
         </p>
         <div className="flex items-center gap-2">
           <button

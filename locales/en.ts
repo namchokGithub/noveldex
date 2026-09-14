@@ -222,6 +222,7 @@ const en = {
   "volume.pageEyebrow": "Volume {number}",
   "volume.pageDescription": "Manage chapters inside this volume. Updated {date}.",
   "volume.chapters": "Chapters",
+  "volume.label": "Volume",
 
   "chapter.filters.tags": "Tags:",
   "chapter.filters.addTag": "+ Add tag filter",

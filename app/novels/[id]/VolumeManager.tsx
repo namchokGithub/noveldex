@@ -235,15 +235,10 @@ export default function VolumeManager({
     <div className={listClassName}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
-          Showing {(pagination.page - 1) * pagination.per_page + 1}-
-          {Math.min(
-            pagination.page * pagination.per_page,
-            pagination.total_items,
-          )}{" "}
-          of {pagination.total_items}
+          {t("common.showing", { start: (pagination.page - 1) * pagination.per_page + 1, end: Math.min(pagination.page * pagination.per_page, pagination.total_items), total: pagination.total_items })}
         </p>
         <label className="flex items-center gap-2 text-sm text-stone-500">
-          Per page
+          {t("common.perPage")}
           <select
             value={pagination.per_page}
             onChange={(event) =>
@@ -261,7 +256,7 @@ export default function VolumeManager({
 
       <div className="hidden border-b border-stone-200 bg-stone-50/70 px-4 py-3 sm:block">
         <div className="grid grid-cols-[minmax(0,1fr)_220px] gap-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-500">
-          <p>Volume</p>
+          <p>{t("volume.label")}</p>
           <p className="text-right">Actions</p>
         </div>
       </div>
@@ -376,7 +371,7 @@ export default function VolumeManager({
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
-          Page {pagination.page} of {pagination.total_pages}
+          {t("common.pageOf", { page: pagination.page, total: pagination.total_pages })}
         </p>
         <div className="flex items-center gap-2">
           <button

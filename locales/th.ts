@@ -225,6 +225,7 @@ const th = {
   "volume.pageEyebrow": "เล่ม {number}",
   "volume.pageDescription": "จัดการตอนในเล่มนี้ อัปเดต {date}",
   "volume.chapters": "ตอน",
+  "volume.label": "เล่ม",
 
   "chapter.filters.tags": "แท็ก:",
   "chapter.filters.addTag": "+ เพิ่มตัวกรองแท็ก",

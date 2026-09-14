@@ -58,7 +58,7 @@ export default function ChapterEditor({
   showSummary?: boolean;
   notesEditor?: ReactNode;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const kindLabels = useChapterKindLabels();
   const { entityMap, upsert, upsertMany } = useSearchIndex();
   const { isAdmin } = useAuth();
@@ -579,7 +579,7 @@ export default function ChapterEditor({
               <button type="button" onClick={cancelReadAt} disabled={readAtSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
               <button type="button" onClick={() => void saveReadAt()} disabled={readAtSaving} className={primaryButtonClassName}>{readAtSaving ? t("common.saving") : t("chapter.saveDate")}</button>
             </div>
-          </> : <p className="text-sm leading-7 text-stone-700">{savedReadAt ? new Date(savedReadAt).toLocaleString() : "—"}</p>}
+          </> : <p className="text-sm leading-7 text-stone-700">{savedReadAt ? new Date(savedReadAt).toLocaleString(language) : "—"}</p>}
         </div>
 
         <div className={cardClassName}>
