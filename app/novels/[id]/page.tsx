@@ -14,6 +14,7 @@ import {
   statusColorClassNames,
 } from "../ui";
 import { getAllCharacters, getNovel, getVolumes } from "@/libs/api";
+import { ResourceNotFoundError } from "@/libs/errors";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
 
@@ -41,8 +42,9 @@ export default async function NovelPage({
       getVolumes(id, { page, perPage }),
       getAllCharacters(id),
     ]);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) notFound();
+    throw error;
   }
 
   const totalChapters = volumes.summary.total_chapters;

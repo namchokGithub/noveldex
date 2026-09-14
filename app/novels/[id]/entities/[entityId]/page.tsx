@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getEntity } from "@/libs/api";
+import { ResourceNotFoundError } from "@/libs/errors";
 import { DashboardPage, backLinkClassName } from "../../../ui";
 import EntityDetail from "./EntityDetail";
 
@@ -13,8 +14,9 @@ export default async function EntityPage({
   let entity: Awaited<ReturnType<typeof getEntity>>;
   try {
     entity = await getEntity(id, entityId);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) notFound();
+    throw error;
   }
   return (
     <DashboardPage maxWidth="max-w-4xl">

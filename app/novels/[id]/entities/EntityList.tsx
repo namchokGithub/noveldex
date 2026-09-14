@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Entity, GenericEntityType } from "@/libs/entities/types";
 import { createEntity } from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   emptyStateClassName,
+  FormError,
   inputClassName,
   primaryButtonClassName,
+  Snackbar,
 } from "../../ui";
 import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
 import { normalizeEntity } from "@/libs/search/normalize";
+import { userErrorMessage } from "@/libs/userErrorMessage";
 
 const TYPES: GenericEntityType[] = [
   "location",
@@ -36,9 +39,22 @@ export default function EntityList({
   const [type, setType] = useState<GenericEntityType>("location");
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    tone: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!snackbar) return;
+    const timeoutId = window.setTimeout(() => setSnackbar(null), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [snackbar]);
+
   async function add() {
     if (!name.trim()) return;
     setSaving(true);
+    setError(null);
     try {
       const entity = await createEntity(novelId, {
         type,
@@ -51,6 +67,11 @@ export default function EntityList({
         [...all, entity].sort((a, b) => a.name.localeCompare(b.name)),
       );
       setName("");
+      setSnackbar({ tone: "success", message: t("entities.addSuccess") });
+    } catch (cause) {
+      const message = userErrorMessage(cause, t);
+      setError(message);
+      setSnackbar({ tone: "error", message });
     } finally {
       setSaving(false);
     }
@@ -83,6 +104,7 @@ export default function EntityList({
             disabled={saving || !name.trim()}>
             {saving ? t("common.saving") : t("entities.add")}
           </button>
+          {error ? <FormError>{error}</FormError> : null}
         </div>
       )}
       {entities.length === 0 ? (
@@ -123,6 +145,13 @@ export default function EntityList({
           );
         })
       )}
+      <Snackbar
+        open={Boolean(snackbar)}
+        tone={snackbar?.tone}
+        message={snackbar?.message}
+        onClose={() => setSnackbar(null)}
+        closeLabel={t("common.ok")}
+      />
     </div>
   );
 }

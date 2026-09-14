@@ -14,6 +14,7 @@ import {
   SectionHeading,
 } from "@/app/novels/ui";
 import { getChaptersByVolume, getNovel, getTags, getVolume } from "@/libs/api";
+import { ResourceNotFoundError } from "@/libs/errors";
 
 export default async function VolumePage({
   params,
@@ -33,8 +34,9 @@ export default async function VolumePage({
       getChaptersByVolume(id, volumeId),
       getTags(id),
     ]);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) notFound();
+    throw error;
   }
 
   const chapterCount = chapters.filter(

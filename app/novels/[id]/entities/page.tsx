@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEntities, getNovel } from "@/libs/api";
+import { ResourceNotFoundError } from "@/libs/errors";
 import { DashboardPage, SectionHeading, backLinkClassName } from "../../ui";
 import EntityList from "./EntityList";
 import { T } from "@/components/i18n/I18nProvider";
@@ -15,8 +16,9 @@ export default async function EntitiesPage({
   let entities: Awaited<ReturnType<typeof getEntities>>;
   try {
     [data, entities] = await Promise.all([getNovel(id), getEntities(id)]);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) notFound();
+    throw error;
   }
   return (
     <DashboardPage maxWidth="max-w-5xl">

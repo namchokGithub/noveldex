@@ -39,7 +39,11 @@ const en = {
   "common.overview": "Overview",
   "common.description": "Description",
   "common.titleRequired": "Title *",
+  "common.englishTitleRequired": "Enter an English title.",
   "common.networkError": "Network error. Please try again.",
+  "error.loadTitle": "We couldn't load this page.",
+  "error.loadBody": "Check your connection and try again.",
+  "error.retry": "Try again",
   "common.requestFailed": "Request failed: {status}",
   "common.descriptionTooLong":
     "Description must be {limit} characters or fewer.",
@@ -327,6 +331,7 @@ const en = {
   "entities.description":
     "Manage locations, skills, organizations, items, and concepts.",
   "entities.add": "Add entity",
+  "entities.addSuccess": "Entity added successfully.",
   "entities.empty": "No entities yet.",
   "entities.name": "Name *",
   "entities.aliases": "Aliases (comma-separated)",

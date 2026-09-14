@@ -15,6 +15,7 @@ import {
   writeBatch,
 } from "firebase/firestore/lite";
 import type { Chapter, ChapterKind, ChapterNote, ChapterSummary, ChapterWithCharacters, Tag } from "@/app/types";
+import { ResourceNotFoundError } from "@/libs/errors";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import { db } from "./app";
 import { getCharactersByIds } from "./characters";
@@ -274,7 +275,7 @@ export async function getChapter(
 ): Promise<ChapterWithCharacters> {
   const snapshot = await getDoc(chapterRef(novelId, volumeId, chapterId));
   if (!snapshot.exists()) {
-    throw new Error("Request failed.");
+    throw new ResourceNotFoundError("chapter");
   }
   const data = snapshot.data() as ChapterDoc;
   const tags = await tagsForChapter(novelId, data.tag_ids ?? []);

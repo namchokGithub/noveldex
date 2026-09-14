@@ -1,6 +1,7 @@
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from "firebase/firestore/lite";
 import { buildEntityId, parseEntityId } from "@/libs/entities/keys";
 import { GENERIC_ENTITY_TYPES, type Entity, type GenericEntityType } from "@/libs/entities/types";
+import { ResourceNotFoundError } from "@/libs/errors";
 import { db } from "./app";
 import { withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 
@@ -45,7 +46,7 @@ export async function getEntities(novelId: string, type?: GenericEntityType): Pr
 
 export async function getEntity(novelId: string, entityId: string): Promise<Entity> {
   const snapshot = await getDoc(doc(entitiesCol(novelId), sourceId(novelId, entityId)));
-  if (!snapshot.exists()) throw new Error("Request failed.");
+  if (!snapshot.exists()) throw new ResourceNotFoundError("entity");
   return toEntity(novelId, snapshot.id, snapshot.data() as EntityDoc);
 }
 

@@ -15,6 +15,7 @@ import {
   type DocumentReference,
 } from "firebase/firestore/lite";
 import type { PaginatedVolumes, Volume, VolumeListSummary } from "@/app/types";
+import { ResourceNotFoundError } from "@/libs/errors";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 
@@ -207,7 +208,7 @@ export async function getVolume(
     doc(db, "novels", novelId, "volumes", volumeId),
   );
   if (!snapshot.exists()) {
-    throw new Error("Request failed.");
+    throw new ResourceNotFoundError("volume");
   }
   return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
 }

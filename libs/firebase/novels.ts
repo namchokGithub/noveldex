@@ -9,6 +9,7 @@ import {
   Timestamp,
 } from "firebase/firestore/lite";
 import type { Novel } from "@/app/types";
+import { ResourceNotFoundError } from "@/libs/errors";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps } from "./helpers";
 
@@ -47,7 +48,7 @@ export async function getNovels(): Promise<Novel[]> {
 export async function getNovel(novelId: string): Promise<Novel> {
   const snapshot = await getDoc(doc(db, "novels", novelId));
   if (!snapshot.exists()) {
-    throw new Error("Request failed.");
+    throw new ResourceNotFoundError("novel");
   }
   return toNovel(snapshot.id, snapshot.data() as NovelDoc);
 }

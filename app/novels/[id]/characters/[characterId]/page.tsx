@@ -4,6 +4,7 @@ import CharacterDetail from "./CharacterDetail";
 import { backLinkClassName, DashboardPage } from "../../../ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { getCharacter, getCharacterRoles, getNovel } from "@/libs/api";
+import { ResourceNotFoundError } from "@/libs/errors";
 
 export default async function CharacterPage({
   params,
@@ -22,8 +23,9 @@ export default async function CharacterPage({
       getCharacter(id, characterId),
       getCharacterRoles(),
     ]);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) notFound();
+    throw error;
   }
 
   return (

@@ -217,6 +217,8 @@ export function Snackbar({
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-70 flex justify-center px-4">
       <div
+        role={tone === "error" ? "alert" : "status"}
+        aria-live={tone === "error" ? "assertive" : "polite"}
         className={`pointer-events-auto flex min-w-70 max-w-md items-center justify-between gap-3 rounded-2xl border px-4 py-3 shadow-[0_16px_40px_rgba(28,25,23,0.18)] ${
           tone === "success"
             ? "border-emerald-200 bg-emerald-50 text-emerald-900"
