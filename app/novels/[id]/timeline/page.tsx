@@ -10,6 +10,7 @@ import type {
 } from "@/app/types";
 import { formatChapterLabel } from "@/libs/chapterLabel";
 import { localizedVolumeTitle } from "@/libs/volumeTitle";
+import { localizedChapterTitle } from "@/libs/chapterTitle";
 import { eventOrder } from "@/libs/timelineOrder";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import {
@@ -416,7 +417,7 @@ export default function TimelinePage({
                     {localizedVolumeTitle(group.volume, language)}
                   </p>
                   <h2 className="mt-1 text-lg font-semibold text-stone-900">
-                    {formatChapterLabel(group.chapter, kindLabels)}
+                    {formatChapterLabel({ ...group.chapter, title: localizedChapterTitle(group.chapter, language) }, kindLabels)}
                   </h2>
                 </div>
               ) : (
@@ -702,7 +703,7 @@ function EventFormFields({
             <option value="">{t("timeline.field.selectChapter")}</option>
             {available.map((chapter) => (
               <option key={chapter.id} value={chapter.id}>
-                {formatChapterLabel(chapter, labels)}
+                {formatChapterLabel({ ...chapter, title: localizedChapterTitle(chapter, language) }, labels)}
               </option>
             ))}
           </select>

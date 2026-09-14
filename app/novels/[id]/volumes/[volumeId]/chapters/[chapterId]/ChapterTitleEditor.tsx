@@ -11,6 +11,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { normalizeChapter } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { userErrorMessage } from "@/libs/userErrorMessage";
+import { localizedChapterTitle } from "@/libs/chapterTitle";
 
 export default function ChapterTitleEditor({
   chapter,
@@ -21,7 +22,7 @@ export default function ChapterTitleEditor({
   novelId: string;
   volumeId: string;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const router = useRouter();
   const kindLabels = useChapterKindLabels();
   const { entityMap, upsert } = useSearchIndex();
@@ -62,7 +63,7 @@ export default function ChapterTitleEditor({
   if (!editing) {
     return (
       <span className="inline-flex flex-wrap items-center gap-2">
-        <span>{titleTh || titleEn}</span>
+        <span>{localizedChapterTitle({ title: titleEn, title_en: titleEn, title_th: titleTh }, language)}</span>
         {isAdmin && (
           <button
             type="button"

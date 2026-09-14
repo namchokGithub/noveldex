@@ -25,7 +25,7 @@ export async function generateMetadata({
     const chapter = await getChapter(id, volumeId, chapterId);
 
     return {
-      title: chapter.title,
+      title: chapter.title_en || chapter.title,
       description: chapter.summary || undefined,
     };
   } catch {

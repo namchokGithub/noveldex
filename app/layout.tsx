@@ -28,6 +28,12 @@ const notoSansThai = localFont({
   display: "swap",
 });
 
+const notoSansJp = localFont({
+  src: "../src/fonts/Noto_Sans_JP/NotoSansJP-VariableFont_wght.ttf",
+  variable: "--font-noto-sans-jp",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Novelndex",
   description: "Novel indexing app",
@@ -41,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${googleSans.variable} ${notoSansThai.variable} h-full antialiased`}>
+      className={`${googleSans.variable} ${notoSansThai.variable} ${notoSansJp.variable} h-full antialiased`}>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <AuthProvider>
           <I18nProvider>

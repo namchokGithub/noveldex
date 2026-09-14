@@ -121,7 +121,7 @@ function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
     sort_order: data.sort_order ?? data.number ?? 0,
     kind,
     custom_label: data.custom_label ?? null,
-    title: title_th || title_en,
+    title: title_en,
     title_en,
     title_th,
     // Keep the legacy field populated for older callers, but make notes canonical.
@@ -238,7 +238,7 @@ export async function getChaptersFlat(novelId: string): Promise<ChapterSummary[]
       sort_order: data.sort_order ?? data.number ?? 0,
       kind: chapterKind(data.kind),
       custom_label: data.custom_label ?? null,
-      title: data.title_th || data.title_en || data.title || "",
+      title: data.title_en || data.title || "",
       title_en: data.title_en ?? data.title ?? "",
       title_th: data.title_th ?? "",
       summary: data.notes?.map((note) => note.content).join("\n") ?? data.summary ?? "",
