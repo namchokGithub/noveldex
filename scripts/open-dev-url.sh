@@ -15,7 +15,8 @@ tell application "Google Chrome"
   if (count of windows) is 0 then
     make new window
   end if
-  set URL of active tab of front window to "$url"
+  make new tab at end of tabs of front window with properties {URL:"$url"}
+  set active tab index of front window to (count of tabs of front window)
 end tell
 EOF
   exit 0
@@ -28,7 +29,7 @@ tell application "Safari"
   if (count of windows) is 0 then
     make new document with properties {URL:"$url"}
   else
-    set URL of front document to "$url"
+    tell front window to set current tab to (make new tab with properties {URL:"$url"})
   end if
 end tell
 EOF

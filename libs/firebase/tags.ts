@@ -1,15 +1,13 @@
 import {
-  limit,
-  startAfter,
-  type DocumentData,
-  type QueryDocumentSnapshot,
-} from "firebase/firestore";
-import {
   addDoc,
   collection,
   getDocs,
+  limit,
   orderBy,
   query,
+  startAfter,
+  type DocumentData,
+  type QueryDocumentSnapshot,
 } from "firebase/firestore/lite";
 import type { Tag } from "@/app/types";
 import { db } from "./app";
