@@ -14,16 +14,6 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 ---
 
-## ADR-006: Direct Firestore application architecture
-
-**Decision:** The Next.js app accesses Firestore directly through the Firebase Firestore Lite SDK. Domain modules in `libs/firebase` own reads and writes.
-
-**Why:** The active data model is already document-shaped, removes the unused Go/Redis layer, and supports the current UI with Firestore collection-group indexes.
-
-**Trade-offs:** Firestore indexes must be deployed with `firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability. Firestore Lite is REST-only, so it does not supply real-time listeners, offline persistence, or `getCountFromServer`; volume aggregates currently count returned query documents. A client-side scoped quick search (command palette) already covers already-loaded chapters/characters/events and is not a substitute for full-text search.
-
----
-
 ## ADR-003: Superseded — Public rules until authentication
 
 **Decision:** Firestore rules remain public temporarily.
@@ -43,6 +33,26 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Why:** Fictional dates can be non-standard or approximate. Timeline uses explicit story order: a linked event sorts by `volume.number`, then `chapter.sort_order`, then `page_number`, then event `sort_order`. Events without a linked chapter sort after placed events. This is story order, not chronological calendar order.
 
 **Trade-off:** Users cannot infer a date-based sequence from `story_date`. When a chapter is linked, the UI resolves its current label with `formatChapterLabel`; `chapter_number` on an event remains only as a backward-compatible snapshot.
+
+---
+
+## ADR-005: `Novel → Volume → Chapter`
+
+**Decision:** A novel owns volumes, and a volume owns chapters. Chapter documents live at `novels/{novelId}/volumes/{volumeId}/chapters/{chapterId}`. Each chapter retains `novel_id` and `volume_id` as denormalized query fields.
+
+**Why:** The hierarchy expresses story structure while allowing novel-scoped collection-group queries.
+
+**Trade-offs:** Chapter operations require both parent IDs; moving a chapter between volumes must be an explicit operation and preserve its query fields.
+
+---
+
+## ADR-006: Direct Firestore application architecture
+
+**Decision:** The Next.js app accesses Firestore directly through the Firebase Firestore Lite SDK. Domain modules in `libs/firebase` own reads and writes.
+
+**Why:** The active data model is already document-shaped, removes the unused Go/Redis layer, and supports the current UI with Firestore collection-group indexes.
+
+**Trade-offs:** Firestore indexes must be deployed with `firestore.indexes.json`; full-text search is deferred because Firestore has no native full-text capability. Firestore Lite is REST-only, so it does not supply real-time listeners, offline persistence, or `getCountFromServer`; volume aggregates currently count returned query documents. A client-side scoped quick search (command palette) already covers already-loaded chapters/characters/events and is not a substitute for full-text search.
 
 ---
 
