@@ -613,7 +613,7 @@ function EventFormFields({
   requireChapter?: boolean;
   onAddCharacter: (name: string, roleId: string) => Promise<CharacterOption>;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const labels = useChapterKindLabels();
   const [name, setName] = useState(""),
     [roleId, setRoleId] = useState(""),
