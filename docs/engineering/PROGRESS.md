@@ -25,7 +25,7 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 - [x] Loading / saving / deleting states
 - [x] Error handling + user-facing messages
 - [ ] Mobile-responsive layout
-- [ ] Guest/Admin UX polish
+- [x] Guest/Admin UX polish
 
 ### Large
 

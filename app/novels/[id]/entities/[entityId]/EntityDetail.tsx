@@ -27,7 +27,7 @@ export default function EntityDetail({
   entity: Entity;
 }) {
   const { t } = useI18n();
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading } = useAuth();
   const { documents, dependents, entityMap, upsertMany, discardMany } =
     useSearchIndex();
   const router = useRouter();
@@ -96,6 +96,31 @@ export default function EntityDetail({
       setBusy(false);
     }
   }
+  if (loading) return null;
+  if (!isAdmin) {
+    return (
+      <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+          {entity.type}
+        </p>
+        <p className="text-sm text-stone-500">{t("entities.readOnly")}</p>
+        <dl className="space-y-4 text-sm">
+          <div>
+            <dt className="font-medium text-stone-500">{t("entities.name")}</dt>
+            <dd className="mt-1 text-stone-900">{entity.name}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-stone-500">{t("entities.aliases")}</dt>
+            <dd className="mt-1 text-stone-900">{entity.aliases.join(", ") || "—"}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-stone-500">{t("entities.descriptionField")}</dt>
+            <dd className="mt-1 whitespace-pre-wrap text-stone-900">{entity.description || "—"}</dd>
+          </div>
+        </dl>
+      </section>
+    );
+  }
   return (
     <>
       <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
@@ -108,7 +133,7 @@ export default function EntityDetail({
             className={inputClassName}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            disabled={!isAdmin}
+            disabled={busy}
           />
         </label>
         {error ? <FormError>{error}</FormError> : null}
@@ -118,7 +143,7 @@ export default function EntityDetail({
             className={inputClassName}
             value={aliases}
             onChange={(event) => setAliases(event.target.value)}
-            disabled={!isAdmin}
+            disabled={busy}
           />
         </label>
         <label className="block text-sm">
@@ -128,11 +153,10 @@ export default function EntityDetail({
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             rows={5}
-            disabled={!isAdmin}
+            disabled={busy}
           />
         </label>
-        {isAdmin && (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
             <button
               className={primaryButtonClassName}
               onClick={() => void save()}
@@ -146,7 +170,6 @@ export default function EntityDetail({
               {t("common.delete")}
             </button>
           </div>
-        )}
       </section>
       <ConfirmDialog
         open={confirming}

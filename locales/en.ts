@@ -11,6 +11,7 @@ const en = {
   "auth.password": "Password",
   "auth.signInError": "Sign-in failed. Check your email and password.",
   "auth.signOutError": "Sign-out failed. Please try again.",
+  "auth.guestMode": "Read-only",
 
   "common.add": "Add",
   "common.actions": "Actions",
@@ -336,6 +337,7 @@ const en = {
   "entities.name": "Name *",
   "entities.aliases": "Aliases (comma-separated)",
   "entities.descriptionField": "Description",
+  "entities.readOnly": "This entity is available to view only.",
   "entities.saveSuccess": "Entity saved successfully.",
   "entities.deleteSuccess": "Entity deleted successfully.",
 

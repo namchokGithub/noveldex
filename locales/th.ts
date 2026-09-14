@@ -17,6 +17,7 @@ const th = {
   "auth.password": "รหัสผ่าน",
   "auth.signInError": "เข้าสู่ระบบไม่สำเร็จ ตรวจสอบอีเมลและรหัสผ่าน",
   "auth.signOutError": "ออกจากระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+  "auth.guestMode": "ดูอย่างเดียว",
 
   "common.add": "เพิ่ม",
   "common.actions": "การทำงาน",
@@ -335,6 +336,7 @@ const th = {
   "entities.name": "ชื่อ *",
   "entities.aliases": "ชื่อเรียกอื่น (คั่นด้วยจุลภาค)",
   "entities.descriptionField": "คำอธิบาย",
+  "entities.readOnly": "เอนทิตีนี้ดูข้อมูลได้อย่างเดียว",
   "entities.saveSuccess": "บันทึกเอนทิตีสำเร็จ",
   "entities.deleteSuccess": "ลบเอนทิตีสำเร็จ",
 

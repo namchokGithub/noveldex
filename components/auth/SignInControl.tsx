@@ -155,12 +155,17 @@ export default function SignInControl() {
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={`${ghostButtonClassName} h-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400`}>
-        {t("auth.signIn")}
-      </button>
+      <div className="flex items-center gap-1.5">
+        <span className="hidden text-xs font-medium text-stone-500 sm:inline">
+          {t("auth.guestMode")}
+        </span>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={`${ghostButtonClassName} h-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400`}>
+          {t("auth.signIn")}
+        </button>
+      </div>
     );
   }
 
