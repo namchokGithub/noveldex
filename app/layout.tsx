@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
-import { I18nProvider } from "@/components/i18n/I18nProvider";
+import { I18nProvider, T } from "@/components/i18n/I18nProvider";
 import LanguageToggle from "@/components/i18n/LanguageToggle";
 import CommandPalette from "@/components/commands/CommandPalette";
 import { SearchIndexProvider } from "@/libs/search/SearchIndexProvider";
@@ -52,6 +52,11 @@ export default function RootLayout({
         <AuthProvider>
           <I18nProvider>
             <SearchIndexProvider>
+              <a
+                href="#main-content"
+                className="sr-only fixed left-4 top-4 z-100 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white focus:not-sr-only focus:outline-none focus:ring-2 focus:ring-stone-400">
+                <T k="common.skipToContent" />
+              </a>
               <LanguageToggle />
               <CommandPalette />
               {children}

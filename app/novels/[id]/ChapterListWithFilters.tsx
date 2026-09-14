@@ -32,6 +32,7 @@ import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { descendantsOf } from "@/libs/search/cascadeDelete";
+import { moveListItem } from "@/libs/reorder";
 
 function ChapterTagRow({ tags }: { tags: Tag[] }) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -244,13 +245,12 @@ export default function ChapterListWithFilters({
     e.dataTransfer.dropEffect = "move";
     const from = dragIndex.current;
     if (from === null || from === index) return;
-    setOrderedChapters((prev) => {
-      const next = [...prev];
-      const [item] = next.splice(from, 1);
-      next.splice(index, 0, item);
-      return next;
-    });
+    setOrderedChapters((prev) => moveListItem(prev, from, index));
     dragIndex.current = index;
+  }
+
+  function moveChapter(from: number, to: number) {
+    setOrderedChapters((current) => moveListItem(current, from, to));
   }
 
   function handleDragEnd() {
@@ -588,6 +588,30 @@ export default function ChapterListWithFilters({
                           <ChapterTagRow tags={chapter.tags} />
                         )}
                       </div>
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveChapter(index, index - 1)}
+                          disabled={reorderSaving || index === 0}
+                          aria-label={t("chapter.moveUp", {
+                            title: kindLabels[chapter.kind],
+                          })}
+                          className="rounded-lg px-2 py-1 text-sm text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 disabled:cursor-not-allowed disabled:opacity-40">
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveChapter(index, index + 1)}
+                          disabled={
+                            reorderSaving || index === orderedChapters.length - 1
+                          }
+                          aria-label={t("chapter.moveDown", {
+                            title: kindLabels[chapter.kind],
+                          })}
+                          className="rounded-lg px-2 py-1 text-sm text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 disabled:cursor-not-allowed disabled:opacity-40">
+                          ↓
+                        </button>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -606,7 +630,7 @@ export default function ChapterListWithFilters({
                   <div className={listRowClassName}>
                     <Link
                       href={`/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapter.id}`}
-                      className="min-w-0 flex-1 rounded-2xl outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
+                      className="min-w-0 flex-1 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">
                       <div className="text-sm font-medium text-stone-900 transition hover:text-stone-700">
                         <ChapterLabel chapter={chapter} />
                       </div>

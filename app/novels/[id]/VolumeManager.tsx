@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { PaginationMeta, Volume } from "@/app/types";
 
@@ -13,7 +12,6 @@ import {
   inputClassName,
   listClassName,
   listRowClassName,
-  modalPanelClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
   smallLabelClassName,
@@ -27,6 +25,7 @@ import { userErrorMessage } from "@/libs/userErrorMessage";
 import { normalizeVolume } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { descendantsOf } from "@/libs/search/cascadeDelete";
+import { canNavigatePage } from "@/libs/pagination";
 import { localizedVolumeTitle } from "@/libs/volumeTitle";
 
 interface VolumeItem extends Volume {
@@ -88,6 +87,17 @@ export default function VolumeManager({
     params.set("per_page", String(nextPerPage));
     router.push(`${pathname}?${params.toString()}`);
   }
+
+  const canGoPrevious = canNavigatePage(
+    pagination.page,
+    pagination.total_pages,
+    "previous",
+  );
+  const canGoNext = canNavigatePage(
+    pagination.page,
+    pagination.total_pages,
+    "next",
+  );
 
   useEffect(() => {
     if (!snackbar) return;
@@ -322,7 +332,7 @@ export default function VolumeManager({
                   <Link
                     href={`/novels/${novelId}/volumes/${volume.id}`}
                     prefetch={false}
-                    className="min-w-0 flex-1 rounded-2xl outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
+                    className="min-w-0 flex-1 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2">
                     <div className="text-base font-semibold text-stone-900 transition hover:text-stone-700">
                       {t("volumeManager.volumeLabel", {
                         number: volume.number,
@@ -369,87 +379,43 @@ export default function VolumeManager({
           Page {pagination.page} of {pagination.total_pages}
         </p>
         <div className="flex items-center gap-2">
-          <Link
-            href={buildPageHref(Math.max(1, pagination.page - 1))}
-            prefetch={false}
-            aria-disabled={pagination.page <= 1}
-            className={`${secondaryButtonClassName} ${
-              pagination.page <= 1 ? "pointer-events-none opacity-50" : ""
-            }`}>
-            Prev
-          </Link>
-          <Link
-            href={buildPageHref(
-              Math.min(pagination.total_pages, pagination.page + 1),
-            )}
-            prefetch={false}
-            aria-disabled={pagination.page >= pagination.total_pages}
-            className={`${secondaryButtonClassName} ${
-              pagination.page >= pagination.total_pages
-                ? "pointer-events-none opacity-50"
-                : ""
-            }`}>
-            Next
-          </Link>
+          <button
+            type="button"
+            disabled={!canGoPrevious}
+            onClick={() =>
+              router.push(buildPageHref(Math.max(1, pagination.page - 1)))
+            }
+            className={secondaryButtonClassName}>
+            {t("common.previous")}
+          </button>
+          <button
+            type="button"
+            disabled={!canGoNext}
+            onClick={() =>
+              router.push(
+                buildPageHref(Math.min(pagination.total_pages, pagination.page + 1)),
+              )
+            }
+            className={secondaryButtonClassName}>
+            {t("common.next")}
+          </button>
         </div>
       </div>
 
-      {confirmState?.action === "save" && typeof document !== "undefined"
-        ? createPortal(
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-stone-950/40 px-4 backdrop-blur-sm">
-          <div className={`${modalPanelClassName} max-w-sm`}>
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-                {t("volumeManager.confirmEyebrow")}
-              </p>
-              <h3 className="text-lg font-semibold tracking-[-0.03em] text-stone-950">
-                {confirmState.action === "save"
-                  ? t("volumeManager.saveConfirmTitle")
-                  : t("volumeManager.deleteConfirmTitle")}
-              </h3>
-              <p className="text-sm leading-6 text-stone-600">
-                {confirmState.action === "save"
-                  ? t("volumeManager.saveConfirmBody", {
-                      number: confirmState.number,
-                      title: confirmState.title,
-                    })
-                  : t("volumeManager.deleteConfirmBody", {
-                      title: confirmState.title,
-                    })}
-              </p>
-            </div>
-
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={saving || deletingId !== null}
-                onClick={() => setConfirmState(null)}
-                className={secondaryButtonClassName}>
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                disabled={saving || deletingId !== null}
-                onClick={handleConfirmAction}
-                className={
-                  confirmState.action === "save"
-                    ? primaryButtonClassName
-                    : `${primaryButtonClassName} bg-rose-600 hover:bg-rose-500`
-                }>
-                {confirmState.action === "save"
-                  ? saving
-                    ? t("common.saving")
-                    : t("addVolume.confirmAction")
-                  : deletingId !== null
-                    ? t("volumeManager.deleting")
-                    : t("common.delete")}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )
-        : null}
+      <ConfirmDialog
+        open={confirmState?.action === "save"}
+        eyebrow={t("volumeManager.confirmEyebrow")}
+        title={t("volumeManager.saveConfirmTitle")}
+        description={t("volumeManager.saveConfirmBody", {
+          number: confirmState?.number ?? 0,
+          title: confirmState?.title ?? "",
+        })}
+        confirmLabel={saving ? t("common.saving") : t("addVolume.confirmAction")}
+        cancelLabel={t("common.cancel")}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmState(null)}
+        busy={saving}
+      />
 
       <ConfirmDialog
         open={confirmState?.action === "delete"}

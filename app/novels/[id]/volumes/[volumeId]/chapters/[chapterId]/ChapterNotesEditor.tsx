@@ -12,6 +12,9 @@ import { useAuth } from '@/components/auth/AuthProvider'
 import { useResetOnSignOut } from '@/components/auth/useResetOnSignOut'
 import { userErrorMessage } from '@/libs/userErrorMessage'
 import { useSearchIndex } from '@/libs/search/SearchIndexProvider'
+import { nextListIndex } from '@/libs/keyboardList'
+import { completeActiveMention } from '@/libs/mentionCompletion'
+import { shouldCancelInlineEdit } from '@/libs/inlineEditKeyboard'
 import { normalizeChapter, normalizeNote } from '@/libs/search/normalize'
 import { diffNotes } from '@/libs/search/diffNotes'
 import { useChapterKindLabels } from '@/components/chapters/ChapterLabel'
@@ -77,8 +80,19 @@ function highlightText(value: string, query: string) {
 }
 
 function NoteForm({ value, onChange, inputRef, suggestionsFor, onSave, onCancel, saving }: { value: string; onChange: (value: string) => void; inputRef: (node: HTMLTextAreaElement | null) => void; suggestionsFor: (value: string, cursor: number) => string[]; onSave: () => void; onCancel: () => void; saving: boolean }) {
-  const { t } = useI18n(); const [suggestions, setSuggestions] = useState<string[]>([])
+  const { t } = useI18n()
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
+
   function resize(node: HTMLTextAreaElement | null) { if (!node) return; node.style.height = 'auto'; node.style.height = `${node.scrollHeight}px` }
-  function update(event: React.ChangeEvent<HTMLTextAreaElement>) { onChange(event.target.value); setSuggestions(suggestionsFor(event.target.value, event.target.selectionStart ?? event.target.value.length)); resize(event.target) }
-  return <div><label className={smallLabelClassName}>{t('chapter.noteContent')}</label><textarea ref={(node) => { inputRef(node); resize(node) }} value={value} onChange={update} onKeyUp={(event) => setSuggestions(suggestionsFor(event.currentTarget.value, event.currentTarget.selectionStart ?? event.currentTarget.value.length))} rows={4} className={`${inputClassName} min-h-32 resize-none overflow-hidden`} placeholder={t('chapter.notePlaceholder')} />{suggestions.length > 0 && <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-stone-200 bg-white py-1 shadow-sm">{suggestions.map((name) => <button key={name} type="button" onMouseDown={(event) => { event.preventDefault(); const next = value.replace(/\[\[[^\]]*$/, `[[${name}]]`); onChange(next); setSuggestions([]) }} className="block w-full px-3 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-50">{name}</button>)}</div>}<div className="mt-3 flex justify-end gap-2"><button type="button" onClick={onCancel} className={secondaryButtonClassName}>{t('common.cancel')}</button><button type="button" onClick={onSave} disabled={saving} className={primaryButtonClassName}>{saving ? t('common.saving') : t('common.save')}</button></div></div>
+  function refreshSuggestions(nextValue: string, cursor: number) { setSuggestions(suggestionsFor(nextValue, cursor)); setActiveSuggestionIndex(-1) }
+  function update(event: React.ChangeEvent<HTMLTextAreaElement>) { onChange(event.target.value); refreshSuggestions(event.target.value, event.target.selectionStart ?? event.target.value.length); resize(event.target) }
+  function selectSuggestion(name: string) { onChange(completeActiveMention(value, name)); setSuggestions([]); setActiveSuggestionIndex(-1) }
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { if (!suggestions.length) return; event.preventDefault(); setActiveSuggestionIndex((current) => nextListIndex(current, suggestions.length, event.key)); return }
+    if (event.key === 'Enter' && activeSuggestionIndex >= 0) { event.preventDefault(); selectSuggestion(suggestions[activeSuggestionIndex]); return }
+    if (event.key === 'Escape') { event.preventDefault(); if (suggestions.length) { setSuggestions([]); setActiveSuggestionIndex(-1); return } if (shouldCancelInlineEdit(event.key, saving)) onCancel() }
+  }
+
+  return <div><label className={smallLabelClassName}>{t('chapter.noteContent')}</label><textarea ref={(node) => { inputRef(node); resize(node) }} value={value} onChange={update} onKeyDown={handleKeyDown} onKeyUp={(event) => { if (!['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(event.key)) refreshSuggestions(event.currentTarget.value, event.currentTarget.selectionStart ?? event.currentTarget.value.length) }} rows={4} aria-controls="mention-suggestions" aria-activedescendant={activeSuggestionIndex >= 0 ? `mention-option-${suggestions[activeSuggestionIndex]}` : undefined} className={`${inputClassName} min-h-32 resize-none overflow-hidden`} placeholder={t('chapter.notePlaceholder')} />{suggestions.length > 0 && <div id="mention-suggestions" role="listbox" className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-stone-200 bg-white py-1 shadow-sm">{suggestions.map((name, index) => <button id={`mention-option-${name}`} key={name} type="button" role="option" aria-selected={index === activeSuggestionIndex} onMouseDown={(event) => { event.preventDefault(); selectSuggestion(name) }} className={`block w-full px-3 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-50 ${index === activeSuggestionIndex ? 'bg-stone-50' : ''}`}>{name}</button>)}</div>}<div className="mt-3 flex justify-end gap-2"><button type="button" onClick={onCancel} className={secondaryButtonClassName}>{t('common.cancel')}</button><button type="button" onClick={onSave} disabled={saving} className={primaryButtonClassName}>{saving ? t('common.saving') : t('common.save')}</button></div></div>
 }

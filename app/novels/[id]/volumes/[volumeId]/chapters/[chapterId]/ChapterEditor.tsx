@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { createPortal } from "react-dom";
 import type { ChapterKind, ChapterWithCharacters, Tag } from "@/app/types";
 import type { TagCursor } from "@/libs/api";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import { normalizeChapter, normalizeNote } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
+import ModalDialog from "@/components/a11y/ModalDialog";
+import { nextListIndex } from "@/libs/keyboardList";
+import { shouldCancelInlineEdit } from "@/libs/inlineEditKeyboard";
 import LinkedCharactersPanel from "./LinkedCharactersPanel";
 import {
   cardClassName,
@@ -100,6 +102,7 @@ export default function ChapterEditor({
   const [allTags, setAllTags] = useState<Tag[]>(chapter.tags ?? []);
   const [tagQuery, setTagQuery] = useState("");
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const [activeTagIndex, setActiveTagIndex] = useState(-1);
 
   useResetOnSignOut(isAdmin, () => {
     setDescriptionEditing(false);
@@ -459,6 +462,26 @@ export default function ChapterEditor({
     }
   }
 
+  function cancelDescription() {
+    setDescription(savedDescription);
+    setDescriptionError(null);
+    setDescriptionEditing(false);
+  }
+
+  function cancelReadAt() {
+    setReadAt(savedReadAt);
+    setReadAtError(null);
+    setReadAtEditing(false);
+  }
+
+  function cancelEntry() {
+    setKind(savedEntry.kind);
+    setNumber(savedEntry.number);
+    setCustomLabel(savedEntry.customLabel);
+    setEntryError(null);
+    setEntryEditing(false);
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div className={cardClassName}>
@@ -471,6 +494,12 @@ export default function ChapterEditor({
             value={description}
             onChange={(event) => setDescription(event.target.value.slice(0, 500))}
             maxLength={500}
+            onKeyDown={(event) => {
+              if (shouldCancelInlineEdit(event.key, descriptionSaving)) {
+                event.preventDefault();
+                cancelDescription();
+              }
+            }}
             rows={3}
             className={textareaClassName}
             placeholder={t("chapter.descriptionPlaceholder")}
@@ -480,7 +509,7 @@ export default function ChapterEditor({
           </div>
           {descriptionError && <FormError>{descriptionError}</FormError>}
           <div className="mt-2 flex justify-end gap-2">
-            <button type="button" onClick={() => { setDescription(savedDescription); setDescriptionError(null); setDescriptionEditing(false); }} disabled={descriptionSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
+            <button type="button" onClick={cancelDescription} disabled={descriptionSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
             <button type="button" onClick={() => void saveDescription()} disabled={descriptionSaving} className={primaryButtonClassName}>{descriptionSaving ? t("common.saving") : t("chapter.saveDescription")}</button>
           </div>
         </> : <p className={`whitespace-pre-wrap break-words text-sm leading-7 ${savedDescription ? "text-stone-700" : "italic text-stone-400"}`}>{savedDescription || t("novels.noDescription")}</p>}
@@ -544,10 +573,10 @@ export default function ChapterEditor({
             {!readAtEditing && isAdmin && <button type="button" onClick={() => setReadAtEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
           </div>
           {readAtEditing ? <>
-            <input type="datetime-local" step={60} value={readAt} onChange={(e) => setReadAt(e.target.value)} className={inputClassName} />
+            <input type="datetime-local" step={60} value={readAt} onChange={(e) => setReadAt(e.target.value)} onKeyDown={(event) => { if (shouldCancelInlineEdit(event.key, readAtSaving)) { event.preventDefault(); cancelReadAt(); } }} className={inputClassName} />
             {readAtError && <FormError>{readAtError}</FormError>}
             <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => { setReadAt(savedReadAt); setReadAtError(null); setReadAtEditing(false); }} disabled={readAtSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
+              <button type="button" onClick={cancelReadAt} disabled={readAtSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
               <button type="button" onClick={() => void saveReadAt()} disabled={readAtSaving} className={primaryButtonClassName}>{readAtSaving ? t("common.saving") : t("chapter.saveDate")}</button>
             </div>
           </> : <p className="text-sm leading-7 text-stone-700">{savedReadAt ? new Date(savedReadAt).toLocaleString() : "—"}</p>}
@@ -559,14 +588,14 @@ export default function ChapterEditor({
             {!entryEditing && isAdmin && <button type="button" onClick={() => setEntryEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
           </div>
           {entryEditing ? <>
-            <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} className={inputClassName}>
+            <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} onKeyDown={(event) => { if (shouldCancelInlineEdit(event.key, entrySaving)) { event.preventDefault(); cancelEntry(); } }} className={inputClassName}>
               {CHAPTER_KINDS.map((entryKind) => <option key={entryKind} value={entryKind}>{kindLabels[entryKind]}</option>)}
             </select>
-            {kind === "chapter" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.numberRequired")}</label><input type="number" min={1} value={number} onChange={(event) => setNumber(event.target.value)} className={inputClassName} /></div>}
-            {kind === "other" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.customLabel")}</label><input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} maxLength={80} className={inputClassName} placeholder={t("addChapter.customLabelPlaceholder")} /></div>}
+            {kind === "chapter" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.numberRequired")}</label><input type="number" min={1} value={number} onChange={(event) => setNumber(event.target.value)} onKeyDown={(event) => { if (shouldCancelInlineEdit(event.key, entrySaving)) { event.preventDefault(); cancelEntry(); } }} className={inputClassName} /></div>}
+            {kind === "other" && <div className="mt-3"><label className={smallLabelClassName}>{t("addChapter.customLabel")}</label><input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} onKeyDown={(event) => { if (shouldCancelInlineEdit(event.key, entrySaving)) { event.preventDefault(); cancelEntry(); } }} maxLength={80} className={inputClassName} placeholder={t("addChapter.customLabelPlaceholder")} /></div>}
             {entryError && <FormError>{entryError}</FormError>}
             <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => { setKind(savedEntry.kind); setNumber(savedEntry.number); setCustomLabel(savedEntry.customLabel); setEntryError(null); setEntryEditing(false); }} disabled={entrySaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
+            <button type="button" onClick={cancelEntry} disabled={entrySaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
               <button type="button" onClick={() => void saveEntry()} disabled={entrySaving} className={primaryButtonClassName}>{entrySaving ? t("common.saving") : t("chapter.saveEntry")}</button>
             </div>
           </> : <p className="break-words text-sm leading-7 text-stone-700">{savedEntry.kind === "chapter" ? `${kindLabels.chapter} ${savedEntry.number}` : savedEntry.kind === "other" ? savedEntry.customLabel : kindLabels[savedEntry.kind]}</p>}
@@ -601,7 +630,9 @@ export default function ChapterEditor({
               data-overflow-badge
               onClick={() => setTagDialogOpen(true)}
               className="inline-flex items-center rounded-full bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-50 transition hover:bg-stone-700"
-              aria-label={`Show ${tags.length - visibleTagCount} more tags`}>
+              aria-label={t("common.showMoreTags", {
+                count: tags.length - visibleTagCount,
+              })}>
               +{tags.length - visibleTagCount}
             </button>
           )}
@@ -623,21 +654,40 @@ export default function ChapterEditor({
                 value={tagQuery}
                 onChange={(e) => {
                   setTagQuery(e.target.value);
+                  setActiveTagIndex(-1);
                   if (e.target.value.trim().length <= TAG_NAME_MAX_LENGTH) {
                     setTagError(null);
                   }
                 }}
                 onKeyDown={(e) => {
+                  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setActiveTagIndex((current) =>
+                      nextListIndex(
+                        current,
+                        filteredTagOptions.length,
+                        e.key,
+                      ),
+                    );
+                  }
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    void handleAddTag();
+                    const activeTag = filteredTagOptions[activeTagIndex];
+                    void handleAddTag(activeTag?.name);
                   }
                   if (e.key === "Escape") {
                     setTagPickerOpen(false);
                     setTagQuery("");
+                    setActiveTagIndex(-1);
                   }
                 }}
                 placeholder={t("chapter.addTagPlaceholder")}
+                aria-controls="tag-suggestions"
+                aria-activedescendant={
+                  activeTagIndex >= 0
+                    ? `tag-option-${filteredTagOptions[activeTagIndex]?.id}`
+                    : undefined
+                }
                 className={inputClassName}
               />
               {tagNameTooLong && (
@@ -661,13 +711,18 @@ export default function ChapterEditor({
                   </p>
                 )}
                 {!tagLoading && filteredTagOptions.length > 0 && (
-                  <ul className="space-y-1">
-                    {filteredTagOptions.map((tag) => (
+                  <ul id="tag-suggestions" role="listbox" className="space-y-1">
+                    {filteredTagOptions.map((tag, index) => (
                       <li key={tag.id}>
                         <button
+                          id={`tag-option-${tag.id}`}
                           type="button"
                           onClick={() => void handleAddTag(tag.name)}
-                          className="w-full rounded-xl px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-white">
+                          role="option"
+                          aria-selected={index === activeTagIndex}
+                          className={`w-full rounded-xl px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-white ${
+                            index === activeTagIndex ? "bg-white" : ""
+                          }`}>
                           {tag.name}
                         </button>
                       </li>
@@ -704,17 +759,11 @@ export default function ChapterEditor({
           ) : null}
           </div>
           {tagError && <FormError>{tagError}</FormError>}
-          {tagDialogOpen &&
-            createPortal(
-              <div
-                className="fixed inset-0 z-60 flex items-center justify-center bg-stone-950/40 px-4 backdrop-blur-sm"
-                onMouseDown={() => setTagDialogOpen(false)}>
-                <div
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="all-tags-title"
-                  className={`${modalPanelClassName} max-w-lg`}
-                  onMouseDown={(event) => event.stopPropagation()}>
+          <ModalDialog
+            open={tagDialogOpen}
+            onClose={() => setTagDialogOpen(false)}
+            labelledBy="all-tags-title"
+            className={`${modalPanelClassName} max-w-lg`}>
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -750,10 +799,7 @@ export default function ChapterEditor({
                       </span>
                     ))}
                   </div>
-                </div>
-              </div>,
-              document.body,
-            )}
+          </ModalDialog>
         </div>
 
         <div className={cardClassName}>

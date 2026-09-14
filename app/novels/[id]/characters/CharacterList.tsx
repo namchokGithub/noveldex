@@ -15,6 +15,7 @@ import {
 } from "../../ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { useRouter } from "next/navigation";
+import { canNavigatePage } from "@/libs/pagination";
 
 export default function CharacterList({
   novelId,
@@ -55,6 +56,16 @@ export default function CharacterList({
   const rangeEnd = Math.min(
     pagination.page * pagination.per_page,
     pagination.total_items,
+  );
+  const canGoPrevious = canNavigatePage(
+    pagination.page,
+    pagination.total_pages,
+    "previous",
+  );
+  const canGoNext = canNavigatePage(
+    pagination.page,
+    pagination.total_pages,
+    "next",
   );
 
   return (
@@ -123,28 +134,26 @@ export default function CharacterList({
           Page {pagination.page} of {pagination.total_pages}
         </p>
         <div className="flex items-center gap-2">
-          <Link
-            href={buildPageHref(Math.max(1, pagination.page - 1))}
-            prefetch={false}
-            aria-disabled={pagination.page <= 1}
-            className={`${secondaryButtonClassName} ${
-              pagination.page <= 1 ? "pointer-events-none opacity-50" : ""
-            }`}>
-            Prev
-          </Link>
-          <Link
-            href={buildPageHref(
-              Math.min(pagination.total_pages, pagination.page + 1),
-            )}
-            prefetch={false}
-            aria-disabled={pagination.page >= pagination.total_pages}
-            className={`${secondaryButtonClassName} ${
-              pagination.page >= pagination.total_pages
-                ? "pointer-events-none opacity-50"
-                : ""
-            }`}>
-            Next
-          </Link>
+          <button
+            type="button"
+            disabled={!canGoPrevious}
+            onClick={() =>
+              router.push(buildPageHref(Math.max(1, pagination.page - 1)))
+            }
+            className={secondaryButtonClassName}>
+            <T k="common.previous" />
+          </button>
+          <button
+            type="button"
+            disabled={!canGoNext}
+            onClick={() =>
+              router.push(
+                buildPageHref(Math.min(pagination.total_pages, pagination.page + 1)),
+              )
+            }
+            className={secondaryButtonClassName}>
+            <T k="common.next" />
+          </button>
         </div>
       </div>
     </div>

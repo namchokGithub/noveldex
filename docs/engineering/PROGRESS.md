@@ -7,7 +7,7 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 ### Small
 
 - [x] Empty states in remaining pages
-- [ ] Accessibility + keyboard UX
+- [x] Accessibility + keyboard UX
 - [ ] Localization / typography polish
 
 ### Medium

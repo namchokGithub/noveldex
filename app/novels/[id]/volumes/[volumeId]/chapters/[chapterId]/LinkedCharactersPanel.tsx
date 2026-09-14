@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { Character } from "@/app/types";
 import {
   chipClassName,
@@ -11,6 +10,7 @@ import {
   secondaryButtonClassName,
 } from "@/app/novels/ui";
 import { T, useI18n } from "@/components/i18n/I18nProvider";
+import ModalDialog from "@/components/a11y/ModalDialog";
 
 interface Props {
   characters: Character[];
@@ -114,23 +114,19 @@ export default function LinkedCharactersPanel({
               type="button"
               onClick={() => setDialogOpen(true)}
               className="inline-flex items-center rounded-full bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-50 transition hover:bg-stone-700"
-              aria-label={`Show ${mentionedCharacterNames.length - visibleCount} more characters`}>
+              aria-label={t("common.showMoreCharacters", {
+                count: mentionedCharacterNames.length - visibleCount,
+              })}>
               +{mentionedCharacterNames.length - visibleCount}
             </button>
           </li>
         )}
       </ul>
-      {dialogOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-60 flex items-center justify-center bg-stone-950/40 px-4 backdrop-blur-sm"
-            onMouseDown={() => setDialogOpen(false)}>
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="all-characters-title"
-            className={`${modalPanelClassName} max-w-lg`}
-            onMouseDown={(event) => event.stopPropagation()}>
+      <ModalDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        labelledBy="all-characters-title"
+        className={`${modalPanelClassName} max-w-lg`}>
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -171,10 +167,7 @@ export default function LinkedCharactersPanel({
                 );
               })}
             </ul>
-          </div>
-          </div>,
-          document.body,
-        )}
+      </ModalDialog>
     </div>
   );
 }

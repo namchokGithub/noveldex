@@ -12,6 +12,7 @@ import { normalizeChapter } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { localizedChapterTitle } from "@/libs/chapterTitle";
+import { shouldCancelInlineEdit } from "@/libs/inlineEditKeyboard";
 
 export default function ChapterTitleEditor({
   chapter,
@@ -32,6 +33,13 @@ export default function ChapterTitleEditor({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function cancel() {
+    setTitleEn(chapter.title_en ?? chapter.title ?? "");
+    setTitleTh(chapter.title_th ?? "");
+    setError(null);
+    setEditing(false);
+  }
 
   async function save() {
     const normalizedTitleEn = titleEn.trim();
@@ -85,6 +93,12 @@ export default function ChapterTitleEditor({
         autoFocus
         value={titleEn}
         onChange={(event) => setTitleEn(event.target.value)}
+        onKeyDown={(event) => {
+          if (shouldCancelInlineEdit(event.key, saving)) {
+            event.preventDefault();
+            cancel();
+          }
+        }}
         className={`${inputClassName} mt-1 w-full py-1 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl`}
         placeholder={t("addChapter.titleEnglishPlaceholder")}
       />
@@ -94,6 +108,12 @@ export default function ChapterTitleEditor({
         <input
           value={titleTh}
           onChange={(event) => setTitleTh(event.target.value)}
+          onKeyDown={(event) => {
+            if (shouldCancelInlineEdit(event.key, saving)) {
+              event.preventDefault();
+              cancel();
+            }
+          }}
           className={`${inputClassName} mt-1 w-full py-1 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl`}
           placeholder={t("addChapter.titleThaiPlaceholder")}
         />
@@ -104,12 +124,7 @@ export default function ChapterTitleEditor({
       </button>
       <button
         type="button"
-        onClick={() => {
-          setTitleEn(chapter.title_en ?? chapter.title ?? "");
-          setTitleTh(chapter.title_th ?? "");
-          setError(null);
-          setEditing(false);
-        }}
+        onClick={cancel}
         disabled={saving}
         className={secondaryButtonClassName}>
         {t("common.cancel")}

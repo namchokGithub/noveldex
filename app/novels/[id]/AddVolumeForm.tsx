@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   ghostButtonClassName,
+  fullScreenModalBackdropClassName,
   inputClassName,
-  modalBackdropClassName,
   modalPanelClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
@@ -133,8 +134,8 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
           className={primaryButtonClassName}>
           {fetchingNumber ? t("common.loading") : t("addVolume.button")}
         </button>
-      ) : (
-        <div className={modalBackdropClassName}>
+      ) : typeof document !== "undefined" ? createPortal(
+        <div className={fullScreenModalBackdropClassName}>
           <div className={modalPanelClassName}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -203,11 +204,12 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body,
+      ) : null}
 
-      {confirmOpen ? (
-        <div className={`${modalBackdropClassName} z-60`}>
+      {confirmOpen && typeof document !== "undefined" ? createPortal(
+        <div className={`${fullScreenModalBackdropClassName} z-60`}>
           <div className={`${modalPanelClassName} max-w-sm`}>
             <div className="space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -241,7 +243,8 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
 
       {snackbar ? (

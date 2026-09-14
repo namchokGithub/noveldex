@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import {
   ghostButtonClassName,
   FormError,
   inputClassName,
-  modalBackdropClassName,
+  fullScreenModalBackdropClassName,
   modalPanelClassName,
   normalizeDateTimeLocalToISOString,
   primaryButtonClassName,
@@ -115,8 +116,8 @@ export default function AddChapterForm({
         >
           {fetchingNumber ? t('common.loading') : t('addChapter.button')}
         </button>
-      ) : (
-        <div className={modalBackdropClassName}>
+      ) : typeof document !== 'undefined' ? createPortal(
+        <div className={fullScreenModalBackdropClassName}>
           <div className={modalPanelClassName}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -206,8 +207,9 @@ export default function AddChapterForm({
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body,
+      ) : null}
 
       <Snackbar
         open={Boolean(snackbar)}
