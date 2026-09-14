@@ -1,4 +1,4 @@
-import { connectFirestoreEmulator } from "firebase/firestore";
+import { connectFirestoreEmulator } from "firebase/firestore/lite";
 import { db } from "./app";
 
 const EMULATOR_HOST = "127.0.0.1";

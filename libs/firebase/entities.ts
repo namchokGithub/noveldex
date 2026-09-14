@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from "firebase/firestore/lite";
 import { buildEntityId, parseEntityId } from "@/libs/entities/keys";
 import { GENERIC_ENTITY_TYPES, type Entity, type GenericEntityType } from "@/libs/entities/types";
 import { db } from "./app";

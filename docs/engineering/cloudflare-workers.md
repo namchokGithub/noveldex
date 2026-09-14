@@ -1,6 +1,8 @@
 # Cloudflare Workers deployment
 
-Novelndex runs on Cloudflare Workers through OpenNext. It preserves the existing Next.js App Router and server rendering; deploy it as a Worker, not as a static Cloudflare Pages site.
+Novelndex runs on Cloudflare Workers through Vinext. It preserves the existing Next.js App Router and server rendering; deploy it as a Worker, not as a static Cloudflare Pages site.
+
+Use Node.js 22 or later for the Cloudflare build and local Vinext commands.
 
 ## One-time Cloudflare setup
 
@@ -16,7 +18,7 @@ Novelndex runs on Cloudflare Workers through OpenNext. It preserves the existing
    ```
 
    They are `NEXT_PUBLIC_` values, so they are bundled into browser JavaScript. They are Firebase identifiers rather than private server credentials; never add a Firebase Admin service account to Workers.
-3. Connect the intended production branch in Workers Builds. Set its build command to `corepack pnpm build:cloudflare` and deploy command to `corepack pnpm exec wrangler deploy`.
+3. Connect the intended production branch in Workers Builds. Set its build command to `corepack pnpm build:cloudflare`, its deploy command to `corepack pnpm exec vinext-cloudflare deploy --config dist/server/wrangler.json`, and its non-production branch deploy command to `corepack pnpm exec wrangler versions upload --config dist/server/wrangler.json`.
 4. Add the Workers custom domain after a successful preview deployment.
 
 ## Local verification
@@ -36,6 +38,7 @@ Do not attach a public production domain while `firestore.rules` allows `read, w
 
 ## Operational notes
 
-- `wrangler.jsonc` enables `nodejs_compat`, which OpenNext requires.
+- `wrangler.jsonc` enables `nodejs_compat`, which Vinext requires.
+- The server uses Firestore Lite rather than the full Firestore SDK because the latter dynamically generates code that Workers reject. Lite supports the app's current one-off reads and writes, but not realtime listeners or offline persistence.
 - `NovelCover` disables Next image optimization, so the Worker does not need a Cloudflare Images binding.
-- The app does not use ISR or Next data caching today; no R2 cache bucket is configured. Add one only if those features are introduced.
+- Vinext uses the Workers Cache API for CDN caching and does not require an R2 or KV binding for the current application.

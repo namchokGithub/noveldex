@@ -10,7 +10,7 @@ import {
   query,
   Timestamp,
   updateDoc,
-} from "firebase/firestore";
+} from "firebase/firestore/lite";
 import type { NovelEvent } from "@/app/types";
 import { firestoreEntityLookup } from "@/libs/entities/firestoreLookup";
 import { reconcileReferenceOccurrences } from "@/libs/entities/reconcile";

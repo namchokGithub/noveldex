@@ -6,7 +6,7 @@ import {
   orderBy,
   query,
   where,
-} from "firebase/firestore";
+} from "firebase/firestore/lite";
 import { db } from "./app";
 
 export interface LastOrderNos {

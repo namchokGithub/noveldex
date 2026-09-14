@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import { clearFirestoreEmulator, useEmulator } from "./testUtils";

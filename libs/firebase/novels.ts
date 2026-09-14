@@ -7,7 +7,7 @@ import {
   orderBy,
   query,
   Timestamp,
-} from "firebase/firestore";
+} from "firebase/firestore/lite";
 import type { Novel } from "@/app/types";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps } from "./helpers";

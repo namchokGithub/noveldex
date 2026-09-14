@@ -4,7 +4,7 @@ import {
   getFirestore,
   initializeFirestore,
   type Firestore,
-} from "firebase/firestore";
+} from "firebase/firestore/lite";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -22,11 +22,7 @@ function initDb(): Firestore {
   const app = getFirebaseApp();
   let firestore: Firestore;
   try {
-    // Vercel's Node serverless runtime breaks Firestore's default gRPC-style
-    // streaming transport; long polling is the documented workaround.
-    firestore = initializeFirestore(app, {
-      experimentalAutoDetectLongPolling: true,
-    });
+    firestore = initializeFirestore(app, {});
   } catch {
     // Already initialized (e.g. Next.js dev server hot reload) — reuse it.
     firestore = getFirestore(app);

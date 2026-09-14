@@ -1,14 +1,16 @@
 import {
-  addDoc,
-  collection,
-  getDocs,
   limit,
-  orderBy,
-  query,
   startAfter,
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  orderBy,
+  query,
+} from "firebase/firestore/lite";
 import type { Tag } from "@/app/types";
 import { db } from "./app";
 
@@ -60,7 +62,9 @@ export async function getTagsPage(
 
 export async function createTag(novelId: string, name: string): Promise<Tag> {
   if (name.trim().length > TAG_NAME_MAX_LENGTH) {
-    throw new Error(`Tag names cannot exceed ${TAG_NAME_MAX_LENGTH} characters.`);
+    throw new Error(
+      `Tag names cannot exceed ${TAG_NAME_MAX_LENGTH} characters.`,
+    );
   }
 
   const ref = await addDoc(tagsCol(novelId), { name });

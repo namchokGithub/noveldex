@@ -13,7 +13,7 @@ import {
   updateDoc,
   where,
   writeBatch,
-} from "firebase/firestore";
+} from "firebase/firestore/lite";
 import type { Chapter, ChapterKind, ChapterNote, ChapterSummary, ChapterWithCharacters, Tag } from "@/app/types";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import { db } from "./app";

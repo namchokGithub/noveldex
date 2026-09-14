@@ -4,7 +4,6 @@ import {
   collectionGroup,
   deleteDoc,
   doc,
-  getCountFromServer,
   getDoc,
   getDocs,
   orderBy,
@@ -14,7 +13,7 @@ import {
   where,
   writeBatch,
   type DocumentReference,
-} from "firebase/firestore";
+} from "firebase/firestore/lite";
 import type { PaginatedVolumes, Volume, VolumeListSummary } from "@/app/types";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
@@ -49,12 +48,12 @@ function chaptersCol(novelId: string, volumeId: string) {
 async function volumeAggregates(novelId: string, volumeId: string) {
   const col = chaptersCol(novelId, volumeId);
   const [totalSnap, readSnap] = await Promise.all([
-    getCountFromServer(col),
-    getCountFromServer(query(col, where("read_at", "!=", null))),
+    getDocs(col),
+    getDocs(query(col, where("read_at", "!=", null))),
   ]);
   return {
-    chapter_count: totalSnap.data().count,
-    read_count: readSnap.data().count,
+    chapter_count: totalSnap.size,
+    read_count: readSnap.size,
   };
 }
 
@@ -105,17 +104,17 @@ export async function getVolumes(
 
   const novelChapters = collectionGroup(db, "chapters");
   const [totalVolumesSnap, novelChaptersSnap, novelReadSnap] = await Promise.all([
-    getCountFromServer(volumesCol(novelId)),
-    getCountFromServer(query(novelChapters, where("novel_id", "==", novelId))),
-    getCountFromServer(
+    getDocs(volumesCol(novelId)),
+    getDocs(query(novelChapters, where("novel_id", "==", novelId))),
+    getDocs(
       query(novelChapters, where("novel_id", "==", novelId), where("read_at", "!=", null)),
     ),
   ]);
 
   const summary: VolumeListSummary = {
-    total_volumes: totalVolumesSnap.data().count,
-    total_chapters: novelChaptersSnap.data().count,
-    read_count: novelReadSnap.data().count,
+    total_volumes: totalVolumesSnap.size,
+    total_chapters: novelChaptersSnap.size,
+    read_count: novelReadSnap.size,
   };
 
   return {

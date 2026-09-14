@@ -1,4 +1,4 @@
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, getDocs, orderBy, query } from "firebase/firestore/lite";
 import type { CharacterRole } from "@/app/types";
 import { db } from "./app";
 
