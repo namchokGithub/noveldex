@@ -36,6 +36,10 @@ export default async function VolumePage({
     notFound();
   }
 
+  const chapterCount = chapters.filter(
+    (chapter) => chapter.kind === "chapter",
+  ).length;
+
   const availableTags =
     tags.length > 0
       ? tags
@@ -82,7 +86,8 @@ export default async function VolumePage({
                   Chapters
                 </p>
                 <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                  {chapters.length} chapter{chapters.length === 1 ? "" : "s"}
+                  {chapterCount} chapter
+                  {chapterCount === 1 ? "" : "s"}
                 </h2>
               </div>
             </>

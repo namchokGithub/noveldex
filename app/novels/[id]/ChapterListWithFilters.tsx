@@ -80,7 +80,9 @@ function ChapterTagRow({ tags }: { tags: Tag[] }) {
   }, [visibleCount, tags.length]);
 
   return (
-    <div ref={listRef} className="mt-2 flex min-w-0 flex-nowrap gap-1.5 overflow-hidden">
+    <div
+      ref={listRef}
+      className="mt-2 flex min-w-0 flex-nowrap gap-1.5 overflow-hidden">
       {tags.slice(0, visibleCount).map((tag) => (
         <span key={tag.id} data-tag-chip className={`${tagClassName} shrink-0`}>
           {tag.name}
@@ -163,7 +165,9 @@ export default function ChapterListWithFilters({
   const filteredRemainingTags = useMemo(() => {
     const query = tagFilterQuery.trim().toLowerCase();
     if (!query) return remainingTags;
-    return remainingTags.filter((tag) => tag.name.toLowerCase().includes(query));
+    return remainingTags.filter((tag) =>
+      tag.name.toLowerCase().includes(query),
+    );
   }, [remainingTags, tagFilterQuery]);
 
   const filteredChapters = useMemo(() => {
@@ -366,253 +370,267 @@ export default function ChapterListWithFilters({
         <aside className="space-y-4">
           {sidebar}
           {reorderMode ? (
-        <div className={cardClassName}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-stone-500">{t("chapter.dragHint")}</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={cancelReorder}
-                disabled={reorderSaving}
-                className={secondaryButtonClassName}>
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSaveOrder()}
-                disabled={reorderSaving}
-                className={primaryButtonClassName}>
-                {reorderSaving ? t("common.saving") : t("chapter.saveOrder")}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className={cardClassName}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-stone-700">
-                {t("chapter.filters.tags")}
-              </span>
-              {selectedTags.map((tag) => (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => removeTag(tag.id)}
-                  className={tagClassName}>
-                  {tag.name}
-                  <span aria-hidden="true">×</span>
-                </button>
-              ))}
-              {!tagFilterPickerOpen ? (
-                <button
-                  type="button"
-                  onClick={() => setTagFilterPickerOpen(true)}
-                  disabled={remainingTags.length === 0}
-                  className="rounded-full border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-400">
-                  {t("chapter.filters.addTag")}
-                </button>
-              ) : (
-                <div className="min-w-0 w-full max-w-full overflow-hidden rounded-[22px] border border-stone-200 bg-stone-50/90 p-3 shadow-sm">
-                  <input
-                    value={tagFilterQuery}
-                    onChange={(event) => setTagFilterQuery(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        setTagFilterQuery("");
-                        setTagFilterPickerOpen(false);
-                      }
-                    }}
-                    placeholder={t("chapter.addTagPlaceholder")}
-                    className={inputClassName}
-                  />
-                  <div className="mt-2 max-h-28 overflow-y-auto">
-                    {filteredRemainingTags.length > 0 ? (
-                      <ul className="min-w-0 space-y-1">
-                        {filteredRemainingTags.map((tag) => (
-                          <li key={tag.id} className="min-w-0 overflow-hidden">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                addTag(tag.id);
-                                setTagFilterQuery("");
-                                setTagFilterPickerOpen(false);
-                              }}
-                              className="min-w-0 w-full truncate rounded-xl px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-white">
-                              <span className="block min-w-0 truncate">{tag.name}</span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-xs text-stone-500">
-                        {t("chapter.noMoreTags")}
-                      </p>
-                    )}
-                  </div>
+            <div className={cardClassName}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-stone-500">
+                  {t("chapter.dragHint")}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelReorder}
+                    disabled={reorderSaving}
+                    className={secondaryButtonClassName}>
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveOrder()}
+                    disabled={reorderSaving}
+                    className={primaryButtonClassName}>
+                    {reorderSaving
+                      ? t("common.saving")
+                      : t("chapter.saveOrder")}
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={enterReorderMode}
-                className={ghostButtonClassName}>
-                {t("chapter.reorder")}
-              </button>
-            )}
-          </div>
-        </div>
+          ) : (
+            <div className={cardClassName}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-stone-700">
+                    {t("chapter.filters.tags")}
+                  </span>
+                  {selectedTags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => removeTag(tag.id)}
+                      className={tagClassName}>
+                      {tag.name}
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  ))}
+                  {!tagFilterPickerOpen ? (
+                    <button
+                      type="button"
+                      onClick={() => setTagFilterPickerOpen(true)}
+                      disabled={remainingTags.length === 0}
+                      className="rounded-full border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-400">
+                      {t("chapter.filters.addTag")}
+                    </button>
+                  ) : (
+                    <div className="min-w-0 w-full max-w-full overflow-hidden rounded-[22px] border border-stone-200 bg-stone-50/90 p-3 shadow-sm">
+                      <input
+                        value={tagFilterQuery}
+                        onChange={(event) =>
+                          setTagFilterQuery(event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape") {
+                            setTagFilterQuery("");
+                            setTagFilterPickerOpen(false);
+                          }
+                        }}
+                        placeholder={t("chapter.addTagPlaceholder")}
+                        className={inputClassName}
+                      />
+                      <div className="mt-2 max-h-28 overflow-y-auto">
+                        {filteredRemainingTags.length > 0 ? (
+                          <ul className="min-w-0 space-y-1">
+                            {filteredRemainingTags.map((tag) => (
+                              <li
+                                key={tag.id}
+                                className="min-w-0 overflow-hidden">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    addTag(tag.id);
+                                    setTagFilterQuery("");
+                                    setTagFilterPickerOpen(false);
+                                  }}
+                                  className="min-w-0 w-full truncate rounded-xl px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-white">
+                                  <span className="block min-w-0 truncate">
+                                    {tag.name}
+                                  </span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-xs text-stone-500">
+                            {t("chapter.noMoreTags")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={enterReorderMode}
+                    className={ghostButtonClassName}>
+                    {t("chapter.reorder")}
+                  </button>
+                )}
+              </div>
+            </div>
           )}
-
         </aside>
         <div className="min-w-0">
           {reorderMode ? (
-        orderedChapters.length === 0 ? null : (
-          <ul className={`${listClassName} divide-y divide-stone-200`}>
-            {orderedChapters.map((chapter, index) => (
-              <li
-                key={chapter.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragEnd={handleDragEnd}
-                className="cursor-grab active:cursor-grabbing active:opacity-50">
-                <div className={`${listRowClassName} select-none`}>
-                  <span className="shrink-0 text-stone-400" aria-hidden="true">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                      aria-hidden="true">
-                      <circle cx="5" cy="3" r="1.5" />
-                      <circle cx="11" cy="3" r="1.5" />
-                      <circle cx="5" cy="8" r="1.5" />
-                      <circle cx="11" cy="8" r="1.5" />
-                      <circle cx="5" cy="13" r="1.5" />
-                      <circle cx="11" cy="13" r="1.5" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-stone-900">
-                      <ChapterLabel chapter={chapter} />
+            orderedChapters.length === 0 ? null : (
+              <ul className={`${listClassName} divide-y divide-stone-200`}>
+                {orderedChapters.map((chapter, index) => (
+                  <li
+                    key={chapter.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className="cursor-grab active:cursor-grabbing active:opacity-50">
+                    <div className={`${listRowClassName} select-none`}>
+                      <span
+                        className="shrink-0 text-stone-400"
+                        aria-hidden="true">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          aria-hidden="true">
+                          <circle cx="5" cy="3" r="1.5" />
+                          <circle cx="11" cy="3" r="1.5" />
+                          <circle cx="5" cy="8" r="1.5" />
+                          <circle cx="11" cy="8" r="1.5" />
+                          <circle cx="5" cy="13" r="1.5" />
+                          <circle cx="11" cy="13" r="1.5" />
+                        </svg>
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-stone-900">
+                          <ChapterLabel chapter={chapter} />
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <label
+                            className="sr-only"
+                            htmlFor={`chapter-kind-${chapter.id}`}>
+                            {t("addChapter.entryType")}
+                          </label>
+                          <select
+                            id={`chapter-kind-${chapter.id}`}
+                            value={chapter.kind}
+                            disabled={reorderSaving}
+                            draggable={false}
+                            onDragStart={(event) => event.stopPropagation()}
+                            onChange={(event) =>
+                              changeReorderEntryKind(
+                                chapter.id,
+                                event.target.value as ChapterKind,
+                              )
+                            }
+                            className={`${inputClassName} w-auto py-1.5 text-xs`}>
+                            {CHAPTER_KINDS.map((kind) => (
+                              <option key={kind} value={kind}>
+                                {kindLabels[kind]}
+                              </option>
+                            ))}
+                          </select>
+                          {chapter.kind === "chapter" &&
+                          visibleChapters.find(({ id }) => id === chapter.id)
+                            ?.number === null ? (
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              inputMode="numeric"
+                              value={chapter.number ?? ""}
+                              placeholder={t("addChapter.numberRequired")}
+                              disabled={reorderSaving}
+                              draggable={false}
+                              onDragStart={(event) => event.stopPropagation()}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                updateReorderEntry(chapter.id, {
+                                  number: value === "" ? null : Number(value),
+                                });
+                              }}
+                              className={`${inputClassName} w-32 py-1.5 text-xs`}
+                            />
+                          ) : null}
+                          {chapter.kind === "other" ? (
+                            <input
+                              value={chapter.custom_label ?? ""}
+                              placeholder={t(
+                                "addChapter.customLabelPlaceholder",
+                              )}
+                              maxLength={80}
+                              disabled={reorderSaving}
+                              draggable={false}
+                              onDragStart={(event) => event.stopPropagation()}
+                              onChange={(event) =>
+                                updateReorderEntry(chapter.id, {
+                                  custom_label: event.target.value,
+                                })
+                              }
+                              className={`${inputClassName} w-48 py-1.5 text-xs`}
+                            />
+                          ) : null}
+                        </div>
+                        {chapter.tags.length > 0 && (
+                          <ChapterTagRow tags={chapter.tags} />
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <label
-                        className="sr-only"
-                        htmlFor={`chapter-kind-${chapter.id}`}>
-                        {t("addChapter.entryType")}
-                      </label>
-                      <select
-                        id={`chapter-kind-${chapter.id}`}
-                        value={chapter.kind}
-                        disabled={reorderSaving}
-                        draggable={false}
-                        onDragStart={(event) => event.stopPropagation()}
-                        onChange={(event) =>
-                          changeReorderEntryKind(
-                            chapter.id,
-                            event.target.value as ChapterKind,
-                          )
-                        }
-                        className={`${inputClassName} w-auto py-1.5 text-xs`}>
-                        {CHAPTER_KINDS.map((kind) => (
-                          <option key={kind} value={kind}>
-                            {kindLabels[kind]}
-                          </option>
-                        ))}
-                      </select>
-                      {chapter.kind === "chapter" &&
-                      visibleChapters.find(({ id }) => id === chapter.id)
-                        ?.number === null ? (
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          inputMode="numeric"
-                          value={chapter.number ?? ""}
-                          placeholder={t("addChapter.numberRequired")}
-                          disabled={reorderSaving}
-                          draggable={false}
-                          onDragStart={(event) => event.stopPropagation()}
-                          onChange={(event) => {
-                            const value = event.target.value;
-                            updateReorderEntry(chapter.id, {
-                              number: value === "" ? null : Number(value),
-                            });
-                          }}
-                          className={`${inputClassName} w-32 py-1.5 text-xs`}
-                        />
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : filteredChapters.length === 0 ? (
+            <div className="flex min-h-55 items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
+              {t("chapter.filters.noMatch")}
+            </div>
+          ) : (
+            <ul className={`${listClassName} divide-y divide-stone-200`}>
+              {filteredChapters.map((chapter) => (
+                <li key={chapter.id}>
+                  <div className={listRowClassName}>
+                    <Link
+                      href={`/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapter.id}`}
+                      className="min-w-0 flex-1 rounded-2xl outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
+                      <div className="text-sm font-medium text-stone-900 transition hover:text-stone-700">
+                        <ChapterLabel chapter={chapter} />
+                      </div>
+                      {chapter.tags.length > 0 && (
+                        <ChapterTagRow tags={chapter.tags} />
+                      )}
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {chapter.read_at ? (
+                        <span className="text-xs text-stone-500">
+                          {formatDisplayDate(chapter.read_at) ??
+                            chapter.read_at}
+                        </span>
                       ) : null}
-                      {chapter.kind === "other" ? (
-                        <input
-                          value={chapter.custom_label ?? ""}
-                          placeholder={t("addChapter.customLabelPlaceholder")}
-                          maxLength={80}
-                          disabled={reorderSaving}
-                          draggable={false}
-                          onDragStart={(event) => event.stopPropagation()}
-                          onChange={(event) =>
-                            updateReorderEntry(chapter.id, {
-                              custom_label: event.target.value,
-                            })
-                          }
-                          className={`${inputClassName} w-48 py-1.5 text-xs`}
-                        />
-                      ) : null}
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmChapter(chapter)}
+                          disabled={deletingId === chapter.id}
+                          className={dangerIconButtonClassName}
+                          aria-label={t("chapter.deleteAria", {
+                            number: chapter.number ?? chapter.kind,
+                          })}>
+                          Del
+                        </button>
+                      )}
                     </div>
-                    {chapter.tags.length > 0 && (
-                      <ChapterTagRow tags={chapter.tags} />
-                    )}
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )
-      ) : filteredChapters.length === 0 ? (
-        <div className="flex min-h-55 items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
-          {t("chapter.filters.noMatch")}
-        </div>
-      ) : (
-        <ul className={`${listClassName} divide-y divide-stone-200`}>
-          {filteredChapters.map((chapter) => (
-            <li key={chapter.id}>
-              <div className={listRowClassName}>
-                <Link
-                  href={`/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapter.id}`}
-                  className="min-w-0 flex-1 rounded-2xl outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
-                  <div className="text-sm font-medium text-stone-900 transition hover:text-stone-700">
-                    <ChapterLabel chapter={chapter} />
-                  </div>
-                  {chapter.tags.length > 0 && (
-                    <ChapterTagRow tags={chapter.tags} />
-                  )}
-                </Link>
-                <div className="flex shrink-0 items-center gap-2">
-                  {chapter.read_at ? (
-                    <span className="text-xs text-stone-500">
-                      {formatDisplayDate(chapter.read_at) ?? chapter.read_at}
-                    </span>
-                  ) : null}
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmChapter(chapter)}
-                      disabled={deletingId === chapter.id}
-                      className={dangerIconButtonClassName}
-                      aria-label={t("chapter.deleteAria", {
-                        number: chapter.number ?? chapter.kind,
-                      })}>
-                      Del
-                    </button>
-                  )}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
