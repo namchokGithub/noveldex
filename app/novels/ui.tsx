@@ -76,6 +76,9 @@ export const timelineDotClassName =
 export const emptyStateClassName =
   "flex min-h-[280px] flex-col items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center shadow-sm";
 
+export const compactEmptyStateClassName =
+  "rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 px-4 py-5 text-center text-sm text-stone-500";
+
 export const modalBackdropClassName =
   "fixed inset-3 z-50 flex items-center justify-center overflow-hidden rounded-[28px] bg-stone-950/42 px-4 backdrop-blur-md sm:inset-4 sm:rounded-[28px]";
 

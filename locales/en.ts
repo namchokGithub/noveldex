@@ -214,6 +214,7 @@ const en = {
   "chapter.filters.tags": "Tags:",
   "chapter.filters.addTag": "+ Add tag filter",
   "chapter.filters.noMatch": "No chapters match selected tags.",
+  "chapter.noChapters": "No chapters in this volume yet. Add the first chapter to begin.",
   "chapter.pageEyebrow": "Chapter {number}",
   "chapter.kind.chapter": "Ch.",
   "chapter.kind.prologue": "Prologue",
@@ -242,6 +243,7 @@ const en = {
   "chapter.addNote": "+ Add note",
   "chapter.noteNumber": "Note {number}",
   "chapter.noNotes": "No notes yet. Add one to start tracking this chapter.",
+  "chapter.noSummary": "No summary yet.",
   "chapter.noteContent": "Note",
   "chapter.notePlaceholder":
     "Write a note. Use [[Character name]] to link a character.",

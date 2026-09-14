@@ -14,6 +14,7 @@ import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import {
   cardClassName,
   dangerIconButtonClassName,
+  emptyStateClassName,
   formatDisplayDate,
   ghostButtonClassName,
   inputClassName,
@@ -481,7 +482,11 @@ export default function ChapterListWithFilters({
         </aside>
         <div className="min-w-0">
           {reorderMode ? (
-            orderedChapters.length === 0 ? null : (
+            orderedChapters.length === 0 ? (
+              <div className={emptyStateClassName}>
+                {t("chapter.noChapters")}
+              </div>
+            ) : (
               <ul className={`${listClassName} divide-y divide-stone-200`}>
                 {orderedChapters.map((chapter, index) => (
                   <li
@@ -589,8 +594,10 @@ export default function ChapterListWithFilters({
               </ul>
             )
           ) : filteredChapters.length === 0 ? (
-            <div className="flex min-h-55 items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
-              {t("chapter.filters.noMatch")}
+            <div className={emptyStateClassName}>
+              {visibleChapters.length === 0
+                ? t("chapter.noChapters")
+                : t("chapter.filters.noMatch")}
             </div>
           ) : (
             <ul className={`${listClassName} divide-y divide-stone-200`}>

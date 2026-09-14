@@ -33,7 +33,7 @@ export default function SummaryRenderer({
   const renderedNotes = notes.length > 0 ? notes : summary ? [{ id: 'legacy-summary', content: summary, created_at: '', updated_at: '' }] : []
   if (renderedNotes.length === 0) {
     return (
-      <p className="text-sm italic text-stone-400">No summary yet.</p>
+      <p className="text-sm italic text-stone-400">{t("chapter.noSummary")}</p>
     )
   }
 

@@ -7,6 +7,7 @@ import { useState } from "react";
 import type { Character, PaginationMeta } from "@/app/types";
 import {
   inputClassName,
+  emptyStateClassName,
   listClassName,
   listRowClassName,
   roleColorClassNames,
@@ -44,7 +45,7 @@ export default function CharacterList({
 
   if (characters.length === 0 && pagination.page === 1) {
     return (
-      <div className="flex min-h-65 items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
+      <div className={emptyStateClassName}>
         <T k="characters.noCharacters" />
       </div>
     );

@@ -7,7 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { PaginationMeta, Volume } from "@/app/types";
 
 import {
-  cardClassName,
+  emptyStateClassName,
   dangerIconButtonClassName,
   ghostButtonClassName,
   inputClassName,
@@ -215,8 +215,8 @@ export default function VolumeManager({
 
   if (volumes.length === 0) {
     return (
-      <div className={cardClassName}>
-        <p className="text-sm text-stone-500">{t("volumeManager.empty")}</p>
+      <div className={emptyStateClassName}>
+        <p>{t("volumeManager.empty")}</p>
       </div>
     );
   }

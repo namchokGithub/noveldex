@@ -4,10 +4,25 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 
 ## Phase 6: Polish
 
+### Small
+
+- [x] Empty states in remaining pages
+- [ ] Accessibility + keyboard UX
+- [ ] Localization / typography polish
+
+### Medium
+
+- [ ] Loading / saving / deleting states
 - [ ] Error handling + user-facing messages
-- [ ] Empty states in remaining pages
 - [ ] Mobile-responsive layout
-- [ ] Rate limiting on API
+- [ ] Guest/Admin UX polish
+- [ ] Data consistency polish
+
+### Large
+
+- [ ] Firestore read-cost + performance audit
+- [ ] Cross-browser / device verification
+- [ ] Production readiness checklist
 
 ## Fix & Issue
 

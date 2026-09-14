@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { Character } from "@/app/types";
 import {
   chipClassName,
+  compactEmptyStateClassName,
   modalPanelClassName,
   secondaryButtonClassName,
 } from "@/app/novels/ui";
@@ -74,9 +75,11 @@ export default function LinkedCharactersPanel({
 
   if (mentionedCharacterNames.length === 0) {
     return (
-      <p className="text-sm text-stone-500">
-        <T k="chapter.noLinkedCharacters" />
-      </p>
+      <div className={compactEmptyStateClassName}>
+        <p className="text-sm text-stone-500">
+          <T k="chapter.noLinkedCharacters" />
+        </p>
+      </div>
     );
   }
 
