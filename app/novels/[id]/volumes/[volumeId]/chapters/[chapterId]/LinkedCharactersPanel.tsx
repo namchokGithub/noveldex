@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { Character } from "@/app/types";
 import {
   chipClassName,
+  compactEmptyStateClassName,
   modalPanelClassName,
   secondaryButtonClassName,
 } from "@/app/novels/ui";
 import { T, useI18n } from "@/components/i18n/I18nProvider";
+import ModalDialog from "@/components/a11y/ModalDialog";
 
 interface Props {
   characters: Character[];
@@ -74,9 +75,11 @@ export default function LinkedCharactersPanel({
 
   if (mentionedCharacterNames.length === 0) {
     return (
-      <p className="text-sm text-stone-500">
-        <T k="chapter.noLinkedCharacters" />
-      </p>
+      <div className={compactEmptyStateClassName}>
+        <p className="text-sm text-stone-500">
+          <T k="chapter.noLinkedCharacters" />
+        </p>
+      </div>
     );
   }
 
@@ -111,67 +114,60 @@ export default function LinkedCharactersPanel({
               type="button"
               onClick={() => setDialogOpen(true)}
               className="inline-flex items-center rounded-full bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-50 transition hover:bg-stone-700"
-              aria-label={`Show ${mentionedCharacterNames.length - visibleCount} more characters`}>
+              aria-label={t("common.showMoreCharacters", {
+                count: mentionedCharacterNames.length - visibleCount,
+              })}>
               +{mentionedCharacterNames.length - visibleCount}
             </button>
           </li>
         )}
       </ul>
-      {dialogOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-60 flex items-center justify-center bg-stone-950/40 px-4 backdrop-blur-sm"
-            onMouseDown={() => setDialogOpen(false)}>
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="all-characters-title"
-            className={`${modalPanelClassName} max-w-lg`}
-            onMouseDown={(event) => event.stopPropagation()}>
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-                  <T k="chapter.characters" />
-                </p>
-                <h3
-                  id="all-characters-title"
-                  className="mt-1 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                  {mentionedCharacterNames.length} <T k="chapter.characters" />
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setDialogOpen(false)}
-                className={secondaryButtonClassName}>
-                {t("common.cancel")}
-              </button>
-            </div>
-            <ul className="flex max-h-96 flex-wrap content-start gap-2 overflow-y-auto pr-1">
-              {mentionedCharacterNames.map((name) => {
-                const char = characters.find((item) => item.name === name);
-                return (
-                  <li key={name}>
-                    {char ? (
-                      <Link
-                        href={`/novels/${novelId}/characters/${char.id}`}
-                        onClick={() => setDialogOpen(false)}
-                        className={chipClassName}>
-                        {char.name}
-                        <span className="text-[11px] text-stone-500">
-                          {char.role}
-                        </span>
-                      </Link>
-                    ) : (
-                      <span className={chipClassName}>{name}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+      <ModalDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        labelledBy="all-characters-title"
+        className={`${modalPanelClassName} max-w-lg`}>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+              <T k="chapter.characters" />
+            </p>
+            <h3
+              id="all-characters-title"
+              className="mt-1 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+              {mentionedCharacterNames.length} <T k="chapter.characters" />
+            </h3>
           </div>
-          </div>,
-          document.body,
-        )}
+          <button
+            type="button"
+            onClick={() => setDialogOpen(false)}
+            className={secondaryButtonClassName}>
+            {t("common.cancel")}
+          </button>
+        </div>
+        <ul className="flex max-h-96 flex-wrap content-start gap-2 overflow-y-auto pr-1">
+          {mentionedCharacterNames.map((name) => {
+            const char = characters.find((item) => item.name === name);
+            return (
+              <li key={name}>
+                {char ? (
+                  <Link
+                    href={`/novels/${novelId}/characters/${char.id}`}
+                    onClick={() => setDialogOpen(false)}
+                    className={chipClassName}>
+                    {char.name}
+                    <span className="text-[11px] text-stone-500">
+                      {char.role}
+                    </span>
+                  </Link>
+                ) : (
+                  <span className={chipClassName}>{name}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </ModalDialog>
     </div>
   );
 }

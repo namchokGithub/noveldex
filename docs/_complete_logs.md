@@ -113,3 +113,9 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 ## Phase 6: Polish (partial — remaining items still in PROGRESS.md)
 
 - [x] Confirm Dialog or Modal when Action Success/Fail
+- [x] Empty states in remaining pages
+- [x] Accessibility + keyboard UX — skip link; keyboard navigation for search, language/account menus, dialogs, reorder, pagination, tag picker, note mentions, and inline chapter editing
+- [x] Localization / typography polish — EN/TH dates, pagination/labels, and volume/chapter metadata follow the selected locale
+- [x] Loading / saving / deleting states — route skeletons plus protected busy controls and labels across mutation flows
+- [x] Error handling + user-facing messages — localized mutation feedback, accessible Snackbar announcements, retryable route failures, and typed not-found handling
+- [x] Guest/Admin UX polish — read-only guest cue, guest entity detail view, and gated admin actions

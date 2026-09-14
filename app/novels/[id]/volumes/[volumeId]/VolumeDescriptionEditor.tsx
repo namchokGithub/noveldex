@@ -78,7 +78,10 @@ export default function VolumeDescriptionEditor({
       <div className="flex items-start justify-between gap-3">
         <label className={smallLabelClassName}>{t("common.description")}</label>
         {!editing && isAdmin && (
-          <button type="button" onClick={() => setEditing(true)} className={secondaryButtonClassName}>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className={secondaryButtonClassName}>
             {t("common.edit")}
           </button>
         )}
@@ -87,7 +90,11 @@ export default function VolumeDescriptionEditor({
         <>
           <textarea
             value={description}
-            onChange={(event) => setDescription(event.target.value.slice(0, MAX_DESCRIPTION_LENGTH))}
+            onChange={(event) =>
+              setDescription(
+                event.target.value.slice(0, MAX_DESCRIPTION_LENGTH),
+              )
+            }
             maxLength={MAX_DESCRIPTION_LENGTH}
             rows={4}
             className={textareaClassName}
@@ -100,26 +107,36 @@ export default function VolumeDescriptionEditor({
           </div>
           {error && <FormError>{error}</FormError>}
           <div className="mt-2 flex justify-end gap-2">
-            <button type="button" onClick={() => { setDescription(savedDescription); setError(null); setEditing(false); }} disabled={saving} className={secondaryButtonClassName}>
+            <button
+              type="button"
+              onClick={() => {
+                setDescription(savedDescription);
+                setError(null);
+                setEditing(false);
+              }}
+              disabled={saving}
+              className={secondaryButtonClassName}>
               {t("common.cancel")}
             </button>
-            <button type="button" onClick={() => void saveDescription()} disabled={saving} className={primaryButtonClassName}>
+            <button
+              type="button"
+              onClick={() => void saveDescription()}
+              disabled={saving}
+              className={primaryButtonClassName}>
               {saving ? t("common.saving") : t("volume.saveDescription")}
             </button>
           </div>
         </>
+      ) : savedDescription ? (
+        <ExpandableDescription
+          collapsedLines={collapsedLines}
+          className="max-w-none">
+          {savedDescription}
+        </ExpandableDescription>
       ) : (
-        savedDescription ? (
-          <ExpandableDescription
-            collapsedLines={collapsedLines}
-            className="max-w-none">
-            {savedDescription}
-          </ExpandableDescription>
-        ) : (
-          <p className="italic text-sm leading-7 text-stone-400">
-            {t("novels.noDescription")}
-          </p>
-        )
+        <p className="italic text-sm leading-7 text-stone-400">
+          {t("novels.noDescription")}
+        </p>
       )}
       <Snackbar
         open={Boolean(snackbar)}

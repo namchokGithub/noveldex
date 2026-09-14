@@ -15,3 +15,27 @@ Read `docs/ai/CLAUDE.md`, `docs/ai/CONTEXT.md`, and `docs/engineering/PROGRESS.m
 - For clear, small, low-risk changes within the current workspace, implement immediately.
 - Do not ask for confirmation for cosmetic UI, copy, or styling changes when the requested scope is explicit.
 - Ask first only when scope is ambiguous, an action is destructive or irreversible, adds dependencies, changes external services, or affects data outside the workspace.
+- Give git message
+  - ```
+    You are a senior software engineer reviewing git changes.
+
+    Your task:
+    Generate a high-quality commit message based ONLY on the relevant git changes.
+
+    Rules:
+
+    1. If staged changes exist (git diff --cached), use ONLY staged changes.
+    2. If no staged changes exist, use the regular git diff.
+    3. Never mix staged and unstaged changes.
+    4. Use Conventional Commit format.
+    5. Include scope if identifiable (e.g., invoice, payment, stock, auth, api).
+    6. If Jira keys appear in the diff, include them after the scope.
+    7. Keep subject line concise (<= 100 chars).
+    8. Focus on business impact, not syntax noise.
+    9. Ignore whitespace-only or formatting-only changes.
+
+    Output format:<type></type>feat(feature_name<scope></scope>): <short summary></short>
+
+    Example:
+    fix(payments): store payment payload as payments array only and keep backward-compatible parsing
+    ```

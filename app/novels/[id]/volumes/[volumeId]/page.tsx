@@ -4,14 +4,17 @@ import AddChapterForm from "../../AddChapterForm";
 import BackToTopButton from "../../../BackToTopButton";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
+import LocalizedVolumeTitle from "@/components/volumes/LocalizedVolumeTitle";
+import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
+import { T } from "@/components/i18n/I18nProvider";
 import {
   backLinkClassName,
   cardClassName,
   DashboardPage,
-  formatDisplayDate,
   SectionHeading,
 } from "@/app/novels/ui";
 import { getChaptersByVolume, getNovel, getTags, getVolume } from "@/libs/api";
+import { ResourceNotFoundError } from "@/libs/errors";
 
 export default async function VolumePage({
   params,
@@ -31,9 +34,14 @@ export default async function VolumePage({
       getChaptersByVolume(id, volumeId),
       getTags(id),
     ]);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) notFound();
+    throw error;
   }
+
+  const chapterCount = chapters.filter(
+    (chapter) => chapter.kind === "chapter",
+  ).length;
 
   const availableTags =
     tags.length > 0
@@ -56,9 +64,13 @@ export default async function VolumePage({
         </Link>
 
         <SectionHeading
-          eyebrow={`Volume ${volume.number}`}
-          title={volume.title}
-          description={`Manage chapters inside this volume. Updated ${formatDisplayDate(volume.updated_at) ?? volume.updated_at}.`}
+          eyebrow={
+            <T k="volume.pageEyebrow" values={{ number: volume.number }} />
+          }
+          title={<LocalizedVolumeTitle volume={volume} />}
+          description={
+            <LocalizedVolumePageDescription updatedAt={volume.updated_at} />
+          }
           action={<AddChapterForm novelId={id} volumeId={volume.id} />}
         />
 
@@ -78,10 +90,17 @@ export default async function VolumePage({
             <>
               <div className={cardClassName}>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                  Chapters
+                  <T k="volume.chapters" />
                 </p>
                 <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                  {chapters.length} chapter{chapters.length === 1 ? "" : "s"}
+                  <T
+                    k={
+                      chapterCount === 1
+                        ? "volumeManager.chapter.one"
+                        : "volumeManager.chapter.other"
+                    }
+                    values={{ count: chapterCount }}
+                  />
                 </h2>
               </div>
             </>

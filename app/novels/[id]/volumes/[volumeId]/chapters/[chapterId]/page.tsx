@@ -12,6 +12,7 @@ import {
 } from "@/app/novels/ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { getChapter } from "@/libs/api";
+import { ResourceNotFoundError } from "@/libs/errors";
 import { formatChapterPrefix } from "@/libs/chapterLabel";
 
 export async function generateMetadata({
@@ -25,7 +26,7 @@ export async function generateMetadata({
     const chapter = await getChapter(id, volumeId, chapterId);
 
     return {
-      title: chapter.title,
+      title: chapter.title_en || chapter.title,
       description: chapter.summary || undefined,
     };
   } catch {
@@ -49,8 +50,9 @@ export default async function ChapterPage({
 
   try {
     chapter = await getChapter(id, volumeId, chapterId);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) notFound();
+    throw error;
   }
 
   return (
@@ -64,8 +66,21 @@ export default async function ChapterPage({
         </Link>
 
         <SectionHeading
-          eyebrow={formatChapterPrefix(chapter, { chapter: "Ch.", prologue: "Prologue", epilogue: "Epilogue", afterword: "Afterword", side_story: "Side Story", other: "Other" })}
-          title={<ChapterTitleEditor chapter={chapter} novelId={id} volumeId={volumeId} />}
+          eyebrow={formatChapterPrefix(chapter, {
+            chapter: "Ch.",
+            prologue: "Prologue",
+            epilogue: "Epilogue",
+            afterword: "Afterword",
+            side_story: "Side Story",
+            other: "Other",
+          })}
+          title={
+            <ChapterTitleEditor
+              chapter={chapter}
+              novelId={id}
+              volumeId={volumeId}
+            />
+          }
         />
 
         <ChapterEditor

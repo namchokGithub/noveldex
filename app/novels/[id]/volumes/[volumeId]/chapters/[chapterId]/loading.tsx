@@ -1,12 +1,12 @@
-import { PageLoadingState } from '@/app/novels/ui'
+import { PageLoadingState } from "@/app/novels/ui";
 
 export default function Loading() {
   return (
     <PageLoadingState
       maxWidth="w-[60vw]"
       backLinkWidth="h-8 w-36"
-      headerWidths={['h-7 w-28', 'h-12 w-80', 'h-4 w-full max-w-xl']}
+      headerWidths={["h-7 w-28", "h-12 w-80", "h-4 w-full max-w-xl"]}
       contentCards={[4, 4, 6]}
     />
-  )
+  );
 }

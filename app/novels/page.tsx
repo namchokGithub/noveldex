@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Novel } from "../types";
 import { T } from "@/components/i18n/I18nProvider";
+import LocalizedDate from "@/components/i18n/LocalizedDate";
 import { getNovels as getNovelsFromApi } from "@/libs/api";
 import NovelCover from "./NovelCover";
 import { CommandPaletteTrigger } from "@/components/commands/CommandPalette";
@@ -14,18 +15,6 @@ const STATUS_COLORS: Record<Novel["status"], string> = {
   dropped: "bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-200",
   on_hold: "bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200",
 };
-
-function formatDate(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return null;
-
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
 
 async function getNovels(): Promise<Novel[] | null> {
   try {
@@ -168,7 +157,7 @@ export default async function NovelsPage() {
                             <T k="common.updated" />
                           </p>
                           <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-stone-900">
-                            {formatDate(featuredNovel.updated_at) ?? (
+                            {featuredNovel.updated_at ? <LocalizedDate value={featuredNovel.updated_at} /> : (
                               <T k="novels.recentlyUpdated" />
                             )}
                           </p>
@@ -242,7 +231,7 @@ export default async function NovelsPage() {
                               <T k="common.updated" />
                             </p>
                             <p className="mt-1 font-medium text-stone-700">
-                              {formatDate(novel.updated_at) ?? (
+                              {novel.updated_at ? <LocalizedDate value={novel.updated_at} /> : (
                                 <T k="novels.recentlyUpdated" />
                               )}
                             </p>

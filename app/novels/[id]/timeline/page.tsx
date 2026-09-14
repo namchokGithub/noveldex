@@ -9,7 +9,9 @@ import type {
   Volume,
 } from "@/app/types";
 import { formatChapterLabel } from "@/libs/chapterLabel";
-import { eventOrder } from "@/libs/timelineOrder";
+import { localizedVolumeTitle } from "@/libs/volumeTitle";
+import { localizedChapterTitle } from "@/libs/chapterTitle";
+import { eventOrder, nextEventPosition } from "@/libs/timelineOrder";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import {
   backLinkClassName,
@@ -85,7 +87,7 @@ export default function TimelinePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { isAdmin } = useAuth();
   const { id: novelId } = use(params);
   const kindLabels = useChapterKindLabels();
@@ -218,6 +220,11 @@ export default function TimelinePage({
       setAddSaving(false);
     }
   }
+  function openAddForm() {
+    setAddForm(EMPTY_FORM);
+    setAddError(null);
+    setShowAddForm(true);
+  }
   function startEdit(event: NovelEvent) {
     setEditingId(event.id);
     setEditForm({
@@ -304,7 +311,14 @@ export default function TimelinePage({
           action={
             isAdmin ? (
               <button
-                onClick={() => setShowAddForm((x) => !x)}
+                onClick={() => {
+                  if (showAddForm) {
+                    setShowAddForm(false);
+                    setAddForm(EMPTY_FORM);
+                  } else {
+                    openAddForm();
+                  }
+                }}
                 className={
                   showAddForm
                     ? secondaryButtonClassName
@@ -325,10 +339,12 @@ export default function TimelinePage({
             <EventFormFields
               form={addForm}
               onChange={setAddForm}
+              events={events}
               chapters={chapters}
               volumes={volumes}
               characters={characters}
               roles={roles}
+              autoPosition
               requireChapter
               onAddCharacter={addCharacter}
             />
@@ -338,6 +354,7 @@ export default function TimelinePage({
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
+                disabled={addSaving}
                 onClick={() => {
                   setShowAddForm(false);
                   setAddForm(EMPTY_FORM);
@@ -412,10 +429,16 @@ export default function TimelinePage({
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
                     {t("timeline.volume")} {group.volume.number} ·{" "}
-                    {group.volume.title}
+                    {localizedVolumeTitle(group.volume, language)}
                   </p>
                   <h2 className="mt-1 text-lg font-semibold text-stone-900">
-                    {formatChapterLabel(group.chapter, kindLabels)}
+                    {formatChapterLabel(
+                      {
+                        ...group.chapter,
+                        title: localizedChapterTitle(group.chapter, language),
+                      },
+                      kindLabels,
+                    )}
                   </h2>
                 </div>
               ) : (
@@ -442,6 +465,7 @@ export default function TimelinePage({
                           <EventFormFields
                             form={editForm}
                             onChange={setEditForm}
+                            events={events}
                             chapters={chapters}
                             volumes={volumes}
                             characters={characters}
@@ -456,6 +480,7 @@ export default function TimelinePage({
                           <div className="mt-4 flex justify-end gap-2">
                             <button
                               type="button"
+                              disabled={editSaving}
                               onClick={() => setEditingId(null)}
                               className={secondaryButtonClassName}>
                               {t("common.cancel")}
@@ -595,23 +620,27 @@ function EventCard({
 function EventFormFields({
   form,
   onChange,
+  events,
   chapters,
   volumes,
   characters,
   roles,
   requireChapter = false,
+  autoPosition = false,
   onAddCharacter,
 }: {
   form: FormState;
   onChange: (form: FormState) => void;
+  events: NovelEvent[];
   chapters: ChapterOption[];
   volumes: Volume[];
   characters: CharacterOption[];
   roles: CharacterRole[];
   requireChapter?: boolean;
+  autoPosition?: boolean;
   onAddCharacter: (name: string, roleId: string) => Promise<CharacterOption>;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const labels = useChapterKindLabels();
   const [name, setName] = useState(""),
     [roleId, setRoleId] = useState(""),
@@ -628,6 +657,38 @@ function EventFormFields({
       >,
     ) =>
       onChange({ ...form, [key]: event.target.value });
+  function setGroupField(
+    field: "chapter_volume_id" | "chapter_id" | "page_number",
+    value: string,
+  ) {
+    const nextForm = {
+      ...form,
+      [field]: value,
+      ...(field === "chapter_volume_id" ? { chapter_id: "" } : {}),
+    };
+    if (!autoPosition) {
+      onChange(nextForm);
+      return;
+    }
+    if (!nextForm.chapter_volume_id || !nextForm.chapter_id) {
+      onChange({ ...nextForm, sort_order: "0" });
+      return;
+    }
+    const pageNumber =
+      nextForm.page_number === ""
+        ? null
+        : Number.parseInt(nextForm.page_number, 10);
+    onChange({
+      ...nextForm,
+      sort_order: String(
+        nextEventPosition(events, {
+          volumeId: nextForm.chapter_volume_id,
+          chapterId: nextForm.chapter_id,
+          pageNumber: Number.isNaN(pageNumber) ? null : pageNumber,
+        }),
+      ),
+    });
+  }
   async function quickAdd() {
     if (!name.trim()) return;
     setError(null);
@@ -673,17 +734,14 @@ function EventFormFields({
             value={form.chapter_volume_id}
             required
             onChange={(event) =>
-              onChange({
-                ...form,
-                chapter_volume_id: event.target.value,
-                chapter_id: "",
-              })
+              setGroupField("chapter_volume_id", event.target.value)
             }
             className={inputClassName}>
             <option value="">{t("timeline.field.selectVolume")}</option>
             {volumes.map((volume) => (
               <option key={volume.id} value={volume.id}>
-                {t("timeline.volume")} {volume.number} · {volume.title}
+                {t("timeline.volume")} {volume.number} ·{" "}
+                {localizedVolumeTitle(volume, language)}
               </option>
             ))}
           </select>
@@ -696,12 +754,20 @@ function EventFormFields({
             value={form.chapter_id}
             required={requireChapter}
             disabled={!form.chapter_volume_id}
-            onChange={set("chapter_id")}
+            onChange={(event) =>
+              setGroupField("chapter_id", event.target.value)
+            }
             className={inputClassName}>
             <option value="">{t("timeline.field.selectChapter")}</option>
             {available.map((chapter) => (
               <option key={chapter.id} value={chapter.id}>
-                {formatChapterLabel(chapter, labels)}
+                {formatChapterLabel(
+                  {
+                    ...chapter,
+                    title: localizedChapterTitle(chapter, language),
+                  },
+                  labels,
+                )}
               </option>
             ))}
           </select>
@@ -716,7 +782,9 @@ function EventFormFields({
             type="number"
             min="1"
             value={form.page_number}
-            onChange={set("page_number")}
+            onChange={(event) =>
+              setGroupField("page_number", event.target.value)
+            }
             className={inputClassName}
             placeholder={t("timeline.field.pagePlaceholder")}
           />

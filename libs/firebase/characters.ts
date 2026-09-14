@@ -20,6 +20,7 @@ import type {
   ChapterSummary,
   PaginatedCharacters,
 } from "@/app/types";
+import { ResourceNotFoundError } from "@/libs/errors";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getCharacterRoles } from "./characterRoles";
@@ -216,7 +217,7 @@ export async function updateCharacter(
 export async function getCharacter(novelId: string, characterId: string): Promise<Character> {
   const snapshot = await getDoc(characterRef(novelId, characterId));
   if (!snapshot.exists()) {
-    throw new Error("Request failed.");
+    throw new ResourceNotFoundError("character");
   }
   return toCharacter(novelId, snapshot.id, snapshot.data() as CharacterDoc, true);
 }

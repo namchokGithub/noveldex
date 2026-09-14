@@ -5,6 +5,7 @@ import CharacterList from "./CharacterList";
 import { T } from "@/components/i18n/I18nProvider";
 import { backLinkClassName, DashboardPage, SectionHeading } from "../../ui";
 import { getCharacters, getCharacterRoles, getNovel } from "@/libs/api";
+import { ResourceNotFoundError } from "@/libs/errors";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
 
@@ -38,8 +39,9 @@ export default async function CharactersPage({
       getCharacters(id, { page, perPage }),
       getCharacterRoles(),
     ]);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) notFound();
+    throw error;
   }
 
   return (
