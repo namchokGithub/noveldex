@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import type { ChapterKind, ChapterWithCharacters, Tag } from "@/app/types";
+import type { TagCursor } from "@/libs/api";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import { normalizeChapter, normalizeNote } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
@@ -12,6 +14,7 @@ import {
   cardClassName,
   FormError,
   inputClassName,
+  modalPanelClassName,
   normalizeDateTimeLocalToISOString,
   primaryButtonClassName,
   Snackbar,
@@ -29,7 +32,9 @@ import {
   createTag,
   getChapter,
   getTags,
+  getTagsPage,
   linkChapterTag,
+  TAG_NAME_MAX_LENGTH,
   unlinkChapterTag,
   updateChapter,
 } from "@/libs/api";
@@ -54,13 +59,7 @@ export default function ChapterEditor({
   const { entityMap, upsert, upsertMany } = useSearchIndex();
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const titleRef = useRef<HTMLInputElement>(null);
-
-  const [title, setTitle] = useState(chapter.title ?? "");
-  const [savedTitle, setSavedTitle] = useState(chapter.title ?? "");
-  const [titleEditing, setTitleEditing] = useState(() => chapterEditorInitialMode().title);
-  const [titleError, setTitleError] = useState<string | null>(null);
-  const [titleSaving, setTitleSaving] = useState(false);
+  const title = chapter.title ?? "";
 
   const [kind, setKind] = useState<ChapterKind>(chapter.kind);
   const [number, setNumber] = useState(chapter.number === null ? "" : String(chapter.number));
@@ -98,7 +97,13 @@ export default function ChapterEditor({
   const [allTags, setAllTags] = useState<Tag[]>(chapter.tags ?? []);
   const [tagQuery, setTagQuery] = useState("");
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const tagListRef = useRef<HTMLDivElement>(null);
+  const tagListWidthRef = useRef(0);
+  const [visibleTagCount, setVisibleTagCount] = useState(tags.length);
+  const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [tagListFetched, setTagListFetched] = useState(false);
+  const [tagCursor, setTagCursor] = useState<TagCursor | null>(null);
+  const [hasMoreTagPages, setHasMoreTagPages] = useState(true);
   const [tagLoading, setTagLoading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
   const [tagSaving, setTagSaving] = useState(false);
@@ -108,7 +113,8 @@ export default function ChapterEditor({
   } | null>(null);
 
   const focusSearchMatch = useCallback((field: 'title' | 'summary', start: number, length: number) => {
-    const input = field === 'title' ? titleRef.current : textareaRef.current;
+    if (field === 'title') return;
+    const input = textareaRef.current;
     if (!input) return;
     input.focus();
     input.setSelectionRange(start, start + length);
@@ -167,6 +173,47 @@ export default function ChapterEditor({
       return tag.name.toLowerCase().includes(tagQuery.trim().toLowerCase());
     });
   }, [allTags, tagQuery, tags]);
+  const tagNameTooLong = tagQuery.trim().length > TAG_NAME_MAX_LENGTH;
+
+  useEffect(() => {
+    const list = tagListRef.current;
+    const container = list?.parentElement;
+    if (!container) return;
+
+    const updateVisibleTags = () => {
+      const width = container.clientWidth;
+      if (width === tagListWidthRef.current) return;
+      tagListWidthRef.current = width;
+      setVisibleTagCount(tags.length);
+    };
+    updateVisibleTags();
+    const observer = new ResizeObserver(updateVisibleTags);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [tags.length]);
+
+  useEffect(() => {
+    const list = tagListRef.current;
+    if (!list || visibleTagCount === 0) return;
+
+    const chips = Array.from(
+      list.querySelectorAll<HTMLElement>("[data-tag-chip]"),
+    );
+    const items = Array.from(
+      list.querySelectorAll<HTMLElement>(
+        "[data-tag-chip], [data-overflow-badge], [data-add-tag]",
+      ),
+    );
+    const rows = [...new Set(items.map((item) => item.offsetTop))];
+    if (rows.length <= 3) return;
+
+    const firstHiddenIndex = chips.findIndex(
+      (chip) => chip.offsetTop > rows[2],
+    );
+    setVisibleTagCount(
+      firstHiddenIndex >= 0 ? firstHiddenIndex : (count) => Math.max(0, count - 1),
+    );
+  }, [visibleTagCount, tags.length]);
 
   function handleKeyUp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Escape") {
@@ -201,12 +248,20 @@ export default function ChapterEditor({
     setSuggestion(null);
   }
 
-  async function ensureTagListLoaded() {
-    if (tagListFetched || tagLoading) return;
+  async function loadNextTagPage() {
+    if (tagLoading || (tagListFetched && !hasMoreTagPages)) return;
     setTagLoading(true);
     setTagError(null);
     try {
-      setAllTags(await getTags(novelId));
+      const page = await getTagsPage(novelId, tagCursor);
+      setAllTags((current) => {
+        const existing = new Set(current.map((tag) => tag.id));
+        return [...current, ...page.tags.filter((tag) => !existing.has(tag.id))].sort(
+          (a, b) => a.name.localeCompare(b.name),
+        );
+      });
+      setTagCursor(page.cursor);
+      setHasMoreTagPages(page.hasMore);
       setTagListFetched(true);
     } catch (error) {
       setTagError(userErrorMessage(error, t));
@@ -215,13 +270,23 @@ export default function ChapterEditor({
     }
   }
 
+  async function ensureTagListLoaded() {
+    if (tagListFetched) return;
+    await loadNextTagPage();
+  }
+
   async function createOrFindTag(name: string): Promise<Tag | null> {
     const normalized = name.trim();
     if (!normalized) return null;
 
-    const existing = allTags.find(
+    let existing = allTags.find(
       (tag) => tag.name.toLowerCase() === normalized.toLowerCase(),
     );
+    if (!existing && hasMoreTagPages) {
+      existing = (await getTags(novelId)).find(
+        (tag) => tag.name.toLowerCase() === normalized.toLowerCase(),
+      );
+    }
     if (existing) return existing;
 
     const created = await createTag(novelId, normalized);
@@ -245,6 +310,10 @@ export default function ChapterEditor({
   async function handleAddTag(name?: string) {
     const nextName = (name ?? tagQuery).trim();
     if (!nextName) return;
+    if (nextName.length > TAG_NAME_MAX_LENGTH) {
+      setTagError(t("chapter.tagNameTooLong", { max: TAG_NAME_MAX_LENGTH }));
+      return;
+    }
     setTagSaving(true);
     setTagError(null);
     try {
@@ -320,40 +389,6 @@ export default function ChapterEditor({
     }
   }
 
-  async function saveTitle() {
-    const normalizedTitle = title.trim();
-    if (!normalizedTitle) {
-      setTitleError(t("chapter.titleRequired"));
-      return;
-    }
-
-    setTitleError(null);
-    setTitleSaving(true);
-    try {
-      const updated = await updateChapter(novelId, volumeId, chapter.id, {
-        title: normalizedTitle,
-      });
-      upsert(normalizeChapter(novelId, updated, entityMap, kindLabels));
-      setTitle(normalizedTitle);
-      setSavedTitle(normalizedTitle);
-      setTitleEditing(false);
-      setSnackbar({
-        tone: "success",
-        message: t("chapter.titleSaved"),
-      });
-      router.refresh();
-    } catch (error) {
-      const message = userErrorMessage(error, t);
-      setTitleError(message);
-      setSnackbar({
-        tone: "error",
-        message,
-      });
-    } finally {
-      setTitleSaving(false);
-    }
-  }
-
   async function saveEntry() {
     const nextNumber = kind === "chapter" ? Number(number) : 0;
     if (kind === "chapter" && (!Number.isInteger(nextNumber) || nextNumber < 1)) {
@@ -415,21 +450,6 @@ export default function ChapterEditor({
 
   return (
     <div className="flex flex-col gap-8">
-      <div className={cardClassName}>
-        <div className="flex items-start justify-between gap-3">
-          <label className={smallLabelClassName}>{t("chapter.editTitle")}</label>
-          {!titleEditing && <button type="button" onClick={() => setTitleEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
-        </div>
-        {titleEditing ? <>
-          <input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} className={inputClassName} placeholder={t("addChapter.chapterTitlePlaceholder")} />
-          {titleError && <FormError>{titleError}</FormError>}
-          <div className="mt-2 flex justify-end gap-2">
-            <button type="button" onClick={() => { setTitle(savedTitle); setTitleError(null); setTitleEditing(false); }} disabled={titleSaving} className={secondaryButtonClassName}>{t("common.cancel")}</button>
-            <button type="button" onClick={() => void saveTitle()} disabled={titleSaving} className={primaryButtonClassName}>{titleSaving ? t("common.saving") : t("chapter.saveTitle")}</button>
-          </div>
-        </> : <p className="break-words text-sm leading-7 text-stone-700">{savedTitle}</p>}
-      </div>
-
       <div className={cardClassName}>
         <div className="flex items-start justify-between gap-3">
           <label className={smallLabelClassName}>{t("common.description")}</label>
@@ -539,9 +559,9 @@ export default function ChapterEditor({
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
             {t("chapter.tags")}
           </h2>
-          <div className="flex flex-wrap items-center gap-2">
-          {tags.map((tag) => (
-            <span key={tag.id} className={tagClassName}>
+          <div ref={tagListRef} className="flex flex-wrap items-center gap-2">
+          {tags.slice(0, visibleTagCount).map((tag) => (
+            <span key={tag.id} data-tag-chip className={tagClassName}>
               {tag.name}
               <button
                 type="button"
@@ -554,9 +574,21 @@ export default function ChapterEditor({
             </span>
           ))}
 
+          {visibleTagCount < tags.length && (
+            <button
+              type="button"
+              data-overflow-badge
+              onClick={() => setTagDialogOpen(true)}
+              className="inline-flex items-center rounded-full bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-50 transition hover:bg-stone-700"
+              aria-label={`Show ${tags.length - visibleTagCount} more tags`}>
+              +{tags.length - visibleTagCount}
+            </button>
+          )}
+
           {!tagPickerOpen ? (
             <button
               type="button"
+              data-add-tag
               onClick={async () => {
                 setTagPickerOpen(true);
                 await ensureTagListLoaded();
@@ -568,7 +600,12 @@ export default function ChapterEditor({
             <div className="w-full max-w-sm rounded-[22px] border border-stone-200 bg-stone-50/90 p-3 shadow-sm">
               <input
                 value={tagQuery}
-                onChange={(e) => setTagQuery(e.target.value)}
+                onChange={(e) => {
+                  setTagQuery(e.target.value);
+                  if (e.target.value.trim().length <= TAG_NAME_MAX_LENGTH) {
+                    setTagError(null);
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -582,7 +619,21 @@ export default function ChapterEditor({
                 placeholder={t("chapter.addTagPlaceholder")}
                 className={inputClassName}
               />
-              <div className="mt-2 max-h-40 overflow-y-auto">
+              {tagNameTooLong && (
+                <p className="mt-1 text-xs text-rose-700">
+                  {t("chapter.tagNameTooLong", { max: TAG_NAME_MAX_LENGTH })}
+                </p>
+              )}
+                <div
+                  className="mt-2 max-h-28 overflow-y-auto"
+                  onScroll={(event) => {
+                    const list = event.currentTarget;
+                    if (
+                      list.scrollHeight - list.scrollTop - list.clientHeight < 24
+                    ) {
+                      void loadNextTagPage();
+                    }
+                  }}>
                 {tagLoading && (
                   <p className="text-xs text-stone-500">
                     {t("chapter.loadingTags")}
@@ -623,7 +674,7 @@ export default function ChapterEditor({
                 <button
                   type="button"
                   onClick={() => void handleAddTag()}
-                  disabled={tagSaving || !tagQuery.trim()}
+                  disabled={tagSaving || !tagQuery.trim() || tagNameTooLong}
                   className={primaryButtonClassName}>
                   {t("common.add")}
                 </button>
@@ -632,6 +683,54 @@ export default function ChapterEditor({
           )}
           </div>
           {tagError && <FormError>{tagError}</FormError>}
+          {tagDialogOpen &&
+            createPortal(
+              <div
+                className="fixed inset-0 z-60 flex items-center justify-center bg-stone-950/40 px-4 backdrop-blur-sm"
+                onMouseDown={() => setTagDialogOpen(false)}>
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="all-tags-title"
+                  className={`${modalPanelClassName} max-w-lg`}
+                  onMouseDown={(event) => event.stopPropagation()}>
+                  <div className="mb-5 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                        {t("chapter.tags")}
+                      </p>
+                      <h3
+                        id="all-tags-title"
+                        className="mt-1 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+                        {tags.length} {t("chapter.tags")}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTagDialogOpen(false)}
+                      className={secondaryButtonClassName}>
+                      {t("common.cancel")}
+                    </button>
+                  </div>
+                  <div className="flex max-h-96 flex-wrap content-start gap-2 overflow-y-auto pr-1">
+                    {tags.map((tag) => (
+                      <span key={tag.id} className={tagClassName}>
+                        {tag.name}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag.id)}
+                          disabled={tagSaving}
+                          className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
+                          aria-label={t("chapter.removeTag", { name: tag.name })}>
+                          Ã—
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>,
+              document.body,
+            )}
         </div>
 
         <div className={cardClassName}>

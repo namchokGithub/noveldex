@@ -146,13 +146,29 @@ async function hydrateNoteReferences(novelId: string, notes: ChapterNoteDoc[]): 
   }));
 }
 
+function characterMentionNames(references: ReferenceOccurrence[]) {
+  return [...new Set(references.flatMap((occurrence) => {
+    if (occurrence.token.status === "resolved") {
+      return occurrence.token.reference.entityType === "character"
+        ? [occurrence.token.reference.label]
+        : [];
+    }
+    return occurrence.token.typed === null || occurrence.token.typed === "character"
+      ? [occurrence.token.label]
+      : [];
+  }))];
+}
+
 function legacyCharacterFields(references: ReferenceOccurrence[]) {
-  const characterRefs = references.flatMap((occurrence) => {
+  const characterIds = references.flatMap((occurrence) => {
     if (occurrence.token.status !== "resolved" || occurrence.token.reference.entityType !== "character") return [];
     const parsed = parseEntityId(occurrence.token.reference.entityId);
-    return parsed ? [{ id: parsed.sourceRecordId, name: occurrence.token.reference.label }] : [];
+    return parsed ? [parsed.sourceRecordId] : [];
   });
-  return { character_ids: [...new Set(characterRefs.map((reference) => reference.id))], mentioned_character_names: [...new Set(characterRefs.map((reference) => reference.name))] };
+  return {
+    character_ids: [...new Set(characterIds)],
+    mentioned_character_names: characterMentionNames(references),
+  };
 }
 
 async function resolveNotes(
@@ -253,7 +269,12 @@ export async function getChapter(
   const tags = await tagsForChapter(novelId, data.tag_ids ?? []);
   const notes = await hydrateNoteReferences(novelId, data.notes ?? []);
   const chapter = toChapter(snapshot.id, { ...data, notes }, tags);
-  const mentioned_character_names = data.mentioned_character_names ?? [...new Set(chapter.notes.flatMap((note) => note.mentioned_character_names ?? []))];
+  const mentioned_character_names = [...new Set([
+    ...(data.mentioned_character_names ?? []),
+    ...chapter.notes.flatMap((note) => note.references
+      ? characterMentionNames(note.references)
+      : note.mentioned_character_names ?? []),
+  ])];
   const characters =
     (data.character_ids ?? []).length === 0
       ? []

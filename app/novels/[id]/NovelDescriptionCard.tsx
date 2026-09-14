@@ -29,7 +29,7 @@ export default function NovelDescriptionCard({
             aria-label={`${t("common.readFull")}: ${title}`}
             aria-haspopup="dialog"
             onClick={() => dialogRef.current?.showModal()}
-            className="absolute inset-0 cursor-pointer rounded-[22px] transition hover:bg-stone-900/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500"
+            className="absolute inset-0 cursor-pointer rounded-[22px] transition hover:bg-stone-900/3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500"
           />
         )}
       </div>
@@ -43,14 +43,19 @@ export default function NovelDescriptionCard({
         style={{ width: "calc(100% - 2rem)" }}>
         <div className="p-6 sm:p-8">
           <div className="mb-5 flex items-start justify-between gap-4">
-            <h2 id={titleId} className="text-xl font-semibold tracking-tight text-stone-950">
+            <h2
+              id={titleId}
+              className="text-xl font-semibold tracking-tight text-stone-950">
               {title}
             </h2>
-            <button type="button" onClick={() => dialogRef.current?.close()} className={`${secondaryButtonClassName} shrink-0`}>
+            <button
+              type="button"
+              onClick={() => dialogRef.current?.close()}
+              className={`${secondaryButtonClassName} shrink-0`}>
               {t("common.close")}
             </button>
           </div>
-          <p className="whitespace-pre-wrap break-words text-sm leading-7 text-stone-600 sm:text-base">
+          <p className="whitespace-pre-wrap wrap-break-word text-sm leading-7 text-stone-600 sm:text-base">
             {description}
           </p>
         </div>

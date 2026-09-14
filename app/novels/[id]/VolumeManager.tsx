@@ -7,16 +7,18 @@ import type { PaginationMeta, Volume } from "@/app/types";
 
 import {
   cardClassName,
+  dangerIconButtonClassName,
   ghostButtonClassName,
-  iconButtonClassName,
   inputClassName,
   listClassName,
+  listRowClassName,
   modalBackdropClassName,
   modalPanelClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
   smallLabelClassName,
 } from "../ui";
+import ConfirmDialog from "../ConfirmDialog";
 import { deleteVolume, updateVolume } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { userErrorMessage } from "@/libs/userErrorMessage";
@@ -150,7 +152,12 @@ export default function VolumeManager({
 
     try {
       await deleteVolume(novelId, volume.id);
-      discardMany(descendantsOf({ type: "volume", novelId, volumeId: volume.id }, documents));
+      discardMany(
+        descendantsOf(
+          { type: "volume", novelId, volumeId: volume.id },
+          documents,
+        ),
+      );
       setConfirmState(null);
       setSnackbar({
         tone: "success",
@@ -289,17 +296,17 @@ export default function VolumeManager({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:gap-4">
-                  <div className="min-w-0">
-                    <Link
-                      href={`/novels/${novelId}/volumes/${volume.id}`}
-                      prefetch={false}
-                      className="text-base font-semibold text-stone-900 hover:text-stone-700">
+                <div className={listRowClassName}>
+                  <Link
+                    href={`/novels/${novelId}/volumes/${volume.id}`}
+                    prefetch={false}
+                    className="min-w-0 flex-1 rounded-2xl outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
+                    <div className="text-base font-semibold text-stone-900 transition hover:text-stone-700">
                       {t("volumeManager.volumeLabel", {
                         number: volume.number,
                       })}{" "}
                       · {volume.title}
-                    </Link>
+                    </div>
                     <p className="mt-1 text-sm text-stone-500">
                       {t(
                         volume.chapterCount === 1
@@ -308,14 +315,8 @@ export default function VolumeManager({
                         { count: volume.chapterCount },
                       )}
                     </p>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-end gap-1">
-                    <Link
-                      href={`/novels/${novelId}/volumes/${volume.id}`}
-                      prefetch={false}
-                      className={ghostButtonClassName}>
-                      {t("volumeManager.open")}
-                    </Link>
+                  </Link>
+                  <div className="flex shrink-0 items-center gap-2">
                     <button
                       type="button"
                       onClick={() => startEdit(volume)}
@@ -327,9 +328,9 @@ export default function VolumeManager({
                       type="button"
                       onClick={() => requestDelete(volume)}
                       disabled={deletingId === volume.id}
-                      className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
+                      className={dangerIconButtonClassName}
                       aria-label={t("volumeManager.deleteAria")}>
-                      🗑️
+                      Del
                     </button>
                   </div>
                 </div>
@@ -369,7 +370,7 @@ export default function VolumeManager({
         </div>
       </div>
 
-      {confirmState ? (
+      {confirmState?.action === "save" ? (
         <div className={`${modalBackdropClassName} z-60`}>
           <div className={`${modalPanelClassName} max-w-sm`}>
             <div className="space-y-2">
@@ -422,6 +423,23 @@ export default function VolumeManager({
           </div>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={confirmState?.action === "delete"}
+        eyebrow={t("volumeManager.confirmEyebrow")}
+        title={t("volumeManager.deleteConfirmTitle")}
+        description={t("volumeManager.deleteConfirmBody", {
+          title: confirmState?.title ?? "",
+        })}
+        confirmLabel={
+          deletingId ? t("volumeManager.deleting") : t("common.delete")
+        }
+        cancelLabel={t("common.cancel")}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmState(null)}
+        busy={deletingId !== null}
+        danger
+      />
 
       {snackbar ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-70 flex justify-center px-4">

@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { Chapter, ChapterKind, Tag } from "@/app/types";
 import { useI18n } from "@/components/i18n/I18nProvider";
-import { ChapterLabel, useChapterKindLabels } from "@/components/chapters/ChapterLabel";
+import {
+  ChapterLabel,
+  useChapterKindLabels,
+} from "@/components/chapters/ChapterLabel";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import {
   cardClassName,
-  ConfirmDialog,
+  dangerIconButtonClassName,
   formatDisplayDate,
   ghostButtonClassName,
-  iconButtonClassName,
   inputClassName,
   listClassName,
   listRowClassName,
@@ -22,21 +24,89 @@ import {
   Snackbar,
   tagClassName,
 } from "../ui";
+import ConfirmDialog from "../ConfirmDialog";
 import { deleteChapter, reorderChapters, updateChapter } from "@/libs/api";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { descendantsOf } from "@/libs/search/cascadeDelete";
+
+function ChapterTagRow({ tags }: { tags: Tag[] }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const listWidthRef = useRef(0);
+  const [visibleCount, setVisibleCount] = useState(tags.length);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+
+    const resetVisibleTags = () => {
+      const width = list.clientWidth;
+      if (width === listWidthRef.current) return;
+      listWidthRef.current = width;
+      setVisibleCount(tags.length);
+    };
+    resetVisibleTags();
+    const observer = new ResizeObserver(resetVisibleTags);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [tags.length]);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || visibleCount === 0) return;
+
+    const chips = Array.from(
+      list.querySelectorAll<HTMLElement>("[data-tag-chip]"),
+    );
+    const firstHiddenIndex = chips.findIndex(
+      (chip) => chip.offsetLeft + chip.offsetWidth > list.clientWidth,
+    );
+    if (firstHiddenIndex >= 0) {
+      setVisibleCount(firstHiddenIndex);
+      return;
+    }
+
+    const overflowBadge = list.querySelector<HTMLElement>(
+      "[data-overflow-badge]",
+    );
+    if (
+      overflowBadge &&
+      overflowBadge.offsetLeft + overflowBadge.offsetWidth > list.clientWidth
+    ) {
+      setVisibleCount((count) => Math.max(0, count - 1));
+    }
+  }, [visibleCount, tags.length]);
+
+  return (
+    <div ref={listRef} className="mt-2 flex min-w-0 flex-nowrap gap-1.5 overflow-hidden">
+      {tags.slice(0, visibleCount).map((tag) => (
+        <span key={tag.id} data-tag-chip className={`${tagClassName} shrink-0`}>
+          {tag.name}
+        </span>
+      ))}
+      {visibleCount < tags.length && (
+        <span
+          data-overflow-badge
+          className="inline-flex shrink-0 items-center rounded-full bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-50">
+          +{tags.length - visibleCount}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function ChapterListWithFilters({
   novelId,
   volumeId,
   chapters,
   availableTags,
+  sidebar,
 }: {
   novelId: string;
   volumeId: string;
   chapters: Chapter[];
   availableTags: Tag[];
+  sidebar?: ReactNode;
 }) {
   const { t } = useI18n();
   const kindLabels = useChapterKindLabels();
@@ -45,6 +115,8 @@ export default function ChapterListWithFilters({
 
   // ── filter state ──────────────────────────────────────────────────────────
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [tagFilterPickerOpen, setTagFilterPickerOpen] = useState(false);
+  const [tagFilterQuery, setTagFilterQuery] = useState("");
   const [deletedChapterIds, setDeletedChapterIds] = useState<string[]>([]);
   const [confirmChapter, setConfirmChapter] = useState<Chapter | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -80,6 +152,12 @@ export default function ChapterListWithFilters({
     [availableTags, selectedTags],
   );
 
+  const filteredRemainingTags = useMemo(() => {
+    const query = tagFilterQuery.trim().toLowerCase();
+    if (!query) return remainingTags;
+    return remainingTags.filter((tag) => tag.name.toLowerCase().includes(query));
+  }, [remainingTags, tagFilterQuery]);
+
   const filteredChapters = useMemo(() => {
     if (selectedTags.length === 0) return visibleChapters;
     return visibleChapters.filter((ch) =>
@@ -106,7 +184,17 @@ export default function ChapterListWithFilters({
     setDeletingId(confirmChapter.id);
     try {
       await deleteChapter(novelId, confirmChapter.volume_id, confirmChapter.id);
-      discardMany(descendantsOf({ type: "chapter", novelId, volumeId: confirmChapter.volume_id, chapterId: confirmChapter.id }, documents));
+      discardMany(
+        descendantsOf(
+          {
+            type: "chapter",
+            novelId,
+            volumeId: confirmChapter.volume_id,
+            chapterId: confirmChapter.id,
+          },
+          documents,
+        ),
+      );
       setDeletedChapterIds((cur) => [...cur, confirmChapter.id]);
       setConfirmChapter(null);
       setSnackbar({ tone: "success", message: t("chapter.deleteSuccess") });
@@ -166,13 +254,18 @@ export default function ChapterListWithFilters({
 
   function changeReorderEntryKind(chapterId: string, kind: ChapterKind) {
     const current = orderedChapters.find((chapter) => chapter.id === chapterId);
-    const original = visibleChapters.find((chapter) => chapter.id === chapterId);
+    const original = visibleChapters.find(
+      (chapter) => chapter.id === chapterId,
+    );
     if (!current) return;
 
     updateReorderEntry(chapterId, {
       kind,
-      number: kind === "chapter" ? current.number ?? original?.number ?? null : null,
-      custom_label: kind === "other" ? current.custom_label ?? "" : null,
+      number:
+        kind === "chapter"
+          ? (current.number ?? original?.number ?? null)
+          : null,
+      custom_label: kind === "other" ? (current.custom_label ?? "") : null,
     });
   }
 
@@ -186,13 +279,18 @@ export default function ChapterListWithFilters({
       setSnackbar({ tone: "error", message: t("chapter.entryNumberRequired") });
       return;
     }
-    const hasDuplicateNumber = new Set(
-      orderedChapters
-        .filter((chapter) => chapter.kind === "chapter")
-        .map((chapter) => chapter.number),
-    ).size !== orderedChapters.filter((chapter) => chapter.kind === "chapter").length;
+    const hasDuplicateNumber =
+      new Set(
+        orderedChapters
+          .filter((chapter) => chapter.kind === "chapter")
+          .map((chapter) => chapter.number),
+      ).size !==
+      orderedChapters.filter((chapter) => chapter.kind === "chapter").length;
     if (hasDuplicateNumber) {
-      setSnackbar({ tone: "error", message: t("chapter.entryNumberDuplicate") });
+      setSnackbar({
+        tone: "error",
+        message: t("chapter.entryNumberDuplicate"),
+      });
       return;
     }
     const invalidCustomLabel = orderedChapters.some(
@@ -207,10 +305,11 @@ export default function ChapterListWithFilters({
     try {
       const changedEntries = orderedChapters.filter((chapter) => {
         const original = visibleChapters.find(({ id }) => id === chapter.id);
-        return original && (
-          original.kind !== chapter.kind ||
-          original.number !== chapter.number ||
-          original.custom_label !== chapter.custom_label
+        return (
+          original &&
+          (original.kind !== chapter.kind ||
+            original.number !== chapter.number ||
+            original.custom_label !== chapter.custom_label)
         );
       });
       const saveEntry = (chapter: Chapter) =>
@@ -228,7 +327,9 @@ export default function ChapterListWithFilters({
       await Promise.all(releasesNumber.map(saveEntry));
       await Promise.all(
         changedEntries
-          .filter((chapter) => !releasesNumber.some(({ id }) => id === chapter.id))
+          .filter(
+            (chapter) => !releasesNumber.some(({ id }) => id === chapter.id),
+          )
           .map(saveEntry),
       );
 
@@ -253,7 +354,10 @@ export default function ChapterListWithFilters({
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <>
-      {reorderMode ? (
+      <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="space-y-4">
+          {sidebar}
+          {reorderMode ? (
         <div className={cardClassName}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-stone-500">{t("chapter.dragHint")}</p>
@@ -278,7 +382,7 @@ export default function ChapterListWithFilters({
       ) : (
         <div className={cardClassName}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-stone-700">
                 {t("chapter.filters.tags")}
               </span>
@@ -292,18 +396,54 @@ export default function ChapterListWithFilters({
                   <span aria-hidden="true">×</span>
                 </button>
               ))}
-              <select
-                value=""
-                onChange={(e) => addTag(e.target.value)}
-                disabled={remainingTags.length === 0}
-                className={`${inputClassName} w-auto min-w-40 appearance-none rounded-full py-2 pr-11 text-xs disabled:cursor-not-allowed disabled:text-stone-400`}>
-                <option value="">{t("chapter.filters.addTag")}</option>
-                {remainingTags.map((tag) => (
-                  <option key={tag.id} value={tag.id}>
-                    {tag.name}
-                  </option>
-                ))}
-              </select>
+              {!tagFilterPickerOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setTagFilterPickerOpen(true)}
+                  disabled={remainingTags.length === 0}
+                  className="rounded-full border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900 disabled:cursor-not-allowed disabled:text-stone-400">
+                  {t("chapter.filters.addTag")}
+                </button>
+              ) : (
+                <div className="min-w-0 w-full max-w-full overflow-hidden rounded-[22px] border border-stone-200 bg-stone-50/90 p-3 shadow-sm">
+                  <input
+                    value={tagFilterQuery}
+                    onChange={(event) => setTagFilterQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setTagFilterQuery("");
+                        setTagFilterPickerOpen(false);
+                      }
+                    }}
+                    placeholder={t("chapter.addTagPlaceholder")}
+                    className={inputClassName}
+                  />
+                  <div className="mt-2 max-h-28 overflow-y-auto">
+                    {filteredRemainingTags.length > 0 ? (
+                      <ul className="min-w-0 space-y-1">
+                        {filteredRemainingTags.map((tag) => (
+                          <li key={tag.id} className="min-w-0 overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                addTag(tag.id);
+                                setTagFilterQuery("");
+                                setTagFilterPickerOpen(false);
+                              }}
+                              className="min-w-0 w-full truncate rounded-xl px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-white">
+                              <span className="block min-w-0 truncate">{tag.name}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-stone-500">
+                        {t("chapter.noMoreTags")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <button
               type="button"
@@ -313,9 +453,11 @@ export default function ChapterListWithFilters({
             </button>
           </div>
         </div>
-      )}
+          )}
 
-      {reorderMode ? (
+        </aside>
+        <div className="min-w-0">
+          {reorderMode ? (
         orderedChapters.length === 0 ? null : (
           <ul className={`${listClassName} divide-y divide-stone-200`}>
             {orderedChapters.map((chapter, index) => (
@@ -347,7 +489,9 @@ export default function ChapterListWithFilters({
                       <ChapterLabel chapter={chapter} />
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <label className="sr-only" htmlFor={`chapter-kind-${chapter.id}`}>
+                      <label
+                        className="sr-only"
+                        htmlFor={`chapter-kind-${chapter.id}`}>
                         {t("addChapter.entryType")}
                       </label>
                       <select
@@ -369,7 +513,9 @@ export default function ChapterListWithFilters({
                           </option>
                         ))}
                       </select>
-                      {chapter.kind === "chapter" && visibleChapters.find(({ id }) => id === chapter.id)?.number === null ? (
+                      {chapter.kind === "chapter" &&
+                      visibleChapters.find(({ id }) => id === chapter.id)
+                        ?.number === null ? (
                         <input
                           type="number"
                           min="1"
@@ -407,13 +553,7 @@ export default function ChapterListWithFilters({
                       ) : null}
                     </div>
                     {chapter.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {chapter.tags.map((tag) => (
-                          <span key={tag.id} className={tagClassName}>
-                            {tag.name}
-                          </span>
-                        ))}
-                      </div>
+                      <ChapterTagRow tags={chapter.tags} />
                     )}
                   </div>
                 </div>
@@ -437,13 +577,7 @@ export default function ChapterListWithFilters({
                     <ChapterLabel chapter={chapter} />
                   </div>
                   {chapter.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {chapter.tags.map((tag) => (
-                        <span key={tag.id} className={tagClassName}>
-                          {tag.name}
-                        </span>
-                      ))}
-                    </div>
+                    <ChapterTagRow tags={chapter.tags} />
                   )}
                 </Link>
                 <div className="flex shrink-0 items-center gap-2">
@@ -456,18 +590,20 @@ export default function ChapterListWithFilters({
                     type="button"
                     onClick={() => setConfirmChapter(chapter)}
                     disabled={deletingId === chapter.id}
-                    className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
+                    className={dangerIconButtonClassName}
                     aria-label={t("chapter.deleteAria", {
                       number: chapter.number ?? chapter.kind,
                     })}>
-                    🗑️
+                    Del
                   </button>
                 </div>
               </div>
             </li>
           ))}
         </ul>
-      )}
+          )}
+        </div>
+      </div>
 
       <ConfirmDialog
         open={Boolean(confirmChapter)}

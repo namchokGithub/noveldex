@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddChapterForm from "../../AddChapterForm";
+import BackToTopButton from "../../../BackToTopButton";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import {
@@ -47,7 +48,10 @@ export default async function VolumePage({
   return (
     <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
-        <Link href={`/novels/${id}`} className={backLinkClassName}>
+        <Link
+          id="volume-back-link"
+          href={`/novels/${id}`}
+          className={backLinkClassName}>
           ← Back to {novel.title}
         </Link>
 
@@ -62,33 +66,28 @@ export default async function VolumePage({
           novelId={id}
           volumeId={volume.id}
           initialDescription={volume.description}
+          collapsedLines={3}
         />
 
-        <div className={cardClassName}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                Chapters
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                {chapters.length} chapter{chapters.length === 1 ? "" : "s"}
-              </h2>
-            </div>
-          </div>
-        </div>
-
-        {chapters.length === 0 ? (
-          <div className="flex min-h-65 items-center justify-center rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center text-sm text-stone-500 shadow-sm">
-            No chapters in this volume yet.
-          </div>
-        ) : (
-          <ChapterListWithFilters
-            novelId={id}
-            volumeId={volumeId}
-            chapters={chapters}
-            availableTags={availableTags}
-          />
-        )}
+        <ChapterListWithFilters
+          novelId={id}
+          volumeId={volumeId}
+          chapters={chapters}
+          availableTags={availableTags}
+          sidebar={
+            <>
+              <div className={cardClassName}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                  Chapters
+                </p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+                  {chapters.length} chapter{chapters.length === 1 ? "" : "s"}
+                </h2>
+              </div>
+            </>
+          }
+        />
+        <BackToTopButton anchorId="volume-back-link" />
       </div>
     </DashboardPage>
   );

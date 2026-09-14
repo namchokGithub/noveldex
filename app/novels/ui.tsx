@@ -37,6 +37,9 @@ export const ghostButtonClassName =
 export const iconButtonClassName =
   "rounded-full p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50";
 
+export const dangerIconButtonClassName =
+  "inline-flex items-center justify-center rounded-full p-2 text-stone-400 transition text-sm font-medium text-stone-500 hover:bg-stone-100 hover:text-rose-600 disabled:opacity-50";
+
 export const inputClassName =
   "w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder-stone-400 shadow-sm outline-none transition focus:border-stone-400 focus:ring-2 focus:ring-stone-200";
 
@@ -185,69 +188,6 @@ export function normalizeDateTimeLocalToISOString(value: string) {
 
 export function LoadingBar({ className }: { className: string }) {
   return <div className={`${skeletonClassName} ${className}`} />;
-}
-
-export function ConfirmDialog({
-  open,
-  eyebrow,
-  title,
-  description,
-  confirmLabel,
-  cancelLabel,
-  onConfirm,
-  onCancel,
-  busy = false,
-  danger = false,
-}: {
-  open: boolean;
-  eyebrow: ReactNode;
-  title: ReactNode;
-  description: ReactNode;
-  confirmLabel: ReactNode;
-  cancelLabel: ReactNode;
-  onConfirm: () => void;
-  onCancel: () => void;
-  busy?: boolean;
-  danger?: boolean;
-}) {
-  if (!open) return null;
-
-  return (
-    <div className={`${modalBackdropClassName} z-60`}>
-      <div className={`${modalPanelClassName} max-w-sm`}>
-        <div className="space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-            {eyebrow}
-          </p>
-          <h3 className="text-lg font-semibold tracking-[-0.03em] text-stone-950">
-            {title}
-          </h3>
-          <p className="text-sm leading-6 text-stone-600">{description}</p>
-        </div>
-
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onCancel}
-            className={secondaryButtonClassName}>
-            {cancelLabel}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onConfirm}
-            className={
-              danger
-                ? `${primaryButtonClassName} bg-rose-600 hover:bg-rose-500`
-                : primaryButtonClassName
-            }>
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function Snackbar({

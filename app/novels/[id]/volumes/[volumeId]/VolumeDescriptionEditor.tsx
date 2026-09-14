@@ -14,6 +14,7 @@ import {
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { updateVolume } from "@/libs/api";
 import { userErrorMessage } from "@/libs/userErrorMessage";
+import ExpandableDescription from "@/app/novels/ExpandableDescription";
 
 const MAX_DESCRIPTION_LENGTH = 500;
 
@@ -21,10 +22,12 @@ export default function VolumeDescriptionEditor({
   novelId,
   volumeId,
   initialDescription,
+  collapsedLines,
 }: {
   novelId: string;
   volumeId: string;
   initialDescription: string;
+  collapsedLines?: 2 | 3;
 }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -98,9 +101,17 @@ export default function VolumeDescriptionEditor({
           </div>
         </>
       ) : (
-        <p className={`whitespace-pre-wrap break-words text-sm leading-7 ${savedDescription ? "text-stone-700" : "italic text-stone-400"}`}>
-          {savedDescription || t("novels.noDescription")}
-        </p>
+        savedDescription ? (
+          <ExpandableDescription
+            collapsedLines={collapsedLines}
+            className="max-w-none">
+            {savedDescription}
+          </ExpandableDescription>
+        ) : (
+          <p className="italic text-sm leading-7 text-stone-400">
+            {t("novels.noDescription")}
+          </p>
+        )
       )}
       <Snackbar
         open={Boolean(snackbar)}

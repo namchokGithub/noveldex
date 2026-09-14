@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ChapterEditor from "./ChapterEditor";
 import ChapterNotesEditor from "./ChapterNotesEditor";
+import ChapterTitleEditor from "./ChapterTitleEditor";
+import BackToTopButton from "@/app/novels/BackToTopButton";
 import {
   backLinkClassName,
   DashboardPage,
@@ -55,6 +57,7 @@ export default async function ChapterPage({
     <DashboardPage maxWidth="w-[60vw]">
       <div className="space-y-5">
         <Link
+          id="chapter-back-link"
           href={`/novels/${id}/volumes/${volumeId}`}
           className={backLinkClassName}>
           ← <T k="nav.backToVolume" />
@@ -62,8 +65,7 @@ export default async function ChapterPage({
 
         <SectionHeading
           eyebrow={formatChapterPrefix(chapter, { chapter: "Ch.", prologue: "Prologue", epilogue: "Epilogue", afterword: "Afterword", side_story: "Side Story", other: "Other" })}
-          title={chapter.title}
-          description={<T k="chapter.pageDescription" />}
+          title={<ChapterTitleEditor chapter={chapter} novelId={id} volumeId={volumeId} />}
         />
 
         <ChapterEditor
@@ -84,6 +86,7 @@ export default async function ChapterPage({
             />
           }
         />
+        <BackToTopButton anchorId="chapter-back-link" />
       </div>
     </DashboardPage>
   );
