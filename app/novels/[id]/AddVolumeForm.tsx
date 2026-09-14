@@ -196,6 +196,7 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
                 <div className="mt-1 flex justify-end gap-2">
                   <button
                     type="button"
+                    disabled={submitting}
                     onClick={handleCloseForm}
                     className={ghostButtonClassName}>
                     {t("common.cancel")}

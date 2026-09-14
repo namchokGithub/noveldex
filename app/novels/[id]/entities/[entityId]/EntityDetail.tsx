@@ -110,13 +110,13 @@ export default function EntityDetail({
               className={primaryButtonClassName}
               onClick={() => void save()}
               disabled={busy || !name.trim()}>
-              Save
+              {busy ? t("common.saving") : t("common.save")}
             </button>
             <button
               className={secondaryButtonClassName}
               onClick={() => setConfirming(true)}
               disabled={busy}>
-              Delete
+              {t("common.delete")}
             </button>
           </div>
         )}
@@ -126,8 +126,8 @@ export default function EntityDetail({
         eyebrow="Confirm"
         title={`Delete ${entity.name}?`}
         description="This entity will be deleted."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        confirmLabel={busy ? t("common.deleting") : t("common.delete")}
+        cancelLabel={t("common.cancel")}
         onConfirm={() => void remove()}
         onCancel={() => setConfirming(false)}
         busy={busy}

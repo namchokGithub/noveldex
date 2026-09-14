@@ -655,7 +655,7 @@ export default function ChapterListWithFilters({
                           aria-label={t("chapter.deleteAria", {
                             number: chapter.number ?? chapter.kind,
                           })}>
-                          Del
+                          {t("common.delete")}
                         </button>
                       )}
                     </div>

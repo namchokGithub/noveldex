@@ -19,8 +19,10 @@ const th = {
   "auth.signOutError": "ออกจากระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
 
   "common.add": "เพิ่ม",
+  "common.actions": "การทำงาน",
   "common.save": "บันทึก",
   "common.saving": "กำลังบันทึก…",
+  "common.deleting": "กำลังลบ…",
   "common.cancel": "ยกเลิก",
   "common.ok": "ตกลง",
   "common.readFull": "อ่านแบบเต็ม",

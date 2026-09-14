@@ -569,6 +569,7 @@ function NoteForm({
       <div className="mt-3 flex justify-end gap-2">
         <button
           type="button"
+          disabled={saving}
           onClick={onCancel}
           className={secondaryButtonClassName}>
           {t("common.cancel")}

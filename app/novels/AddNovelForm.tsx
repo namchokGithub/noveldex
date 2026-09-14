@@ -155,6 +155,7 @@ export default function AddNovelForm() {
               <div className="mt-2 flex justify-end gap-2">
                 <button
                   type="button"
+                  disabled={submitting}
                   onClick={() => {
                     setOpen(false);
                     setError(null);

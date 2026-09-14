@@ -972,6 +972,7 @@ export default function ChapterEditor({
                 <div className="mt-3 flex justify-end gap-2">
                   <button
                     type="button"
+                    disabled={tagSaving}
                     onClick={() => {
                       setTagPickerOpen(false);
                       setTagQuery("");
@@ -984,7 +985,7 @@ export default function ChapterEditor({
                     onClick={() => void handleAddTag()}
                     disabled={tagSaving || !tagQuery.trim() || tagNameTooLong}
                     className={primaryButtonClassName}>
-                    {t("common.add")}
+                    {tagSaving ? t("common.saving") : t("common.add")}
                   </button>
                 </div>
               </div>
@@ -995,7 +996,8 @@ export default function ChapterEditor({
             open={tagDialogOpen}
             onClose={() => setTagDialogOpen(false)}
             labelledBy="all-tags-title"
-            className={`${modalPanelClassName} max-w-lg`}>
+            className={`${modalPanelClassName} max-w-lg`}
+            busy={tagSaving}>
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -1009,6 +1011,7 @@ export default function ChapterEditor({
               </div>
               <button
                 type="button"
+                disabled={tagSaving}
                 onClick={() => setTagDialogOpen(false)}
                 className={secondaryButtonClassName}>
                 {t("common.cancel")}

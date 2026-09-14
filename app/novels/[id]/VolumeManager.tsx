@@ -267,7 +267,7 @@ export default function VolumeManager({
       <div className="hidden border-b border-stone-200 bg-stone-50/70 px-4 py-3 sm:block">
         <div className="grid grid-cols-[minmax(0,1fr)_220px] gap-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-500">
           <p>{t("volume.label")}</p>
-          <p className="text-right">Actions</p>
+          <p className="text-right">{t("common.actions")}</p>
         </div>
       </div>
 
@@ -319,6 +319,7 @@ export default function VolumeManager({
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
+                      disabled={saving}
                       onClick={() => setEditingId(null)}
                       className={secondaryButtonClassName}>
                       {t("common.cancel")}
@@ -368,7 +369,7 @@ export default function VolumeManager({
                         disabled={deletingId === volume.id}
                         className={dangerIconButtonClassName}
                         aria-label={t("volumeManager.deleteAria")}>
-                        Del
+                        {t("common.delete")}
                       </button>
                     </div>
                   ) : null}

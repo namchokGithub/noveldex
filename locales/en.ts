@@ -13,8 +13,10 @@ const en = {
   "auth.signOutError": "Sign-out failed. Please try again.",
 
   "common.add": "Add",
+  "common.actions": "Actions",
   "common.save": "Save",
   "common.saving": "Saving…",
+  "common.deleting": "Deleting…",
   "common.cancel": "Cancel",
   "common.ok": "OK",
   "common.readFull": "Read more",

@@ -147,7 +147,7 @@ export default function CharacterDetail({
           </div>
           {editing ? (
             <div className="flex gap-2">
-              <button onClick={cancel} className={ghostButtonClassName}>
+              <button onClick={cancel} disabled={saving} className={ghostButtonClassName}>
                 {t("common.cancel")}
               </button>
               <button

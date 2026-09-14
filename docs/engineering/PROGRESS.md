@@ -22,7 +22,7 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 
 ### Medium
 
-- [ ] Loading / saving / deleting states
+- [x] Loading / saving / deleting states
 - [ ] Error handling + user-facing messages
 - [ ] Mobile-responsive layout
 - [ ] Guest/Admin UX polish

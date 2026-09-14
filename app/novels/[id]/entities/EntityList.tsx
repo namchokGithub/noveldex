@@ -81,7 +81,7 @@ export default function EntityList({
             className={primaryButtonClassName}
             onClick={() => void add()}
             disabled={saving || !name.trim()}>
-            {t("entities.add")}
+            {saving ? t("common.saving") : t("entities.add")}
           </button>
         </div>
       )}

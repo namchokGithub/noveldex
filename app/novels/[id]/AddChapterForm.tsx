@@ -240,6 +240,7 @@ export default function AddChapterForm({
                 <div className="mt-1 flex justify-end gap-2">
                   <button
                     type="button"
+                    disabled={submitting}
                     onClick={() => {
                       setOpen(false);
                       setError(null);

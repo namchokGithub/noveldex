@@ -354,6 +354,7 @@ export default function TimelinePage({
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
+                disabled={addSaving}
                 onClick={() => {
                   setShowAddForm(false);
                   setAddForm(EMPTY_FORM);
@@ -479,6 +480,7 @@ export default function TimelinePage({
                           <div className="mt-4 flex justify-end gap-2">
                             <button
                               type="button"
+                              disabled={editSaving}
                               onClick={() => setEditingId(null)}
                               className={secondaryButtonClassName}>
                               {t("common.cancel")}
