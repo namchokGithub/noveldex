@@ -12,12 +12,14 @@ import {
   smallLabelClassName,
 } from './ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
+import { useAuth } from '@/components/auth/AuthProvider'
 import { createNovel } from '@/libs/api'
 import type { Novel } from '@/app/types'
 
 export default function AddNovelForm() {
   const { t } = useI18n()
   const router = useRouter()
+  const { isAdmin } = useAuth()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -62,6 +64,8 @@ export default function AddNovelForm() {
       setSubmitting(false)
     }
   }
+
+  if (!isAdmin) return null;
 
   return (
     <>

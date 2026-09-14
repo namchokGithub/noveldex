@@ -21,6 +21,8 @@ import {
 import ConfirmDialog from "../ConfirmDialog";
 import { deleteVolume, updateVolume } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { normalizeVolume } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
@@ -53,6 +55,7 @@ export default function VolumeManager({
 }) {
   const { t } = useI18n();
   const { documents, discardMany, upsert } = useSearchIndex();
+  const { isAdmin } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -64,6 +67,11 @@ export default function VolumeManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+
+  useResetOnSignOut(isAdmin, () => {
+    setEditingId(null);
+    setConfirmState(null);
+  });
 
   function buildPageHref(page: number, perPage = pagination.per_page) {
     const params = new URLSearchParams(searchParams.toString());
@@ -316,23 +324,25 @@ export default function VolumeManager({
                       )}
                     </p>
                   </Link>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(volume)}
-                      className={ghostButtonClassName}
-                      aria-label={t("volumeManager.editAria")}>
-                      {t("volumeManager.edit")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => requestDelete(volume)}
-                      disabled={deletingId === volume.id}
-                      className={dangerIconButtonClassName}
-                      aria-label={t("volumeManager.deleteAria")}>
-                      Del
-                    </button>
-                  </div>
+                  {isAdmin ? (
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(volume)}
+                        className={ghostButtonClassName}
+                        aria-label={t("volumeManager.editAria")}>
+                        {t("volumeManager.edit")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => requestDelete(volume)}
+                        disabled={deletingId === volume.id}
+                        className={dangerIconButtonClassName}
+                        aria-label={t("volumeManager.deleteAria")}>
+                        Del
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               )}
             </li>

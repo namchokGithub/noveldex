@@ -5,6 +5,13 @@ const en = {
   "language.switchToThai": "Switch to Thai",
   "language.toggleLabel": "Language",
 
+  "auth.signIn": "Sign in",
+  "auth.signOut": "Sign out",
+  "auth.email": "Email",
+  "auth.password": "Password",
+  "auth.signInError": "Sign-in failed. Check your email and password.",
+  "auth.signOutError": "Sign-out failed. Please try again.",
+
   "common.add": "Add",
   "common.save": "Save",
   "common.saving": "Saving…",

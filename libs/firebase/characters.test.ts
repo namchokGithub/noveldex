@@ -9,10 +9,10 @@ import {
   getCharacters,
   updateCharacter,
 } from "./characters";
-import { clearFirestoreEmulator, useEmulator } from "./testUtils";
+import { clearFirestoreEmulator, connectFirestoreTestEmulator } from "./testUtils";
 
-beforeAll(() => {
-  useEmulator();
+beforeAll(async () => {
+  await connectFirestoreTestEmulator();
 });
 
 beforeEach(async () => {

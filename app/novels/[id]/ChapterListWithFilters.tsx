@@ -26,6 +26,8 @@ import {
 } from "../ui";
 import ConfirmDialog from "../ConfirmDialog";
 import { deleteChapter, reorderChapters, updateChapter } from "@/libs/api";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { descendantsOf } from "@/libs/search/cascadeDelete";
@@ -112,6 +114,7 @@ export default function ChapterListWithFilters({
   const kindLabels = useChapterKindLabels();
   const router = useRouter();
   const { documents, discardMany } = useSearchIndex();
+  const { isAdmin } = useAuth();
 
   // ── filter state ──────────────────────────────────────────────────────────
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
@@ -131,6 +134,11 @@ export default function ChapterListWithFilters({
     tone: "success" | "error";
     message: string;
   } | null>(null);
+
+  useResetOnSignOut(isAdmin, () => {
+    setReorderMode(false);
+    setConfirmChapter(null);
+  });
 
   useEffect(() => {
     if (!snackbar) return;
@@ -445,12 +453,14 @@ export default function ChapterListWithFilters({
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              onClick={enterReorderMode}
-              className={ghostButtonClassName}>
-              {t("chapter.reorder")}
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={enterReorderMode}
+                className={ghostButtonClassName}>
+                {t("chapter.reorder")}
+              </button>
+            )}
           </div>
         </div>
           )}
@@ -586,16 +596,18 @@ export default function ChapterListWithFilters({
                       {formatDisplayDate(chapter.read_at) ?? chapter.read_at}
                     </span>
                   ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setConfirmChapter(chapter)}
-                    disabled={deletingId === chapter.id}
-                    className={dangerIconButtonClassName}
-                    aria-label={t("chapter.deleteAria", {
-                      number: chapter.number ?? chapter.kind,
-                    })}>
-                    Del
-                  </button>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmChapter(chapter)}
+                      disabled={deletingId === chapter.id}
+                      className={dangerIconButtonClassName}
+                      aria-label={t("chapter.deleteAria", {
+                        number: chapter.number ?? chapter.kind,
+                      })}>
+                      Del
+                    </button>
+                  )}
                 </div>
               </div>
             </li>

@@ -25,6 +25,8 @@ import {
   toDateTimeLocalInputValue,
 } from "@/app/novels/ui";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { chapterEditorInitialMode } from "@/libs/chapterEditor";
 import { CHAPTER_SEARCH_SOURCE_EVENT, type ChapterSearchSource } from "@/components/commands/CommandPalette";
@@ -57,6 +59,7 @@ export default function ChapterEditor({
   const { t } = useI18n();
   const kindLabels = useChapterKindLabels();
   const { entityMap, upsert, upsertMany } = useSearchIndex();
+  const { isAdmin } = useAuth();
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const title = chapter.title ?? "";
@@ -97,6 +100,14 @@ export default function ChapterEditor({
   const [allTags, setAllTags] = useState<Tag[]>(chapter.tags ?? []);
   const [tagQuery, setTagQuery] = useState("");
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
+
+  useResetOnSignOut(isAdmin, () => {
+    setDescriptionEditing(false);
+    setReadAtEditing(false);
+    setEntryEditing(false);
+    setTagPickerOpen(false);
+  });
+
   const tagListRef = useRef<HTMLDivElement>(null);
   const tagListWidthRef = useRef(0);
   const [visibleTagCount, setVisibleTagCount] = useState(tags.length);
@@ -453,7 +464,7 @@ export default function ChapterEditor({
       <div className={cardClassName}>
         <div className="flex items-start justify-between gap-3">
           <label className={smallLabelClassName}>{t("common.description")}</label>
-          {!descriptionEditing && <button type="button" onClick={() => setDescriptionEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
+          {!descriptionEditing && isAdmin && <button type="button" onClick={() => setDescriptionEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
         </div>
         {descriptionEditing ? <>
           <textarea
@@ -477,52 +488,60 @@ export default function ChapterEditor({
 
       {showSummary && <div className={cardClassName}>
         <label className={smallLabelClassName}>{t("addChapter.summary")}</label>
-        <div className="relative">
-          <textarea
-            ref={textareaRef}
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            onKeyUp={handleKeyUp}
-            rows={6}
-            className={`${inputClassName} min-h-45 resize-none overflow-hidden`}
-            placeholder={t("addChapter.summaryPlaceholder")}
-          />
-          {suggestion && suggestion.names.length > 0 && (
-            <ul className="absolute left-0 top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg">
-              {suggestion.names.map((name) => (
-                <li key={name}>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      insertSuggestion(name);
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-stone-700 hover:bg-stone-50">
-                    {name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        {summaryError && (
-          <FormError>{summaryError}</FormError>
+        {isAdmin ? (
+          <>
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                onKeyUp={handleKeyUp}
+                rows={6}
+                className={`${inputClassName} min-h-45 resize-none overflow-hidden`}
+                placeholder={t("addChapter.summaryPlaceholder")}
+              />
+              {suggestion && suggestion.names.length > 0 && (
+                <ul className="absolute left-0 top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg">
+                  {suggestion.names.map((name) => (
+                    <li key={name}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          insertSuggestion(name);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-stone-700 hover:bg-stone-50">
+                        {name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {summaryError && (
+              <FormError>{summaryError}</FormError>
+            )}
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={saveSummary}
+                disabled={summarySaving}
+                className={primaryButtonClassName}>
+                {summarySaving ? t("common.saving") : t("chapter.saveSummary")}
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className={`whitespace-pre-wrap wrap-break-word text-sm leading-7 ${summary ? "text-stone-700" : "italic text-stone-400"}`}>
+            {summary || t("novels.noDescription")}
+          </p>
         )}
-        <div className="mt-2 flex justify-end">
-          <button
-            onClick={saveSummary}
-            disabled={summarySaving}
-            className={primaryButtonClassName}>
-            {summarySaving ? t("common.saving") : t("chapter.saveSummary")}
-          </button>
-        </div>
       </div>}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className={cardClassName}>
           <div className="flex items-start justify-between gap-3">
             <label className={smallLabelClassName}>{t("addChapter.dateRead")}</label>
-            {!readAtEditing && <button type="button" onClick={() => setReadAtEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
+            {!readAtEditing && isAdmin && <button type="button" onClick={() => setReadAtEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
           </div>
           {readAtEditing ? <>
             <input type="datetime-local" step={60} value={readAt} onChange={(e) => setReadAt(e.target.value)} className={inputClassName} />
@@ -537,7 +556,7 @@ export default function ChapterEditor({
         <div className={cardClassName}>
           <div className="flex items-start justify-between gap-3">
             <label className={smallLabelClassName}>{t("chapter.editEntry")}</label>
-            {!entryEditing && <button type="button" onClick={() => setEntryEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
+            {!entryEditing && isAdmin && <button type="button" onClick={() => setEntryEditing(true)} className={secondaryButtonClassName}>{t("common.edit")}</button>}
           </div>
           {entryEditing ? <>
             <select value={kind} onChange={(event) => setKind(event.target.value as ChapterKind)} className={inputClassName}>
@@ -563,14 +582,16 @@ export default function ChapterEditor({
           {tags.slice(0, visibleTagCount).map((tag) => (
             <span key={tag.id} data-tag-chip className={tagClassName}>
               {tag.name}
-              <button
-                type="button"
-                onClick={() => handleRemoveTag(tag.id)}
-                disabled={tagSaving}
-                className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
-                aria-label={t("chapter.removeTag", { name: tag.name })}>
-                ×
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(tag.id)}
+                  disabled={tagSaving}
+                  className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
+                  aria-label={t("chapter.removeTag", { name: tag.name })}>
+                  ×
+                </button>
+              )}
             </span>
           ))}
 
@@ -585,7 +606,7 @@ export default function ChapterEditor({
             </button>
           )}
 
-          {!tagPickerOpen ? (
+          {!tagPickerOpen && isAdmin ? (
             <button
               type="button"
               data-add-tag
@@ -596,7 +617,7 @@ export default function ChapterEditor({
               className="rounded-full border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-400 hover:text-stone-900">
               {t("chapter.addTag")}
             </button>
-          ) : (
+          ) : tagPickerOpen ? (
             <div className="w-full max-w-sm rounded-[22px] border border-stone-200 bg-stone-50/90 p-3 shadow-sm">
               <input
                 value={tagQuery}
@@ -680,7 +701,7 @@ export default function ChapterEditor({
                 </button>
               </div>
             </div>
-          )}
+          ) : null}
           </div>
           {tagError && <FormError>{tagError}</FormError>}
           {tagDialogOpen &&
@@ -716,14 +737,16 @@ export default function ChapterEditor({
                     {tags.map((tag) => (
                       <span key={tag.id} className={tagClassName}>
                         {tag.name}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag.id)}
-                          disabled={tagSaving}
-                          className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
-                          aria-label={t("chapter.removeTag", { name: tag.name })}>
-                          Ã—
-                        </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(tag.id)}
+                            disabled={tagSaving}
+                            className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
+                            aria-label={t("chapter.removeTag", { name: tag.name })}>
+                            Ã—
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>

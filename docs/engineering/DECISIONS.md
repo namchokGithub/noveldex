@@ -24,13 +24,15 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 ---
 
-## ADR-003: Public rules until authentication
+## ADR-003: Superseded — Public rules until authentication
 
 **Decision:** Firestore rules remain public temporarily.
 
 **Why:** Existing data is currently single-user/demo data. Phase 5 will introduce authentication and ownership-aware rules.
 
 **Trade-off:** Do not expose sensitive production data before Phase 5 rules replace the temporary policy.
+
+**Superseded by:** ADR-012 — Phase 5 ships the authenticated-writer/guest split this ADR anticipated.
 
 ---
 
@@ -81,3 +83,13 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Why:** Different entity types can share a name. Explicit types make references unambiguous while preserving existing chapter notes that use the character-only shorthand.
 
 **Resolution:** Names and aliases resolve only within the owning novel and requested type. Untyped `[[Name]]` resolves as `character` only; it never infers another entity type. Unknown, malformed, or ambiguous tokens remain searchable text and are not silently linked.
+
+---
+
+## ADR-012: Authenticated writer + guest authentication (Firebase Auth)
+
+**Decision:** Firebase Auth uses email/password with no self-registration UI. `isAdmin = user !== null` intentionally means any signed-in Firebase Auth user can write. Firestore keeps `read: if true`; `write` becomes `if request.auth != null`.
+
+**Why:** The app needs an authenticated writer and a guest who only views. Firebase Auth's built-in session handling covers this without reintroducing the JWT/refresh-token machinery the Firestore migration removed.
+
+**Trade-offs:** UI hiding of mutation controls is a UX convenience only; the Firestore rule is the actual enforcement boundary. This deliberately does not distinguish among authenticated users; add roles, an allowlist, or custom claims only through a new ADR.

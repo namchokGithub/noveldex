@@ -14,6 +14,7 @@ import {
 } from '../../ui'
 import { useI18n } from '@/components/i18n/I18nProvider'
 import { createCharacter } from '@/libs/api'
+import { useAuth } from '@/components/auth/AuthProvider'
 
 export default function AddCharacterForm({
   novelId,
@@ -24,6 +25,7 @@ export default function AddCharacterForm({
 }) {
   const { t } = useI18n()
   const router = useRouter()
+  const { isAdmin } = useAuth()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -68,6 +70,8 @@ export default function AddCharacterForm({
       setSubmitting(false)
     }
   }
+
+  if (!isAdmin) return null
 
   return (
     <>

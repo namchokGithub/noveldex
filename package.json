@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "emulators": "firebase emulators:start --only firestore --project demo-noveldex",
+    "emulators": "firebase emulators:start --only firestore,auth --project demo-noveldex",
     "migrate:firestore": "tsx --env-file=.env.local scripts/one-off/migrate-postgres-to-firestore.ts",
     "backfill:event-locations": "tsx --env-file=.env.local scripts/one-off/backfill-event-locations.ts",
     "backfill:chapter-notes": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-notes.ts",
@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.54.7",
+    "@firebase/rules-unit-testing": "4.0.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",

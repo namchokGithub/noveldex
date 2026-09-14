@@ -2,13 +2,6 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Phase 5: Auth + Guest only view (Re-plan)
-
-- [ ] users table + migration
-- [ ] JWT-based login/register
-- [ ] Protected routes (middleware)
-- [ ] Session handling (refresh tokens)
-
 ## Phase 6: Polish
 
 - [ ] Error handling + user-facing messages

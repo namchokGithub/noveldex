@@ -23,7 +23,7 @@ Firestore data is nested under `novels/{novelId}` for volumes, chapters, charact
 
 `sort_order` is the reading position within a volume. Keep regular chapter numbers novel-wide unique through `chapterNumbers/{number}` markers; special chapter entries use `number: null`, a `kind`, and `custom_label` only for `other`. Use `formatChapterLabel` for all user-visible chapter labels. Before releasing this model against existing data, run `backfill:chapter-entry-order` with `--dry-run`, then `--apply`.
 
-The Firestore rules are temporarily public until Phase 5 authentication. Phase 3 extends the client-side scoped search into one derived MiniSearch index fed by Firestore; it must not add Firestore full-text queries or an HTTP search endpoint.
+Firestore rules (ADR-012): reads stay public; writes require any authenticated Firebase Auth user. Phase 3 extends the client-side scoped search into one derived MiniSearch index fed by Firestore; it must not add Firestore full-text queries or an HTTP search endpoint.
 
 ## Guardrails
 
@@ -34,5 +34,6 @@ The Firestore rules are temporarily public until Phase 5 authentication. Phase 3
 - Never commit `.env.local` or Firebase service-account credentials.
 - PostgreSQL backups remain recovery material; do not treat them as a live application database.
 - Finishing a `docs/engineering/PROGRESS.md` item? Move it to `docs/_complete_logs.md` in the same change (check for a duplicate entry first) — see `docs/ai/AGENTS.md`.
+- `@firebase/rules-unit-testing` must stay on the 4.x line — 5.x requires `firebase ^12`, this project is pinned to `firebase ^11.10.0`.
 
 See `docs/ai/AGENTS.md` for agent-specific instructions and `docs/engineering/PROGRESS.md` for current work.

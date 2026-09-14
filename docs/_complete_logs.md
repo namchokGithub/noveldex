@@ -2,6 +2,13 @@
 
 Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRESS.md) to keep that file focused on outstanding work. History only — do not edit completed entries here; add new completions as items finish in PROGRESS.md.
 
+## Phase 5: Admin + guest auth
+
+- [x] Firebase Auth (email/password), `AuthProvider`/`useAuth()`, sign-in/sign-out control in the header
+- [x] Every mutation UI (novel/volume/chapter/character/entity/timeline-event create, edit, delete, reorder, tag add/remove) gated behind `isAdmin`
+- [x] Firestore rule: guest reads everything; write requires an authenticated Firebase Auth user (ADR-012)
+- [x] `firestore.rules.test.ts` — automated rules-boundary coverage via `@firebase/rules-unit-testing`
+
 ## Phase 3: Timeline + Search
 
 - [x] Generic Entity Reference System — six entity types with stable qualified IDs, aliases, typed and backward-compatible character references, persisted occurrences, and compatibility projections for existing character features

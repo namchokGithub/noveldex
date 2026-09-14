@@ -18,6 +18,8 @@ function getFirebaseApp(): FirebaseApp {
   return existing.length > 0 ? existing[0] : initializeApp(firebaseConfig);
 }
 
+export const firebaseApp: FirebaseApp = getFirebaseApp();
+
 function initDb(): Firestore {
   const app = getFirebaseApp();
   let firestore: Firestore;
