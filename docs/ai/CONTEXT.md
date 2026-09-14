@@ -15,6 +15,8 @@ Chapters carry an embedded `notes[]` list with timestamped entries and persisted
 
 Chapter entries use ADR-009: `sort_order` controls reading order only within a volume. Regular `chapter` entries retain their novel-wide unique positive `number` and a `chapterNumbers` marker. `prologue`, `epilogue`, `afterword`, `side_story`, and `other` entries store `number: null`; only `other` needs a nonempty `custom_label`. Use `formatChapterLabel` from `libs/chapterLabel.ts` for every user-facing label, and run `pnpm backfill:chapter-entry-order -- --project <id> --dry-run` before its `--apply` counterpart when upgrading existing Firestore data.
 
+Timeline events use story order: `volume.number → chapter.sort_order → page_number → event.sort_order → event.id`. Event `sort_order` is a position only within the same volume, chapter, and page. The Add Event form derives its default as the next position in that group (`max + 1`); it does not renumber existing events when inserting a value in the middle.
+
 User-facing form errors use `FormError` from `app/novels/ui.tsx`. Client code must pass caught Firebase errors through `userErrorMessage` from `libs/userErrorMessage.ts` rather than rendering raw error text.
 
 `chapters` collection-group queries require the definitions in `firestore.indexes.json`, including the `novel_id` collection-group field override.

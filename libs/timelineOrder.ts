@@ -5,6 +5,22 @@ export interface VolumeOrderInput { id: string; number: number }
 
 const UNKNOWN = Number.MAX_SAFE_INTEGER;
 
+export function nextEventPosition(
+  events: Pick<NovelEvent, "chapter_id" | "chapter_volume_id" | "page_number" | "sort_order">[],
+  group: { volumeId: string; chapterId: string; pageNumber: number | null },
+): number {
+  const positions = events
+    .filter(
+      (event) =>
+        event.chapter_volume_id === group.volumeId &&
+        event.chapter_id === group.chapterId &&
+        event.page_number === group.pageNumber,
+    )
+    .map((event) => event.sort_order);
+
+  return Math.max(-1, ...positions) + 1;
+}
+
 export function eventOrder(a: NovelEvent, b: NovelEvent, chapters: ChapterOrderInput[], volumes: VolumeOrderInput[]): number {
   const chapterA = chapters.find((chapter) => chapter.id === a.chapter_id);
   const chapterB = chapters.find((chapter) => chapter.id === b.chapter_id);

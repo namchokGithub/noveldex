@@ -30,7 +30,7 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 **Decision:** `story_date` remains text and is display-only; it does not determine timeline order.
 
-**Why:** Fictional dates can be non-standard or approximate. Timeline uses explicit story order: a linked event sorts by `volume.number`, then `chapter.sort_order`, then `page_number`, then event `sort_order`. Events without a linked chapter sort after placed events. This is story order, not chronological calendar order.
+**Why:** Fictional dates can be non-standard or approximate. Timeline uses explicit story order: a linked event sorts by `volume.number`, then `chapter.sort_order`, then `page_number`, then event `sort_order`. Event `sort_order` breaks ties only within the same volume, chapter, and page; a new event defaults to the next value in that group (`max + 1`) and never renumbers existing events. Events without a linked chapter sort after placed events. This is story order, not chronological calendar order.
 
 **Trade-off:** Users cannot infer a date-based sequence from `story_date`. When a chapter is linked, the UI resolves its current label with `formatChapterLabel`; `chapter_number` on an event remains only as a backward-compatible snapshot.
 
