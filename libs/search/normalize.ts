@@ -37,15 +37,16 @@ export function normalizeNovel(novel: Novel): SearchDocument {
   return { id: `novel:${novel.id}`, type: "novel", novelId: novel.id, title: novel.title, author: novel.author, description: novel.description, ...emptyFields(), route: novelRoute(novel.id) };
 }
 
-export function normalizeVolume(volume: Pick<Volume, "id" | "novel_id" | "number" | "title" | "description"> | VolumeSearchSource): SearchDocument {
-  return { id: `volume:${volume.novel_id}:${volume.id}`, type: "volume", novelId: volume.novel_id, volumeId: volume.id, name: String(volume.number), title: volume.title, description: volume.description, ...emptyFields(), route: volumeRoute(volume.novel_id, volume.id) };
+export function normalizeVolume(volume: Pick<Volume, "id" | "novel_id" | "number" | "title" | "title_en" | "title_th" | "description"> | VolumeSearchSource): SearchDocument {
+  return { id: `volume:${volume.novel_id}:${volume.id}`, type: "volume", novelId: volume.novel_id, volumeId: volume.id, name: String(volume.number), title: volume.title, description: volume.description, ...emptyFields(), aliases: [...new Set([volume.title_en, volume.title_th].filter(Boolean))], route: volumeRoute(volume.novel_id, volume.id) };
 }
 
 export function normalizeChapter(novelId: string, chapter: Chapter, entityMap: EntityMap, labels: ChapterKindLabels): SearchDocument {
+  const titles = [chapter.title_en, chapter.title_th].filter(Boolean);
   return {
     id: `chapter:${novelId}:${chapter.volume_id}:${chapter.id}`, type: "chapter", novelId, volumeId: chapter.volume_id, chapterId: chapter.id,
     name: formatChapterLabel(chapter, labels), title: chapter.title, description: chapter.description,
-    ...projectReferences(chapter.notes, entityMap), tagIds: chapter.tags.map((tag) => tag.id), tags: chapter.tags.map((tag) => tag.name), route: chapterRoute(novelId, chapter.volume_id, chapter.id),
+    ...projectReferences(chapter.notes, entityMap), aliases: [...new Set(titles)], tagIds: chapter.tags.map((tag) => tag.id), tags: chapter.tags.map((tag) => tag.name), route: chapterRoute(novelId, chapter.volume_id, chapter.id),
   };
 }
 

@@ -20,7 +20,8 @@ import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
 
 interface VolumeDraft {
   number: number;
-  title: string;
+  title_en: string;
+  title_th: string;
 }
 
 interface SnackbarState {
@@ -61,9 +62,10 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
     const number = Number(
       (form.elements.namedItem("number") as HTMLInputElement).value,
     );
-    const title = (form.elements.namedItem("title") as HTMLInputElement).value;
+    const title_en = (form.elements.namedItem("title_en") as HTMLInputElement).value;
+    const title_th = (form.elements.namedItem("title_th") as HTMLInputElement).value;
 
-    setDraft({ number, title });
+    setDraft({ number, title_en, title_th });
     setConfirmOpen(true);
   }
 
@@ -163,13 +165,23 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
               </div>
               <div>
                 <label className={smallLabelClassName}>
-                  {t("common.titleRequired")}
+                  {t("addChapter.titleEnglishRequired")}
                 </label>
                 <input
-                  name="title"
+                  name="title_en"
                   required
                   className={inputClassName}
-                  placeholder={t("addVolume.titlePlaceholder")}
+                  placeholder={t("addChapter.titleEnglishPlaceholder")}
+                />
+              </div>
+              <div>
+                <label className={smallLabelClassName}>
+                  {t("addChapter.titleThaiOptional")}
+                </label>
+                <input
+                  name="title_th"
+                  className={inputClassName}
+                  placeholder={t("addChapter.titleThaiPlaceholder")}
                 />
               </div>
 
@@ -207,7 +219,7 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
               <p className="text-sm leading-6 text-stone-600">
                 {t("addVolume.confirmBody", {
                   number: draft?.number ?? "",
-                  title: draft?.title ?? "",
+                  title: draft?.title_th || draft?.title_en || "",
                 })}
               </p>
             </div>

@@ -78,7 +78,8 @@ export default function AddChapterForm({
       kind,
       number: kind === 'chapter' ? Number((form.elements.namedItem('number') as HTMLInputElement).value) : null,
       custom_label: kind === 'other' ? customLabel : null,
-      title: (form.elements.namedItem('title') as HTMLInputElement).value,
+      title_en: (form.elements.namedItem('title_en') as HTMLInputElement).value,
+      title_th: (form.elements.namedItem('title_th') as HTMLInputElement).value,
       description: (form.elements.namedItem('description') as HTMLTextAreaElement).value,
       read_at: normalizeDateTimeLocalToISOString(readAtRaw),
     }
@@ -149,12 +150,20 @@ export default function AddChapterForm({
                 <input value={customLabel} onChange={(event) => setCustomLabel(event.target.value)} required maxLength={80} className={inputClassName} placeholder={t('addChapter.customLabelPlaceholder')} />
               </div>}
               <div>
-                <label className={smallLabelClassName}>{t('common.titleRequired')}</label>
+                <label className={smallLabelClassName}>{t('addChapter.titleEnglishRequired')}</label>
                 <input
-                  name="title"
+                  name="title_en"
                   required
                   className={inputClassName}
-                  placeholder={t('addChapter.chapterTitlePlaceholder')}
+                  placeholder={t('addChapter.titleEnglishPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className={smallLabelClassName}>{t('addChapter.titleThaiOptional')}</label>
+                <input
+                  name="title_th"
+                  className={inputClassName}
+                  placeholder={t('addChapter.titleThaiPlaceholder')}
                 />
               </div>
               <div>

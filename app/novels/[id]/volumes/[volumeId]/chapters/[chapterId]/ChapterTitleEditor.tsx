@@ -26,14 +26,16 @@ export default function ChapterTitleEditor({
   const kindLabels = useChapterKindLabels();
   const { entityMap, upsert } = useSearchIndex();
   const { isAdmin } = useAuth();
-  const [title, setTitle] = useState(chapter.title ?? "");
+  const [titleEn, setTitleEn] = useState(chapter.title_en ?? chapter.title ?? "");
+  const [titleTh, setTitleTh] = useState(chapter.title_th ?? "");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
-    const normalizedTitle = title.trim();
-    if (!normalizedTitle) {
+    const normalizedTitleEn = titleEn.trim();
+    const normalizedTitleTh = titleTh.trim();
+    if (!normalizedTitleEn) {
       setError(t("chapter.titleRequired"));
       return;
     }
@@ -42,10 +44,12 @@ export default function ChapterTitleEditor({
     setError(null);
     try {
       const updated = await updateChapter(novelId, volumeId, chapter.id, {
-        title: normalizedTitle,
+        title_en: normalizedTitleEn,
+        title_th: normalizedTitleTh,
       });
       upsert(normalizeChapter(novelId, updated, entityMap, kindLabels));
-      setTitle(normalizedTitle);
+      setTitleEn(normalizedTitleEn);
+      setTitleTh(normalizedTitleTh);
       setEditing(false);
       router.refresh();
     } catch (cause) {
@@ -58,7 +62,7 @@ export default function ChapterTitleEditor({
   if (!editing) {
     return (
       <span className="inline-flex flex-wrap items-center gap-2">
-        <span>{title}</span>
+        <span>{titleTh || titleEn}</span>
         {isAdmin && (
           <button
             type="button"
@@ -73,21 +77,35 @@ export default function ChapterTitleEditor({
   }
 
   return (
-    <span className="inline-flex w-full flex-wrap items-center gap-2">
+    <span className="grid w-full gap-2">
+      <label className="text-sm font-medium text-stone-700">
+        {t("addChapter.titleEnglishRequired")}
       <input
         autoFocus
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        className={`${inputClassName} min-w-52 flex-1 py-1 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl`}
-        placeholder={t("addChapter.chapterTitlePlaceholder")}
+        value={titleEn}
+        onChange={(event) => setTitleEn(event.target.value)}
+        className={`${inputClassName} mt-1 w-full py-1 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl`}
+        placeholder={t("addChapter.titleEnglishPlaceholder")}
       />
+      </label>
+      <label className="text-sm font-medium text-stone-700">
+        {t("addChapter.titleThaiOptional")}
+        <input
+          value={titleTh}
+          onChange={(event) => setTitleTh(event.target.value)}
+          className={`${inputClassName} mt-1 w-full py-1 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl`}
+          placeholder={t("addChapter.titleThaiPlaceholder")}
+        />
+      </label>
+      <span className="flex flex-wrap items-center gap-2">
       <button type="button" onClick={() => void save()} disabled={saving} className={primaryButtonClassName}>
         {saving ? t("common.saving") : t("chapter.saveTitle")}
       </button>
       <button
         type="button"
         onClick={() => {
-          setTitle(chapter.title ?? "");
+          setTitleEn(chapter.title_en ?? chapter.title ?? "");
+          setTitleTh(chapter.title_th ?? "");
           setError(null);
           setEditing(false);
         }}
@@ -96,6 +114,7 @@ export default function ChapterTitleEditor({
         {t("common.cancel")}
       </button>
       {error ? <span role="alert" className="w-full text-sm font-normal text-rose-600">{error}</span> : null}
+      </span>
     </span>
   );
 }

@@ -30,7 +30,10 @@ interface ChapterDoc {
   sort_order?: number;
   kind?: ChapterKind;
   custom_label?: string | null;
-  title: string;
+  // `title` is retained for documents written before bilingual titles.
+  title?: string;
+  title_en?: string;
+  title_th?: string;
   summary: string;
   description?: string;
   notes?: ChapterNoteDoc[];
@@ -109,6 +112,8 @@ function markerRef(novelId: string, number: number) {
 function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
   const notes = notesForChapter(data);
   const kind = chapterKind(data.kind);
+  const title_en = data.title_en ?? data.title ?? "";
+  const title_th = data.title_th ?? "";
   return {
     id,
     volume_id: data.volume_id,
@@ -116,7 +121,9 @@ function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
     sort_order: data.sort_order ?? data.number ?? 0,
     kind,
     custom_label: data.custom_label ?? null,
-    title: data.title,
+    title: title_th || title_en,
+    title_en,
+    title_th,
     // Keep the legacy field populated for older callers, but make notes canonical.
     summary: notes.map((note) => note.content).join("\n") || data.summary || "",
     description: data.description ?? "",
@@ -216,7 +223,9 @@ export async function getChaptersFlat(novelId: string): Promise<ChapterSummary[]
       sort_order?: number;
       kind?: ChapterKind;
       custom_label?: string | null;
-      title: string;
+      title?: string;
+      title_en?: string;
+      title_th?: string;
       summary?: string;
       notes?: ChapterNoteDoc[];
       read_at: Timestamp | null;
@@ -229,7 +238,9 @@ export async function getChaptersFlat(novelId: string): Promise<ChapterSummary[]
       sort_order: data.sort_order ?? data.number ?? 0,
       kind: chapterKind(data.kind),
       custom_label: data.custom_label ?? null,
-      title: data.title,
+      title: data.title_th || data.title_en || data.title || "",
+      title_en: data.title_en ?? data.title ?? "",
+      title_th: data.title_th ?? "",
       summary: data.notes?.map((note) => note.content).join("\n") ?? data.summary ?? "",
       read_at: data.read_at ? tsToIso(data.read_at) : null,
       character_ids: data.character_ids ?? [],
@@ -286,7 +297,8 @@ export interface ChapterCreatePayload {
   number?: number | null;
   kind?: ChapterKind;
   custom_label?: string | null;
-  title: string;
+  title_en: string;
+  title_th?: string;
   summary?: string;
   description?: string;
   notes?: ChapterNote[];
@@ -299,6 +311,9 @@ export async function createChapter(
   payload: ChapterCreatePayload,
 ): Promise<Chapter> {
   validateDescription(payload.description);
+  const title_en = payload.title_en.trim();
+  if (!title_en) throw new Error("English chapter title is required");
+  const title_th = payload.title_th?.trim() ?? "";
   const kind = chapterKind(payload.kind);
   const number = kind === "chapter" ? payload.number ?? null : null;
   const customLabel = kind === "other" ? payload.custom_label?.trim() ?? null : null;
@@ -330,7 +345,10 @@ export async function createChapter(
         sort_order: sortOrder,
         kind,
         custom_label: customLabel,
-        title: payload.title,
+        // Keep the former field in sync for older callers and existing data.
+        title: title_en,
+        title_en,
+        title_th,
         summary: payload.summary ?? "",
         description: payload.description ?? "",
         notes: notesToDoc(notes),
@@ -354,7 +372,10 @@ export interface ChapterPayload {
   number?: number | null;
   kind?: ChapterKind;
   custom_label?: string | null;
+  /** Legacy title input; treated as the English title. */
   title?: string;
+  title_en?: string;
+  title_th?: string;
   summary?: string;
   description?: string;
   notes?: ChapterNote[];
@@ -369,7 +390,17 @@ export async function updateChapter(
 ): Promise<Chapter> {
   validateDescription(payload.description);
   const update: Record<string, unknown> = {};
-  if (payload.title !== undefined) update.title = payload.title;
+  if (payload.title !== undefined) {
+    update.title = payload.title;
+    update.title_en = payload.title;
+  }
+  if (payload.title_en !== undefined) {
+    const title_en = payload.title_en.trim();
+    if (!title_en) throw new Error("English chapter title is required");
+    update.title = title_en;
+    update.title_en = title_en;
+  }
+  if (payload.title_th !== undefined) update.title_th = payload.title_th.trim();
   if (payload.summary !== undefined) update.summary = payload.summary;
   if (payload.description !== undefined) update.description = payload.description;
   if (payload.read_at !== undefined) {

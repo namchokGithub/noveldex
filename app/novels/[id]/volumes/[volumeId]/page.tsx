@@ -4,6 +4,7 @@ import AddChapterForm from "../../AddChapterForm";
 import BackToTopButton from "../../../BackToTopButton";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
+import LocalizedVolumeTitle from "@/components/volumes/LocalizedVolumeTitle";
 import {
   backLinkClassName,
   cardClassName,
@@ -57,7 +58,7 @@ export default async function VolumePage({
 
         <SectionHeading
           eyebrow={`Volume ${volume.number}`}
-          title={volume.title}
+          title={<LocalizedVolumeTitle volume={volume} />}
           description={`Manage chapters inside this volume. Updated ${formatDisplayDate(volume.updated_at) ?? volume.updated_at}.`}
           action={<AddChapterForm novelId={id} volumeId={volume.id} />}
         />

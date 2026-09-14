@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { PaginationMeta, Volume } from "@/app/types";
 
@@ -12,7 +13,6 @@ import {
   inputClassName,
   listClassName,
   listRowClassName,
-  modalBackdropClassName,
   modalPanelClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
@@ -27,6 +27,7 @@ import { userErrorMessage } from "@/libs/userErrorMessage";
 import { normalizeVolume } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { descendantsOf } from "@/libs/search/cascadeDelete";
+import { localizedVolumeTitle } from "@/libs/volumeTitle";
 
 interface VolumeItem extends Volume {
   chapterCount: number;
@@ -53,7 +54,7 @@ export default function VolumeManager({
   volumes: VolumeItem[];
   pagination: PaginationMeta;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { documents, discardMany, upsert } = useSearchIndex();
   const { isAdmin } = useAuth();
   const router = useRouter();
@@ -61,7 +62,8 @@ export default function VolumeManager({
   const searchParams = useSearchParams();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [number, setNumber] = useState("");
-  const [title, setTitle] = useState("");
+  const [titleEn, setTitleEn] = useState("");
+  const [titleTh, setTitleTh] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -100,7 +102,8 @@ export default function VolumeManager({
   function startEdit(volume: VolumeItem) {
     setEditingId(volume.id);
     setNumber(String(volume.number));
-    setTitle(volume.title);
+    setTitleEn(volume.title_en ?? volume.title);
+    setTitleTh(volume.title_th ?? "");
     setError(null);
   }
 
@@ -109,7 +112,7 @@ export default function VolumeManager({
     setConfirmState({
       action: "save",
       volumeId: volume.id,
-      title,
+      title: localizedVolumeTitle({ title: titleEn, title_en: titleEn, title_th: titleTh }, language),
       number: Number(number),
     });
   }
@@ -121,7 +124,8 @@ export default function VolumeManager({
     try {
       const updated = await updateVolume(novelId, volumeId, {
         number: Number(number),
-        title,
+        title_en: titleEn,
+        title_th: titleTh,
       });
       upsert(normalizeVolume(updated));
       setConfirmState(null);
@@ -149,7 +153,7 @@ export default function VolumeManager({
     setConfirmState({
       action: "delete",
       volumeId: volume.id,
-      title: volume.title,
+      title: localizedVolumeTitle(volume, language),
       number: volume.number,
     });
   }
@@ -258,7 +262,7 @@ export default function VolumeManager({
             <li key={volume.id} className="px-4 py-4">
               {editingId === volume.id ? (
                 <div className="space-y-3 rounded-2xl bg-stone-50/70 p-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-3">
                     <div>
                       <label className={smallLabelClassName}>
                         {t("addVolume.numberRequired")}
@@ -273,11 +277,21 @@ export default function VolumeManager({
                     </div>
                     <div>
                       <label className={smallLabelClassName}>
-                        {t("common.titleRequired")}
+                        {t("addChapter.titleEnglishRequired")}
                       </label>
                       <input
-                        value={title}
-                        onChange={(event) => setTitle(event.target.value)}
+                        value={titleEn}
+                        onChange={(event) => setTitleEn(event.target.value)}
+                        className={inputClassName}
+                      />
+                    </div>
+                    <div>
+                      <label className={smallLabelClassName}>
+                        {t("addChapter.titleThaiOptional")}
+                      </label>
+                      <input
+                        value={titleTh}
+                        onChange={(event) => setTitleTh(event.target.value)}
                         className={inputClassName}
                       />
                     </div>
@@ -297,7 +311,7 @@ export default function VolumeManager({
                     <button
                       type="button"
                       onClick={() => requestSave(volume)}
-                      disabled={saving}
+                      disabled={saving || !titleEn.trim()}
                       className={primaryButtonClassName}>
                       {saving ? t("common.saving") : t("common.save")}
                     </button>
@@ -313,7 +327,7 @@ export default function VolumeManager({
                       {t("volumeManager.volumeLabel", {
                         number: volume.number,
                       })}{" "}
-                      · {volume.title}
+                      · {localizedVolumeTitle(volume, language)}
                     </div>
                     <p className="mt-1 text-sm text-stone-500">
                       {t(
@@ -380,8 +394,9 @@ export default function VolumeManager({
         </div>
       </div>
 
-      {confirmState?.action === "save" ? (
-        <div className={`${modalBackdropClassName} z-60`}>
+      {confirmState?.action === "save" && typeof document !== "undefined"
+        ? createPortal(
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-stone-950/40 px-4 backdrop-blur-sm">
           <div className={`${modalPanelClassName} max-w-sm`}>
             <div className="space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -431,8 +446,10 @@ export default function VolumeManager({
               </button>
             </div>
           </div>
-        </div>
-      ) : null}
+        </div>,
+        document.body,
+      )
+        : null}
 
       <ConfirmDialog
         open={confirmState?.action === "delete"}

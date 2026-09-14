@@ -9,6 +9,7 @@ import type {
   Volume,
 } from "@/app/types";
 import { formatChapterLabel } from "@/libs/chapterLabel";
+import { localizedVolumeTitle } from "@/libs/volumeTitle";
 import { eventOrder } from "@/libs/timelineOrder";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import {
@@ -85,7 +86,7 @@ export default function TimelinePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { isAdmin } = useAuth();
   const { id: novelId } = use(params);
   const kindLabels = useChapterKindLabels();
@@ -412,7 +413,7 @@ export default function TimelinePage({
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
                     {t("timeline.volume")} {group.volume.number} ·{" "}
-                    {group.volume.title}
+                    {localizedVolumeTitle(group.volume, language)}
                   </p>
                   <h2 className="mt-1 text-lg font-semibold text-stone-900">
                     {formatChapterLabel(group.chapter, kindLabels)}
@@ -683,7 +684,7 @@ function EventFormFields({
             <option value="">{t("timeline.field.selectVolume")}</option>
             {volumes.map((volume) => (
               <option key={volume.id} value={volume.id}>
-                {t("timeline.volume")} {volume.number} · {volume.title}
+                {t("timeline.volume")} {volume.number} · {localizedVolumeTitle(volume, language)}
               </option>
             ))}
           </select>

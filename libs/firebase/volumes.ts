@@ -20,7 +20,10 @@ import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 
 interface VolumeDoc {
   number: number;
-  title: string;
+  // `title` is retained for documents written before bilingual titles.
+  title?: string;
+  title_en?: string;
+  title_th?: string;
   description?: string;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -59,11 +62,15 @@ async function volumeAggregates(novelId: string, volumeId: string) {
 
 async function toVolume(novelId: string, id: string, data: VolumeDoc): Promise<Volume> {
   const { chapter_count, read_count } = await volumeAggregates(novelId, id);
+  const title_en = data.title_en ?? data.title ?? "";
+  const title_th = data.title_th ?? "";
   return {
     id,
     novel_id: novelId,
     number: data.number,
-    title: data.title,
+    title: title_en,
+    title_en,
+    title_th,
     description: data.description ?? "",
     chapter_count,
     read_count,
@@ -74,13 +81,19 @@ async function toVolume(novelId: string, id: string, data: VolumeDoc): Promise<V
 
 export interface VolumeCreatePayload {
   number: number;
-  title: string;
+  /** Legacy title input; treated as the English title. */
+  title?: string;
+  title_en?: string;
+  title_th?: string;
   description?: string;
 }
 
 export interface VolumePayload {
   number?: number;
+  /** Legacy title input; treated as the English title. */
   title?: string;
+  title_en?: string;
+  title_th?: string;
   description?: string;
 }
 
@@ -129,6 +142,8 @@ export interface VolumeSearchSource {
   novel_id: string;
   number: number;
   title: string;
+  title_en: string;
+  title_th: string;
   description: string;
 }
 
@@ -141,7 +156,9 @@ export async function getVolumesFlat(novelId: string): Promise<VolumeSearchSourc
       id: snapshot.id,
       novel_id: novelId,
       number: data.number,
-      title: data.title,
+      title: data.title_en || data.title || "",
+      title_en: data.title_en ?? data.title ?? "",
+      title_th: data.title_th ?? "",
       description: data.description ?? "",
     };
   });
@@ -157,9 +174,18 @@ export async function getVolume(novelId: string, volumeId: string): Promise<Volu
 
 export async function createVolume(novelId: string, payload: VolumeCreatePayload): Promise<Volume> {
   validateDescription(payload.description);
+  const title_en = (payload.title_en ?? payload.title ?? "").trim();
+  if (!title_en) throw new Error("English volume title is required");
+  const title_th = payload.title_th?.trim() ?? "";
   const ref = await addDoc(
     volumesCol(novelId),
-    withCreateTimestamps({ ...payload, description: payload.description ?? "" }),
+    withCreateTimestamps({
+      number: payload.number,
+      title: title_en,
+      title_en,
+      title_th,
+      description: payload.description ?? "",
+    }),
   );
   const snapshot = await getDoc(ref);
   return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
@@ -171,11 +197,23 @@ export async function updateVolume(
   payload: VolumePayload,
 ): Promise<Volume> {
   validateDescription(payload.description);
+  const update: VolumePayload = { ...payload };
+  if (payload.title !== undefined) {
+    update.title = payload.title;
+    update.title_en = payload.title;
+  }
+  if (payload.title_en !== undefined) {
+    const title_en = payload.title_en.trim();
+    if (!title_en) throw new Error("English volume title is required");
+    update.title = title_en;
+    update.title_en = title_en;
+  }
+  if (payload.title_th !== undefined) update.title_th = payload.title_th.trim();
   const ref = doc(db, "novels", novelId, "volumes", volumeId) as DocumentReference<
     VolumeDoc,
     VolumeDoc
   >;
-  await updateDoc(ref, withUpdateTimestamp(payload));
+  await updateDoc(ref, withUpdateTimestamp(update));
   const snapshot = await getDoc(ref);
   return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
 }

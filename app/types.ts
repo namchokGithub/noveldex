@@ -16,6 +16,8 @@ export interface Volume {
   novel_id: string
   number: number
   title: string
+  title_en: string
+  title_th: string
   description: string
   chapter_count: number
   read_count: number
@@ -58,6 +60,8 @@ export interface Chapter {
   kind: ChapterKind
   custom_label: string | null
   title: string
+  title_en: string
+  title_th: string
   summary: string
   description: string
   notes: ChapterNote[]
@@ -75,6 +79,8 @@ export interface ChapterSummary {
   kind: ChapterKind
   custom_label: string | null
   title: string
+  title_en: string
+  title_th: string
   summary?: string
   read_at: string | null
   character_ids?: string[]

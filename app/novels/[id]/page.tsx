@@ -181,6 +181,8 @@ export default async function NovelPage({
                 novel_id: volume.novel_id,
                 number: volume.number,
                 title: volume.title,
+                title_en: volume.title_en,
+                title_th: volume.title_th,
                 description: volume.description,
                 chapter_count: volume.chapter_count,
                 read_count: volume.read_count,
