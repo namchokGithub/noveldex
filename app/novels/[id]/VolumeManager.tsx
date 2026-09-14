@@ -122,7 +122,10 @@ export default function VolumeManager({
     setConfirmState({
       action: "save",
       volumeId: volume.id,
-      title: localizedVolumeTitle({ title: titleEn, title_en: titleEn, title_th: titleTh }, language),
+      title: localizedVolumeTitle(
+        { title: titleEn, title_en: titleEn, title_th: titleTh },
+        language,
+      ),
       number: Number(number),
     });
   }
@@ -235,7 +238,14 @@ export default function VolumeManager({
     <div className={listClassName}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
-          {t("common.showing", { start: (pagination.page - 1) * pagination.per_page + 1, end: Math.min(pagination.page * pagination.per_page, pagination.total_items), total: pagination.total_items })}
+          {t("common.showing", {
+            start: (pagination.page - 1) * pagination.per_page + 1,
+            end: Math.min(
+              pagination.page * pagination.per_page,
+              pagination.total_items,
+            ),
+            total: pagination.total_items,
+          })}
         </p>
         <label className="flex items-center gap-2 text-sm text-stone-500">
           {t("common.perPage")}
@@ -371,7 +381,10 @@ export default function VolumeManager({
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
-          {t("common.pageOf", { page: pagination.page, total: pagination.total_pages })}
+          {t("common.pageOf", {
+            page: pagination.page,
+            total: pagination.total_pages,
+          })}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -388,7 +401,9 @@ export default function VolumeManager({
             disabled={!canGoNext}
             onClick={() =>
               router.push(
-                buildPageHref(Math.min(pagination.total_pages, pagination.page + 1)),
+                buildPageHref(
+                  Math.min(pagination.total_pages, pagination.page + 1),
+                ),
               )
             }
             className={secondaryButtonClassName}>
@@ -405,7 +420,9 @@ export default function VolumeManager({
           number: confirmState?.number ?? 0,
           title: confirmState?.title ?? "",
         })}
-        confirmLabel={saving ? t("common.saving") : t("addVolume.confirmAction")}
+        confirmLabel={
+          saving ? t("common.saving") : t("addVolume.confirmAction")
+        }
         cancelLabel={t("common.cancel")}
         onConfirm={handleConfirmAction}
         onCancel={() => setConfirmState(null)}

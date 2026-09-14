@@ -220,14 +220,16 @@ const en = {
   "volume.saveDescription": "Save description",
   "volume.descriptionSaved": "Description saved successfully.",
   "volume.pageEyebrow": "Volume {number}",
-  "volume.pageDescription": "Manage chapters inside this volume. Updated {date}.",
+  "volume.pageDescription":
+    "Manage chapters inside this volume. Updated {date}.",
   "volume.chapters": "Chapters",
   "volume.label": "Volume",
 
   "chapter.filters.tags": "Tags:",
   "chapter.filters.addTag": "+ Add tag filter",
   "chapter.filters.noMatch": "No chapters match selected tags.",
-  "chapter.noChapters": "No chapters in this volume yet. Add the first chapter to begin.",
+  "chapter.noChapters":
+    "No chapters in this volume yet. Add the first chapter to begin.",
   "chapter.pageEyebrow": "Chapter {number}",
   "chapter.kind.chapter": "Ch.",
   "chapter.kind.prologue": "Prologue",
@@ -320,7 +322,8 @@ const en = {
 
   "entities.eyebrow": "Entities",
   "entities.title": "Story entities",
-  "entities.description": "Manage locations, skills, organizations, items, and concepts.",
+  "entities.description":
+    "Manage locations, skills, organizations, items, and concepts.",
   "entities.add": "Add entity",
   "entities.empty": "No entities yet.",
   "entities.name": "Name *",

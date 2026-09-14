@@ -7,5 +7,5 @@ export default function LocalizedDate({ value }: { value: string | null | undefi
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return <>{value}</>;
-  return <>{new Intl.DateTimeFormat(language, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(date)}</>;
+  return <>{new Intl.DateTimeFormat(language, { month: "short", day: "numeric", year: "numeric" }).format(date)}</>;
 }

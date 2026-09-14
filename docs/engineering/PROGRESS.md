@@ -18,7 +18,7 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
   - Tag picker → พิมพ์, `↑ ↓` เลือก, `Enter` เพิ่ม, `Esc` ปิด
   - Note mention → พิมพ์ `[[`, `↑ ↓`, `Enter` แทรกชื่อ, `Esc` ซ่อน suggestion; กด `Esc` อีกครั้งยกเลิก note edit
   - Inline Chapter edit (title, description, date, entry type) → แก้ค่าแล้ว `Esc` ต้องคืนค่าเดิมและปิด edit mode
-- [ ] Localization / typography polish
+- [x] Localization / typography polish
 
 ### Medium
 

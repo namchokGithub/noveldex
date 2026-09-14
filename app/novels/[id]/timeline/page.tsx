@@ -431,7 +431,13 @@ export default function TimelinePage({
                     {localizedVolumeTitle(group.volume, language)}
                   </p>
                   <h2 className="mt-1 text-lg font-semibold text-stone-900">
-                    {formatChapterLabel({ ...group.chapter, title: localizedChapterTitle(group.chapter, language) }, kindLabels)}
+                    {formatChapterLabel(
+                      {
+                        ...group.chapter,
+                        title: localizedChapterTitle(group.chapter, language),
+                      },
+                      kindLabels,
+                    )}
                   </h2>
                 </div>
               ) : (
@@ -666,14 +672,19 @@ function EventFormFields({
       onChange({ ...nextForm, sort_order: "0" });
       return;
     }
-    const pageNumber = nextForm.page_number === "" ? null : Number.parseInt(nextForm.page_number, 10);
+    const pageNumber =
+      nextForm.page_number === ""
+        ? null
+        : Number.parseInt(nextForm.page_number, 10);
     onChange({
       ...nextForm,
-      sort_order: String(nextEventPosition(events, {
-        volumeId: nextForm.chapter_volume_id,
-        chapterId: nextForm.chapter_id,
-        pageNumber: Number.isNaN(pageNumber) ? null : pageNumber,
-      })),
+      sort_order: String(
+        nextEventPosition(events, {
+          volumeId: nextForm.chapter_volume_id,
+          chapterId: nextForm.chapter_id,
+          pageNumber: Number.isNaN(pageNumber) ? null : pageNumber,
+        }),
+      ),
     });
   }
   async function quickAdd() {
@@ -720,12 +731,15 @@ function EventFormFields({
           <select
             value={form.chapter_volume_id}
             required
-            onChange={(event) => setGroupField("chapter_volume_id", event.target.value)}
+            onChange={(event) =>
+              setGroupField("chapter_volume_id", event.target.value)
+            }
             className={inputClassName}>
             <option value="">{t("timeline.field.selectVolume")}</option>
             {volumes.map((volume) => (
               <option key={volume.id} value={volume.id}>
-                {t("timeline.volume")} {volume.number} · {localizedVolumeTitle(volume, language)}
+                {t("timeline.volume")} {volume.number} ·{" "}
+                {localizedVolumeTitle(volume, language)}
               </option>
             ))}
           </select>
@@ -738,12 +752,20 @@ function EventFormFields({
             value={form.chapter_id}
             required={requireChapter}
             disabled={!form.chapter_volume_id}
-            onChange={(event) => setGroupField("chapter_id", event.target.value)}
+            onChange={(event) =>
+              setGroupField("chapter_id", event.target.value)
+            }
             className={inputClassName}>
             <option value="">{t("timeline.field.selectChapter")}</option>
             {available.map((chapter) => (
               <option key={chapter.id} value={chapter.id}>
-                {formatChapterLabel({ ...chapter, title: localizedChapterTitle(chapter, language) }, labels)}
+                {formatChapterLabel(
+                  {
+                    ...chapter,
+                    title: localizedChapterTitle(chapter, language),
+                  },
+                  labels,
+                )}
               </option>
             ))}
           </select>
@@ -758,7 +780,9 @@ function EventFormFields({
             type="number"
             min="1"
             value={form.page_number}
-            onChange={(event) => setGroupField("page_number", event.target.value)}
+            onChange={(event) =>
+              setGroupField("page_number", event.target.value)
+            }
             className={inputClassName}
             placeholder={t("timeline.field.pagePlaceholder")}
           />

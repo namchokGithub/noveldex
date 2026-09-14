@@ -1,6 +1,9 @@
 import type { TranslationKey } from "@/components/i18n/I18nProvider";
 
-type Translate = (key: TranslationKey, values?: Record<string, string | number>) => string;
+type Translate = (
+  key: TranslationKey,
+  values?: Record<string, string | number>,
+) => string;
 
 export function userErrorMessage(error: unknown, t: Translate): string {
   const message = error instanceof Error ? error.message : "";

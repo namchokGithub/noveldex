@@ -62,9 +62,13 @@ export default async function VolumePage({
         </Link>
 
         <SectionHeading
-          eyebrow={<T k="volume.pageEyebrow" values={{ number: volume.number }} />}
+          eyebrow={
+            <T k="volume.pageEyebrow" values={{ number: volume.number }} />
+          }
           title={<LocalizedVolumeTitle volume={volume} />}
-          description={<LocalizedVolumePageDescription updatedAt={volume.updated_at} />}
+          description={
+            <LocalizedVolumePageDescription updatedAt={volume.updated_at} />
+          }
           action={<AddChapterForm novelId={id} volumeId={volume.id} />}
         />
 
@@ -87,7 +91,14 @@ export default async function VolumePage({
                   <T k="volume.chapters" />
                 </p>
                 <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                  <T k={chapterCount === 1 ? "volumeManager.chapter.one" : "volumeManager.chapter.other"} values={{ count: chapterCount }} />
+                  <T
+                    k={
+                      chapterCount === 1
+                        ? "volumeManager.chapter.one"
+                        : "volumeManager.chapter.other"
+                    }
+                    values={{ count: chapterCount }}
+                  />
                 </h2>
               </div>
             </>

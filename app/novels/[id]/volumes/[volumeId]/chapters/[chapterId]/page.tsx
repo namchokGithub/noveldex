@@ -64,8 +64,21 @@ export default async function ChapterPage({
         </Link>
 
         <SectionHeading
-          eyebrow={formatChapterPrefix(chapter, { chapter: "Ch.", prologue: "Prologue", epilogue: "Epilogue", afterword: "Afterword", side_story: "Side Story", other: "Other" })}
-          title={<ChapterTitleEditor chapter={chapter} novelId={id} volumeId={volumeId} />}
+          eyebrow={formatChapterPrefix(chapter, {
+            chapter: "Ch.",
+            prologue: "Prologue",
+            epilogue: "Epilogue",
+            afterword: "Afterword",
+            side_story: "Side Story",
+            other: "Other",
+          })}
+          title={
+            <ChapterTitleEditor
+              chapter={chapter}
+              novelId={id}
+              volumeId={volumeId}
+            />
+          }
         />
 
         <ChapterEditor

@@ -603,7 +603,8 @@ export default function ChapterListWithFilters({
                           type="button"
                           onClick={() => moveChapter(index, index + 1)}
                           disabled={
-                            reorderSaving || index === orderedChapters.length - 1
+                            reorderSaving ||
+                            index === orderedChapters.length - 1
                           }
                           aria-label={t("chapter.moveDown", {
                             title: kindLabels[chapter.kind],

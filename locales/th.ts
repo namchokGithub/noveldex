@@ -247,7 +247,8 @@ const th = {
   "chapter.entryNumberRequired": "กรุณาระบุเลขตอนเป็นจำนวนเต็มบวก",
   "chapter.entryNumberDuplicate": "เลขตอนต้องไม่ซ้ำกัน",
   "chapter.entryOtherRequired": "กรุณาระบุชื่อประเภทสำหรับ อื่น ๆ",
-  "chapter.entryCustomLabelTooLong": "ชื่อประเภทต้องมีความยาวไม่เกิน {limit} ตัวอักษร",
+  "chapter.entryCustomLabelTooLong":
+    "ชื่อประเภทต้องมีความยาวไม่เกิน {limit} ตัวอักษร",
   "chapter.titleRequired": "กรุณาระบุชื่อตอน",
   "chapter.saveTitle": "บันทึกชื่อ",
   "chapter.titleSaved": "บันทึกชื่อตอนสำเร็จ",

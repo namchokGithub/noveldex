@@ -155,7 +155,10 @@ export function SectionHeading({
   );
 }
 
-export function formatDisplayDate(value: string | null | undefined, locale = "en") {
+export function formatDisplayDate(
+  value: string | null | undefined,
+  locale = "en",
+) {
   if (!value) return null;
 
   const date = new Date(value);

@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   createContext,
@@ -7,62 +7,70 @@ import {
   useMemo,
   useState,
   type ReactNode,
-} from 'react'
+} from "react";
 
-import en from '@/locales/en'
-import th from '@/locales/th'
+import en from "@/locales/en";
+import th from "@/locales/th";
 
-export type Locale = 'en' | 'th'
-export type TranslationKey = keyof typeof en
-type TranslationValues = Record<string, string | number>
+export type Locale = "en" | "th";
+export type TranslationKey = keyof typeof en;
+type TranslationValues = Record<string, string | number>;
 
-const STORAGE_KEY = 'novelndex-locale'
-const LEGACY_STORAGE_KEY = 'noveldex-locale'
+const STORAGE_KEY = "novelndex-locale";
+const LEGACY_STORAGE_KEY = "noveldex-locale";
 
 const dictionaries = {
   en,
   th,
-} as const
+} as const;
 
 interface I18nContextValue {
-  language: Locale
-  setLanguage: (language: Locale) => void
-  t: (key: TranslationKey, values?: TranslationValues) => string
+  language: Locale;
+  setLanguage: (language: Locale) => void;
+  t: (key: TranslationKey, values?: TranslationValues) => string;
 }
 
-const I18nContext = createContext<I18nContextValue | null>(null)
+const I18nContext = createContext<I18nContextValue | null>(null);
 
 function interpolate(template: string, values?: TranslationValues) {
-  if (!values) return template
-  return template.replace(/\{(\w+)\}/g, (_, token: string) => String(values[token] ?? `{${token}}`))
+  if (!values) return template;
+  return template.replace(/\{(\w+)\}/g, (_, token: string) =>
+    String(values[token] ?? `{${token}}`),
+  );
 }
 
-function translate(language: Locale, key: TranslationKey, values?: TranslationValues) {
-  return interpolate(dictionaries[language][key], values)
+function translate(
+  language: Locale,
+  key: TranslationKey,
+  values?: TranslationValues,
+) {
+  return interpolate(dictionaries[language][key], values);
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   // Keep the first client render identical to the server render. Reading localStorage
   // in the initializer made a saved Thai preference render before hydration while SSR
   // always rendered English.
-  const [language, setLanguageState] = useState<Locale>('en')
-  const [hydrated, setHydrated] = useState(false)
+  const [language, setLanguageState] = useState<Locale>("en");
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY)
+    const stored =
+      window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_STORAGE_KEY);
     const frame = window.requestAnimationFrame(() => {
-      if (stored === 'en' || stored === 'th') setLanguageState(stored)
-      setHydrated(true)
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [])
+      if (stored === "en" || stored === "th") setLanguageState(stored);
+      setHydrated(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
-    if (!hydrated) return
-    window.localStorage.setItem(STORAGE_KEY, language)
-    window.localStorage.removeItem(LEGACY_STORAGE_KEY)
-    document.documentElement.lang = language
-  }, [hydrated, language])
+    if (!hydrated) return;
+    window.localStorage.setItem(STORAGE_KEY, language);
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    document.documentElement.lang = language;
+  }, [hydrated, language]);
 
   const value = useMemo<I18nContextValue>(
     () => ({
@@ -71,26 +79,26 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       t: (key, values) => translate(language, key, values),
     }),
     [language],
-  )
+  );
 
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
 export function useI18n() {
-  const context = useContext(I18nContext)
+  const context = useContext(I18nContext);
   if (!context) {
-    throw new Error('useI18n must be used within I18nProvider')
+    throw new Error("useI18n must be used within I18nProvider");
   }
-  return context
+  return context;
 }
 
 export function T({
   k,
   values,
 }: {
-  k: TranslationKey
-  values?: TranslationValues
+  k: TranslationKey;
+  values?: TranslationValues;
 }) {
-  const { t } = useI18n()
-  return <>{t(k, values)}</>
+  const { t } = useI18n();
+  return <>{t(k, values)}</>;
 }

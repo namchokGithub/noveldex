@@ -16,8 +16,7 @@ export default function ExpandableDescription({
   const textRef = useRef<HTMLParagraphElement | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [overflowing, setOverflowing] = useState(false);
-  const collapsedClass =
-    collapsedLines === 3 ? "line-clamp-3" : "line-clamp-2";
+  const collapsedClass = collapsedLines === 3 ? "line-clamp-3" : "line-clamp-2";
 
   useEffect(() => {
     const element = textRef.current;

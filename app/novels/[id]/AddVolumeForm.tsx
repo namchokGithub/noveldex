@@ -63,8 +63,10 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
     const number = Number(
       (form.elements.namedItem("number") as HTMLInputElement).value,
     );
-    const title_en = (form.elements.namedItem("title_en") as HTMLInputElement).value;
-    const title_th = (form.elements.namedItem("title_th") as HTMLInputElement).value;
+    const title_en = (form.elements.namedItem("title_en") as HTMLInputElement)
+      .value;
+    const title_th = (form.elements.namedItem("title_th") as HTMLInputElement)
+      .value;
 
     setDraft({ number, title_en, title_th });
     setConfirmOpen(true);
@@ -134,118 +136,126 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
           className={primaryButtonClassName}>
           {fetchingNumber ? t("common.loading") : t("addVolume.button")}
         </button>
-      ) : typeof document !== "undefined" ? createPortal(
-        <div className={fullScreenModalBackdropClassName}>
-          <div className={modalPanelClassName}>
-            <div className="mb-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-                {t("addVolume.eyebrow")}
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                {t("addVolume.title")}
-              </h2>
+      ) : typeof document !== "undefined" ? (
+        createPortal(
+          <div className={fullScreenModalBackdropClassName}>
+            <div className={modalPanelClassName}>
+              <div className="mb-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                  {t("addVolume.eyebrow")}
+                </p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+                  {t("addVolume.title")}
+                </h2>
+              </div>
+
+              <form
+                ref={formRef}
+                onSubmit={handleSubmit}
+                className="flex flex-col gap-3">
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("addVolume.numberRequired")}
+                  </label>
+                  <input
+                    name="number"
+                    type="number"
+                    min={1}
+                    required
+                    className={inputClassName}
+                    defaultValue={nextNumber ?? undefined}
+                    placeholder="1"
+                  />
+                </div>
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("addChapter.titleEnglishRequired")}
+                  </label>
+                  <input
+                    name="title_en"
+                    required
+                    className={inputClassName}
+                    placeholder={t("addChapter.titleEnglishPlaceholder")}
+                  />
+                </div>
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("addChapter.titleThaiOptional")}
+                  </label>
+                  <input
+                    name="title_th"
+                    className={inputClassName}
+                    placeholder={t("addChapter.titleThaiPlaceholder")}
+                  />
+                </div>
+
+                {error ? (
+                  <p className="text-sm text-rose-600">{error}</p>
+                ) : null}
+
+                <div className="mt-1 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCloseForm}
+                    className={ghostButtonClassName}>
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className={primaryButtonClassName}>
+                    {submitting ? t("common.saving") : t("common.save")}
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form
-              ref={formRef}
-              onSubmit={handleSubmit}
-              className="flex flex-col gap-3">
-              <div>
-                <label className={smallLabelClassName}>
-                  {t("addVolume.numberRequired")}
-                </label>
-                <input
-                  name="number"
-                  type="number"
-                  min={1}
-                  required
-                  className={inputClassName}
-                  defaultValue={nextNumber ?? undefined}
-                  placeholder="1"
-                />
-              </div>
-              <div>
-                <label className={smallLabelClassName}>
-                  {t("addChapter.titleEnglishRequired")}
-                </label>
-                <input
-                  name="title_en"
-                  required
-                  className={inputClassName}
-                  placeholder={t("addChapter.titleEnglishPlaceholder")}
-                />
-              </div>
-              <div>
-                <label className={smallLabelClassName}>
-                  {t("addChapter.titleThaiOptional")}
-                </label>
-                <input
-                  name="title_th"
-                  className={inputClassName}
-                  placeholder={t("addChapter.titleThaiPlaceholder")}
-                />
-              </div>
-
-              {error ? <p className="text-sm text-rose-600">{error}</p> : null}
-
-              <div className="mt-1 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={handleCloseForm}
-                  className={ghostButtonClassName}>
-                  {t("common.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={primaryButtonClassName}>
-                  {submitting ? t("common.saving") : t("common.save")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body,
+          </div>,
+          document.body,
+        )
       ) : null}
 
-      {confirmOpen && typeof document !== "undefined" ? createPortal(
-        <div className={`${fullScreenModalBackdropClassName} z-60`}>
-          <div className={`${modalPanelClassName} max-w-sm`}>
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-                {t("addVolume.confirmEyebrow")}
-              </p>
-              <h3 className="text-lg font-semibold tracking-[-0.03em] text-stone-950">
-                {t("addVolume.confirmTitle")}
-              </h3>
-              <p className="text-sm leading-6 text-stone-600">
-                {t("addVolume.confirmBody", {
-                  number: draft?.number ?? "",
-                  title: draft?.title_th || draft?.title_en || "",
-                })}
-              </p>
-            </div>
+      {confirmOpen && typeof document !== "undefined"
+        ? createPortal(
+            <div className={`${fullScreenModalBackdropClassName} z-60`}>
+              <div className={`${modalPanelClassName} max-w-sm`}>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                    {t("addVolume.confirmEyebrow")}
+                  </p>
+                  <h3 className="text-lg font-semibold tracking-[-0.03em] text-stone-950">
+                    {t("addVolume.confirmTitle")}
+                  </h3>
+                  <p className="text-sm leading-6 text-stone-600">
+                    {t("addVolume.confirmBody", {
+                      number: draft?.number ?? "",
+                      title: draft?.title_th || draft?.title_en || "",
+                    })}
+                  </p>
+                </div>
 
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => setConfirmOpen(false)}
-                className={secondaryButtonClassName}>
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={handleConfirmSave}
-                className={primaryButtonClassName}>
-                {submitting ? t("common.saving") : t("addVolume.confirmAction")}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      ) : null}
+                <div className="mt-5 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setConfirmOpen(false)}
+                    className={secondaryButtonClassName}>
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={handleConfirmSave}
+                    className={primaryButtonClassName}>
+                    {submitting
+                      ? t("common.saving")
+                      : t("addVolume.confirmAction")}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
 
       {snackbar ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-70 flex justify-center px-4">
