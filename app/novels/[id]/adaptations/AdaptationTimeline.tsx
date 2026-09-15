@@ -39,6 +39,7 @@ import { normalizeAdaptation } from "@/libs/search/normalize";
 import AdaptationFormFields, {
   type AdaptationFormState,
 } from "./AdaptationFormFields";
+import AdaptationImageModal from "./AdaptationImageModal";
 
 const emptyForm = (volumeId = "", sortOrder = "1"): AdaptationFormState => ({
   volume_id: volumeId,
@@ -344,7 +345,9 @@ export default function AdaptationTimeline({
                           key={item.id}
                           className="py-4 first:pt-0 last:pb-0">
                           <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
+                            <div className="flex min-w-0 items-start gap-3">
+                              <AdaptationImageModal adaptation={item} />
+                              <div className="min-w-0">
                               <p className="font-medium text-stone-900">
                                 {item.entry_type} {item.entry_number} ·{" "}
                                 {item.title}
@@ -363,6 +366,7 @@ export default function AdaptationTimeline({
                                   {t("adaptations.source")}
                                 </a>
                               ) : null}
+                              </div>
                             </div>
                             {isAdmin ? (
                               <div className="flex gap-1">
