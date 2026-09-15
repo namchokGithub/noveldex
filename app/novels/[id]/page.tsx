@@ -95,82 +95,88 @@ export default async function NovelPage({
               </div>
             </section>
 
-            <section className={cardClassName}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                <T k="common.overview" />
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusColorClassNames[novel.status]}`}>
-                  <T k={`status.${novel.status}` as const} />
-                </span>
-                {novel.author ? <span className={chipClassName}>{novel.author}</span> : null}
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-                <div className="rounded-2xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200/70 sm:px-4 sm:py-3">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-stone-400 sm:text-[11px] sm:tracking-[0.22em]"><T k="novel.volumes" /></p>
-                  <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">{volumes.summary.total_volumes}</p>
-                </div>
-                <div className="rounded-2xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200/70 sm:px-4 sm:py-3">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-stone-400 sm:text-[11px] sm:tracking-[0.22em]"><T k="novel.chapters" /></p>
-                  <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">{totalChapters}</p>
-                </div>
-                <div className="rounded-2xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200/70 sm:px-4 sm:py-3">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-stone-400 sm:text-[11px] sm:tracking-[0.22em]"><T k="novel.read" /></p>
-                  <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">{readCount}</p>
-                </div>
-              </div>
-            </section>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:items-stretch">
+              <aside className="space-y-4">
+                <section className={cardClassName}>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                    <T k="common.overview" />
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusColorClassNames[novel.status]}`}>
+                      <T k={`status.${novel.status}` as const} />
+                    </span>
+                    {novel.author ? <span className={chipClassName}>{novel.author}</span> : null}
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-1">
+                    <div className="rounded-2xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200/70 sm:px-4 sm:py-3">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-stone-400 sm:text-[11px] sm:tracking-[0.22em]"><T k="novel.volumes" /></p>
+                      <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">{volumes.summary.total_volumes}</p>
+                    </div>
+                    <div className="rounded-2xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200/70 sm:px-4 sm:py-3">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-stone-400 sm:text-[11px] sm:tracking-[0.22em]"><T k="novel.chapters" /></p>
+                      <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">{totalChapters}</p>
+                    </div>
+                    <div className="rounded-2xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200/70 sm:px-4 sm:py-3">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-stone-400 sm:text-[11px] sm:tracking-[0.22em]"><T k="novel.read" /></p>
+                      <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">{readCount}</p>
+                    </div>
+                  </div>
+                </section>
 
-            <section className={mutedCardClassName}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                <T k="novel.explore" />
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
-                <Link
-                  href={`/novels/${id}/characters`}
-                  className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
-                  <p className="text-sm font-semibold text-stone-900">
-                    <T k="novel.characters" />
+                <section className={mutedCardClassName}>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                    <T k="novel.explore" />
                   </p>
-                  <p className="mt-1 hidden text-sm text-stone-500 sm:block">
-                    <T k="novel.trackedCast" values={{ count: characters.length }} />
-                  </p>
-                </Link>
-                <Link
-                  href={`/novels/${id}/timeline`}
-                  className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
-                  <p className="text-sm font-semibold text-stone-900">
-                    <T k="novel.timeline" />
-                  </p>
-                  <p className="mt-1 hidden text-sm text-stone-500 sm:block">
-                    <T k="novel.timelineHelp" />
-                  </p>
-                </Link>
-                <Link href={`/novels/${id}/adaptations`} className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
-                  <p className="text-sm font-semibold text-stone-900"><T k="novel.adaptations" /></p>
-                  <p className="mt-1 hidden text-sm text-stone-500 sm:block"><T k="novel.adaptationsHelp" /></p>
-                </Link>
-              </div>
-            </section>
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-1">
+                    <Link
+                      href={`/novels/${id}/characters`}
+                      className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
+                      <p className="text-sm font-semibold text-stone-900">
+                        <T k="novel.characters" />
+                      </p>
+                      <p className="mt-1 hidden text-sm text-stone-500 sm:block">
+                        <T k="novel.trackedCast" values={{ count: characters.length }} />
+                      </p>
+                    </Link>
+                    <Link
+                      href={`/novels/${id}/timeline`}
+                      className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
+                      <p className="text-sm font-semibold text-stone-900">
+                        <T k="novel.timeline" />
+                      </p>
+                      <p className="mt-1 hidden text-sm text-stone-500 sm:block">
+                        <T k="novel.timelineHelp" />
+                      </p>
+                    </Link>
+                    <Link href={`/novels/${id}/adaptations`} className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
+                      <p className="text-sm font-semibold text-stone-900"><T k="novel.adaptations" /></p>
+                      <p className="mt-1 hidden text-sm text-stone-500 sm:block"><T k="novel.adaptationsHelp" /></p>
+                    </Link>
+                  </div>
+                </section>
+              </aside>
 
-            <VolumeManager
-              novelId={id}
-              volumes={volumes.items.map((volume) => ({
-                id: volume.id,
-                novel_id: volume.novel_id,
-                number: volume.number,
-                title: volume.title,
-                title_en: volume.title_en,
-                title_th: volume.title_th,
-                description: volume.description,
-                chapter_count: volume.chapter_count,
-                read_count: volume.read_count,
-                created_at: volume.created_at,
-                updated_at: volume.updated_at,
-                chapterCount: volume.chapter_count,
-              }))}
-              pagination={volumes.pagination}
-            />
+              <div className="min-w-0 self-stretch">
+                <VolumeManager
+                  novelId={id}
+                  volumes={volumes.items.map((volume) => ({
+                    id: volume.id,
+                    novel_id: volume.novel_id,
+                    number: volume.number,
+                    title: volume.title,
+                    title_en: volume.title_en,
+                    title_th: volume.title_th,
+                    description: volume.description,
+                    chapter_count: volume.chapter_count,
+                    read_count: volume.read_count,
+                    created_at: volume.created_at,
+                    updated_at: volume.updated_at,
+                    chapterCount: volume.chapter_count,
+                  }))}
+                  pagination={volumes.pagination}
+                />
+              </div>
+            </div>
         </div>
         <BackToTopButton anchorId="novel-back-link" />
       </div>

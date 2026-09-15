@@ -235,7 +235,7 @@ export default function VolumeManager({
   }
 
   return (
-    <div className={listClassName}>
+    <div className={`${listClassName} flex h-full flex-col`}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
           {t("common.showing", {
@@ -271,7 +271,7 @@ export default function VolumeManager({
         </div>
       </div>
 
-      <div className="max-h-105 overflow-y-auto">
+      <div className="lg:h-[535px] lg:overflow-y-auto">
         <ul className="divide-y divide-stone-200">
           {volumes.map((volume) => (
             <li key={volume.id} className="px-4 py-4">
@@ -380,7 +380,7 @@ export default function VolumeManager({
         </ul>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 px-4 py-3">
+      <div className="mt-0 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 px-4 py-3 lg:mt-auto">
         <p className="text-sm text-stone-500">
           {t("common.pageOf", {
             page: pagination.page,
