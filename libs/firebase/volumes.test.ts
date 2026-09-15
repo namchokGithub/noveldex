@@ -8,7 +8,11 @@ import {
   getVolumes,
   updateVolume,
 } from "./volumes";
-import { clearFirestoreEmulator, connectFirestoreTestEmulator } from "./testUtils";
+import { createAdaptation, getAdaptationsByVolume } from "./adaptations";
+import {
+  clearFirestoreEmulator,
+  connectFirestoreTestEmulator,
+} from "./testUtils";
 
 beforeAll(async () => {
   await connectFirestoreTestEmulator();
@@ -47,7 +51,10 @@ async function seedChapter(
 
 describe("volumes", () => {
   it("creates a volume with generated id, timestamps, and zeroed counts", async () => {
-    const volume = await createVolume("novel-1", { number: 1, title: "Volume One" });
+    const volume = await createVolume("novel-1", {
+      number: 1,
+      title: "Volume One",
+    });
 
     expect(volume.id).toBeTruthy();
     expect(volume.novel_id).toBe("novel-1");
@@ -59,7 +66,10 @@ describe("volumes", () => {
   });
 
   it("computes chapter_count and read_count for a single volume from its chapters", async () => {
-    const volume = await createVolume("novel-1", { number: 1, title: "Volume One" });
+    const volume = await createVolume("novel-1", {
+      number: 1,
+      title: "Volume One",
+    });
     await seedChapter("novel-1", volume.id, "ch-1", 1, true);
     await seedChapter("novel-1", volume.id, "ch-2", 2, false);
 
@@ -72,7 +82,10 @@ describe("volumes", () => {
   it("lists volumes paginated, ordered by number, with a novel-wide summary", async () => {
     for (let n = 1; n <= 7; n += 1) {
       // eslint-disable-next-line no-await-in-loop
-      const v = await createVolume("novel-1", { number: n, title: `Volume ${n}` });
+      const v = await createVolume("novel-1", {
+        number: n,
+        title: `Volume ${n}`,
+      });
       // eslint-disable-next-line no-await-in-loop
       await seedChapter("novel-1", v.id, `ch-${n}`, n, n % 2 === 0);
     }
@@ -110,7 +123,10 @@ describe("volumes", () => {
   });
 
   it("updates a volume's number and title", async () => {
-    const volume = await createVolume("novel-1", { number: 1, title: "Old Title" });
+    const volume = await createVolume("novel-1", {
+      number: 1,
+      title: "Old Title",
+    });
 
     const updated = await updateVolume("novel-1", volume.id, {
       number: 2,
@@ -145,7 +161,11 @@ describe("volumes", () => {
 
   it("rejects a volume description longer than 500 characters", async () => {
     await expect(
-      createVolume("novel-1", { number: 1, title: "Volume One", description: "x".repeat(501) }),
+      createVolume("novel-1", {
+        number: 1,
+        title: "Volume One",
+        description: "x".repeat(501),
+      }),
     ).rejects.toThrow("description must be 500 characters or fewer");
   });
 
@@ -154,18 +174,25 @@ describe("volumes", () => {
   });
 
   it("deletes a volume and cascades to its chapters and their number markers", async () => {
-    const volume = await createVolume("novel-1", { number: 1, title: "Volume One" });
+    const volume = await createVolume("novel-1", {
+      number: 1,
+      title: "Volume One",
+    });
     await seedChapter("novel-1", volume.id, "ch-1", 1, false);
     await seedChapter("novel-1", volume.id, "ch-2", 2, false);
 
     await deleteVolume("novel-1", volume.id);
 
-    expect((await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "1"))).exists()).toBe(
-      false,
-    );
-    expect((await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "2"))).exists()).toBe(
-      false,
-    );
+    expect(
+      (
+        await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "1"))
+      ).exists(),
+    ).toBe(false);
+    expect(
+      (
+        await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "2"))
+      ).exists(),
+    ).toBe(false);
 
     await expect(getVolume("novel-1", volume.id)).rejects.toThrow();
     const remaining = await getVolumes("novel-1");
@@ -174,5 +201,24 @@ describe("volumes", () => {
       total_chapters: 0,
       read_count: 0,
     });
+  });
+
+  it("deletes adaptations before deleting their volume", async () => {
+    const volume = await createVolume("novel-1", {
+      number: 1,
+      title: "Volume One",
+    });
+    await createAdaptation("novel-1", volume.id, {
+      medium: "anime",
+      group_label: "Season 1",
+      group_sort_order: 1,
+      entry_type: "episode",
+      entry_number: 1,
+      title: "Episode 1",
+    });
+
+    await deleteVolume("novel-1", volume.id);
+
+    expect(await getAdaptationsByVolume("novel-1", volume.id)).toEqual([]);
   });
 });

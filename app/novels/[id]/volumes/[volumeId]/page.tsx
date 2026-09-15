@@ -4,6 +4,7 @@ import AddChapterForm from "../../AddChapterForm";
 import BackToTopButton from "../../../BackToTopButton";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
+import AdaptationSection from "./AdaptationSection";
 import LocalizedVolumeTitle from "@/components/volumes/LocalizedVolumeTitle";
 import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
 import { T } from "@/components/i18n/I18nProvider";
@@ -13,7 +14,7 @@ import {
   DashboardPage,
   SectionHeading,
 } from "@/app/novels/ui";
-import { getChaptersByVolume, getNovel, getTags, getVolume } from "@/libs/api";
+import { getAdaptationsByVolume, getChaptersByVolume, getNovel, getTags, getVolume } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 
 export default async function VolumePage({
@@ -26,13 +27,15 @@ export default async function VolumePage({
   let volume: Awaited<ReturnType<typeof getVolume>>;
   let chapters: Awaited<ReturnType<typeof getChaptersByVolume>>;
   let tags: Awaited<ReturnType<typeof getTags>>;
+  let adaptations: Awaited<ReturnType<typeof getAdaptationsByVolume>>;
 
   try {
-    [novel, volume, chapters, tags] = await Promise.all([
+    [novel, volume, chapters, tags, adaptations] = await Promise.all([
       getNovel(id),
       getVolume(id, volumeId),
       getChaptersByVolume(id, volumeId),
       getTags(id),
+      getAdaptationsByVolume(id, volumeId),
     ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
@@ -80,6 +83,7 @@ export default async function VolumePage({
           initialDescription={volume.description}
           collapsedLines={3}
         />
+        <AdaptationSection novelId={id} volumeId={volumeId} adaptations={adaptations} />
 
         <ChapterListWithFilters
           novelId={id}
