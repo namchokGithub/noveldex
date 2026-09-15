@@ -1,8 +1,9 @@
-import { doc, getDoc } from "firebase/firestore/lite";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import {
   createAdaptation,
+  getAdaptationsByChapter,
   getAdaptationsForNovel,
   reorderAdaptations,
 } from "./adaptations";
@@ -82,6 +83,49 @@ describe("adaptations", () => {
       "Episode 2",
       "Manga",
     ]);
+  });
+
+  it("lists only adaptations mapped to a chapter in the same volume", async () => {
+    const linkedRef = doc(
+      db,
+      "novels",
+      "novel-1",
+      "volumes",
+      "volume-1",
+      "adaptations",
+      "linked",
+    );
+    const unrelatedRef = doc(
+      db,
+      "novels",
+      "novel-1",
+      "volumes",
+      "volume-1",
+      "adaptations",
+      "unrelated",
+    );
+    const base = {
+      ...payload,
+      novel_id: "novel-1",
+      volume_id: "volume-1",
+      source_url: null,
+      source_img_url: null,
+      description: "",
+      notes: [],
+      sort_order: 1,
+      created_at: Timestamp.now(),
+      updated_at: Timestamp.now(),
+    };
+    await setDoc(linkedRef, { ...base, adapted_chapter_ids: ["chapter-1"] });
+    await setDoc(unrelatedRef, { ...base, adapted_chapter_ids: ["chapter-2"] });
+
+    const adaptations = await getAdaptationsByChapter(
+      "novel-1",
+      "volume-1",
+      "chapter-1",
+    );
+
+    expect(adaptations.map((adaptation) => adaptation.id)).toEqual(["linked"]);
   });
 
   it("reorders only sort_order within the selected volume", async () => {

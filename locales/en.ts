@@ -165,6 +165,15 @@ const en = {
   "adaptations.viewAllNotes": "View all {count} notes",
   "adaptations.deleteNoteTitle": "Delete this note?",
   "adaptations.deleteNoteBody": "This note will be permanently deleted.",
+  "chapter.related": "Related records",
+  "chapter.linkedEntities": "Story entities",
+  "chapter.timelineEvents": "Timeline events",
+  "chapter.adaptationLinks": "Adaptations",
+  "chapter.viewTimeline": "View all {count} more events",
+  "chapter.viewAdaptations": "View all {count} more adaptations",
+  "volume.overview": "Overview",
+  "volume.notes": "Notes",
+  "volume.events": "Timeline events",
 
   "novels.dashboard": "Dashboard",
   "novels.libraryTitle": "Novelndex Library",
@@ -375,6 +384,7 @@ const en = {
   "character.aliases": "Aliases",
   "character.noDescription": "No description.",
   "character.appearsIn": "Appears in ({count})",
+  "character.relatedNotes": "Related notes",
   "character.saveSuccess": "Character updated successfully.",
 
   "entities.eyebrow": "Entities",

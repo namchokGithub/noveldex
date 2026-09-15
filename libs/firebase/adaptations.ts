@@ -164,7 +164,8 @@ function characterFields(references: ReferenceOccurrence[]) {
       return occurrence.token.reference.entityType === "character"
         ? [occurrence.token.reference.label]
         : [];
-    return occurrence.token.typed === null || occurrence.token.typed === "character"
+    return occurrence.token.typed === null ||
+      occurrence.token.typed === "character"
       ? [occurrence.token.label]
       : [];
   });
@@ -298,6 +299,22 @@ export async function getAdaptationsByVolume(
   volumeId: string,
 ): Promise<Adaptation[]> {
   const snapshot = await getDocs(adaptationsCol(novelId, volumeId));
+  return snapshot.docs
+    .map((item) => toAdaptation(item.id, item.data() as AdaptationDoc))
+    .sort(compareAdaptations);
+}
+
+export async function getAdaptationsByChapter(
+  novelId: string,
+  volumeId: string,
+  chapterId: string,
+): Promise<Adaptation[]> {
+  const snapshot = await getDocs(
+    query(
+      adaptationsCol(novelId, volumeId),
+      where("adapted_chapter_ids", "array-contains", chapterId),
+    ),
+  );
   return snapshot.docs
     .map((item) => toAdaptation(item.id, item.data() as AdaptationDoc))
     .sort(compareAdaptations);

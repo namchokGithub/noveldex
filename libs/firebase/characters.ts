@@ -24,6 +24,7 @@ import { ResourceNotFoundError } from "@/libs/errors";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getCharacterRoles } from "./characterRoles";
+import { relatedNotesForCharacter } from "@/libs/characterRelatedNotes";
 
 interface CharacterDoc {
   name: string;
@@ -65,9 +66,19 @@ async function characterChapters(
       sort_order?: number;
       kind?: ChapterKind;
       custom_label?: string | null;
-      title: string;
+      title?: string;
+      title_en?: string;
+      title_th?: string;
+      notes?: Array<{
+        id: string;
+        content: string;
+        character_ids?: string[];
+        created_at: Timestamp;
+      updated_at: Timestamp;
+      }>;
       read_at: Timestamp | null;
     };
+    const notesById = new Map((data.notes ?? []).map((note) => [note.id, note]));
     return {
       id: d.id,
       volume_id: data.volume_id,
@@ -75,7 +86,16 @@ async function characterChapters(
       sort_order: data.sort_order ?? data.number ?? 0,
       kind: data.kind ?? "chapter",
       custom_label: data.custom_label ?? null,
-      title: data.title,
+      title: data.title_en ?? data.title ?? "",
+      title_en: data.title_en ?? data.title ?? "",
+      title_th: data.title_th ?? "",
+      notes: relatedNotesForCharacter([{ id: d.id, notes: data.notes ?? [] }], characterId)
+        .flatMap(({ note }) => {
+          const source = notesById.get(note.id);
+          return source
+            ? [{ ...note, created_at: tsToIso(source.created_at), updated_at: tsToIso(source.updated_at) }]
+            : [];
+        }),
       read_at: data.read_at ? tsToIso(data.read_at) : null,
     };
   });

@@ -2,16 +2,10 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Phase 6: Polish
+## Phase 7: Cross-reference Views (remaining)
 
-- [ ] Production readiness checklist
-
-## Phase 7: Cross-reference Views
-
-- [ ] Character detail: show related notes, timeline events, adaptations
+- [ ] Character detail: show related timeline events and adaptations
 - [ ] Entity detail: show related notes, timeline events, adaptations
-- [ ] Volume detail: show chapters, notes count, events, adaptations
-- [ ] Chapter detail: show linked entities, timeline events, adaptation links
 - [ ] Adaptation detail: show related volume/chapter/entities
 
 ## Future: Adaptation Comparison

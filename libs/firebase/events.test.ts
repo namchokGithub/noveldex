@@ -1,7 +1,13 @@
 import { doc, setDoc, Timestamp, updateDoc } from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
-import { createEvent, deleteEvent, getEvents, updateEvent } from "./events";
+import {
+  createEvent,
+  deleteEvent,
+  getEvents,
+  getEventsByChapter,
+  updateEvent,
+} from "./events";
 import {
   clearFirestoreEmulator,
   connectFirestoreTestEmulator,
@@ -136,6 +142,31 @@ describe("events", () => {
     const events = await getEvents("novel-1");
 
     expect(events.map((e) => e.title)).toEqual(["A", "B"]);
+  });
+
+  it("lists only events linked to a chapter", async () => {
+    await seedChapter("novel-1", "vol-1", "chapter-1", 1, "First");
+    await seedChapter("novel-1", "vol-1", "chapter-2", 2, "Second");
+    await createEvent("novel-1", {
+      title: "Linked",
+      description: "",
+      story_date: "",
+      sort_order: 1,
+      chapter_id: "chapter-1",
+      chapter_volume_id: "vol-1",
+    });
+    await createEvent("novel-1", {
+      title: "Elsewhere",
+      description: "",
+      story_date: "",
+      sort_order: 2,
+      chapter_id: "chapter-2",
+      chapter_volume_id: "vol-1",
+    });
+
+    const events = await getEventsByChapter("novel-1", "chapter-1");
+
+    expect(events.map((event) => event.title)).toEqual(["Linked"]);
   });
 
   it("resolves character_ids to character_names via getEvents", async () => {

@@ -71,6 +71,8 @@ export type {
 // Events domain via Firestore
 export {
   getEvents,
+  getEventsByChapter,
+  getEventsByVolume,
   createEvent,
   updateEvent,
   deleteEvent,
@@ -79,6 +81,7 @@ export type { EventPayload } from "@/libs/firebase/events";
 // Adaptations domain via Firestore
 export {
   getAdaptationsByVolume,
+  getAdaptationsByChapter,
   getAdaptation,
   getAdaptationsForNovel,
   createAdaptation,

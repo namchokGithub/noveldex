@@ -5,6 +5,7 @@ import BackToTopButton from "../../../BackToTopButton";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import AdaptationSection from "./AdaptationSection";
+import VolumeOverview from "./VolumeOverview";
 import LocalizedVolumeTitle from "@/components/volumes/LocalizedVolumeTitle";
 import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
 import { T } from "@/components/i18n/I18nProvider";
@@ -17,6 +18,7 @@ import {
 import {
   getAdaptationsByVolume,
   getChaptersByVolume,
+  getEventsByVolume,
   getNovel,
   getTags,
   getVolumeMetadata,
@@ -34,14 +36,16 @@ export default async function VolumePage({
   let chapters: Awaited<ReturnType<typeof getChaptersByVolume>>;
   let tags: Awaited<ReturnType<typeof getTags>>;
   let adaptations: Awaited<ReturnType<typeof getAdaptationsByVolume>>;
+  let events: Awaited<ReturnType<typeof getEventsByVolume>>;
 
   try {
-    [novel, volume, chapters, tags, adaptations] = await Promise.all([
+    [novel, volume, chapters, tags, adaptations, events] = await Promise.all([
       getNovel(id),
       getVolumeMetadata(id, volumeId),
       getChaptersByVolume(id, volumeId),
       getTags(id),
       getAdaptationsByVolume(id, volumeId),
+      getEventsByVolume(id, volumeId),
     ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
@@ -88,6 +92,12 @@ export default async function VolumePage({
           volumeId={volume.id}
           initialDescription={volume.description}
           collapsedLines={3}
+        />
+        <VolumeOverview
+          novelId={id}
+          chapters={chapters}
+          events={events}
+          adaptations={adaptations}
         />
         <AdaptationSection
           novelId={id}

@@ -34,13 +34,21 @@ async function seedChapterWithCharacter(
   chapterId: string,
   number: number,
   characterId: string,
+  notes: Array<{ id: string; content: string; character_ids: string[] }> = [],
 ) {
   await setDoc(
     doc(db, "novels", novelId, "volumes", "vol-1", "chapters", chapterId),
     {
       number,
       title: `Chapter ${number}`,
+      title_en: `Chapter ${number}`,
+      title_th: "",
       summary: "",
+      notes: notes.map((note) => ({
+        ...note,
+        created_at: Timestamp.now(),
+        updated_at: Timestamp.now(),
+      })),
       read_at: null,
       novel_id: novelId,
       volume_id: "vol-1",
@@ -113,6 +121,23 @@ describe("characters", () => {
 
     expect(fetched.chapter_count).toBe(2);
     expect(fetched.chapters?.map((c) => c.number)).toEqual([1, 2]);
+  });
+
+  it("includes only notes that reference the character in chapter appearances", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Alice",
+      role: "minor",
+      description: "",
+      aliases: [],
+    });
+    await seedChapterWithCharacter("novel-1", "ch-1", 1, character.id, [
+      { id: "alice-note", content: "Alice arrives.", character_ids: [character.id] },
+      { id: "other-note", content: "Someone else leaves.", character_ids: ["other"] },
+    ]);
+
+    const fetched = await getCharacter("novel-1", character.id);
+
+    expect(fetched.chapters?.[0]?.notes?.map((note) => note.id)).toEqual(["alice-note"]);
   });
 
   it("scopes chapter hydration to the character's own novel via the novel_id filter", async () => {

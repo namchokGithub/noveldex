@@ -10,6 +10,7 @@ import {
   query,
   Timestamp,
   updateDoc,
+  where,
 } from "firebase/firestore/lite";
 import type { NovelEvent } from "@/app/types";
 import { firestoreEntityLookup } from "@/libs/entities/firestoreLookup";
@@ -241,6 +242,40 @@ export async function getEvents(
   return snapshot.docs.map((d) =>
     toEvent(novelId, d.id, d.data() as EventDoc, nameById),
   );
+}
+
+export async function getEventsByChapter(
+  novelId: string,
+  chapterId: string,
+): Promise<NovelEvent[]> {
+  const snapshot = await getDocs(
+    query(eventsCol(novelId), where("chapter_id", "==", chapterId)),
+  );
+  return snapshot.docs
+    .map((item) =>
+      toEvent(novelId, item.id, item.data() as EventDoc, new Map()),
+    )
+    .sort(
+      (left, right) =>
+        left.sort_order - right.sort_order || left.id.localeCompare(right.id),
+    );
+}
+
+export async function getEventsByVolume(
+  novelId: string,
+  volumeId: string,
+): Promise<NovelEvent[]> {
+  const snapshot = await getDocs(
+    query(eventsCol(novelId), where("chapter_volume_id", "==", volumeId)),
+  );
+  return snapshot.docs
+    .map((item) =>
+      toEvent(novelId, item.id, item.data() as EventDoc, new Map()),
+    )
+    .sort(
+      (left, right) =>
+        left.sort_order - right.sort_order || left.id.localeCompare(right.id),
+    );
 }
 
 export async function deleteEvent(

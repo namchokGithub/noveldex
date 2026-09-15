@@ -131,3 +131,9 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Error handling + user-facing messages — localized mutation feedback, accessible Snackbar announcements, retryable route failures, and typed not-found handling
 - [x] Guest/Admin UX polish — read-only guest cue, guest entity detail view, and gated admin actions
 - [x] Mobile-responsive layout — compact header and lists, responsive overview/detail layouts, scroll-to-top, viewport-safe forms/modals, and mobile-safe Timeline/editor actions
+
+## Phase 7: Cross-reference Views (partial — remaining items still in PROGRESS.md)
+
+- [x] Chapter detail — linked story entities, timeline events, and adaptations; event/adaptation previews show three items with a link to the complete novel-wide view
+- [x] Volume detail — overview summary of regular chapters, embedded notes, timeline events, and adaptations in the same volume
+- [x] Character detail — related note previews from existing chapter appearances, filtered by persisted note-level `character_ids` and deep-linked to the note
