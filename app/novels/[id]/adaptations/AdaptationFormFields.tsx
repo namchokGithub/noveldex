@@ -1,6 +1,10 @@
 "use client";
 
-import { ADAPTATION_ENTRY_TYPES, ADAPTATION_MEDIA } from "@/app/types";
+import {
+  ADAPTATION_ENTRY_TYPES,
+  ADAPTATION_MEDIA,
+  type ChapterSummary,
+} from "@/app/types";
 import {
   inputClassName,
   smallLabelClassName,
@@ -9,6 +13,8 @@ import {
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { localizedVolumeTitle } from "@/libs/volumeTitle";
 import type { VolumeSearchSource } from "@/libs/firebase/volumes";
+import { formatChapterLabel } from "@/libs/chapterLabel";
+import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 
 export type AdaptationFormState = {
   volume_id: string;
@@ -22,20 +28,27 @@ export type AdaptationFormState = {
   source_img_url: string;
   description: string;
   sort_order: string;
+  adapted_chapter_ids: string[];
 };
 
 export default function AdaptationFormFields({
   form,
   onChange,
   volumes,
+  chapters,
   volumeLocked = false,
 }: {
   form: AdaptationFormState;
   onChange: (next: AdaptationFormState) => void;
   volumes: VolumeSearchSource[];
+  chapters: ChapterSummary[];
   volumeLocked?: boolean;
 }) {
   const { language, t } = useI18n();
+  const chapterLabels = useChapterKindLabels();
+  const volumeChapters = chapters.filter(
+    (chapter) => chapter.volume_id === form.volume_id,
+  );
   const set =
     (field: keyof AdaptationFormState) =>
     (
@@ -136,6 +149,43 @@ export default function AdaptationFormFields({
           required
         />
       </label>
+      <fieldset className="sm:col-span-2">
+        <legend className={smallLabelClassName}>
+          {t("adaptations.field.chapters")}
+        </legend>
+        {volumeChapters.length === 0 ? (
+          <p className="mt-2 text-sm text-stone-500">
+            {t("adaptations.noChapters")}
+          </p>
+        ) : (
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {volumeChapters.map((chapter) => {
+              const checked = form.adapted_chapter_ids.includes(chapter.id);
+              return (
+                <label
+                  key={chapter.id}
+                  className="flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() =>
+                      onChange({
+                        ...form,
+                        adapted_chapter_ids: checked
+                          ? form.adapted_chapter_ids.filter(
+                              (id) => id !== chapter.id,
+                            )
+                          : [...form.adapted_chapter_ids, chapter.id],
+                      })
+                    }
+                  />
+                  {formatChapterLabel(chapter, chapterLabels)} · {chapter.title}
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </fieldset>
       <label>
         <span className={smallLabelClassName}>
           {t("adaptations.field.sortOrder")}

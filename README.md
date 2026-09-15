@@ -14,7 +14,7 @@ Novelndex is a calm workspace for mapping a novel as you read or write it: volum
 - Volume-first chapter management with reading progress and special chapter entries
 - Notes, character/entity references, tags, and scoped command-palette search
 - Story timeline ordered by volume, chapter, page, and event position
-- Adaptation tracking for anime, manga, movies, and more — including source links and images
+- Adaptation tracking for anime, manga, movies, and more — source links/images, notes, and mapped novel chapters
 - Public read-only guest mode with authenticated admin editing
 
 ## Stack
@@ -70,7 +70,7 @@ Novelndex talks directly to Firestore from the Next.js application. There is no 
 novels/{novelId}
 ├── volumes/{volumeId}
 │   ├── chapters/{chapterId}
-│   └── adaptations/{adaptationId}
+│   └── adaptations/{adaptationId}  # embedded notes[] and adapted_chapter_ids[]
 ├── characters/{characterId}
 ├── entities/{entityId}
 ├── events/{eventId}
@@ -80,7 +80,7 @@ novels/{novelId}
 character_roles/{roleId}
 ```
 
-Adaptations duplicate `novel_id` and `volume_id` for collection-group reads and search routing; their parent volume path remains authoritative. Firestore rules and index configuration live in [`firestore.rules`](firestore.rules) and [`firestore.indexes.json`](firestore.indexes.json).
+Adaptations duplicate `novel_id` and `volume_id` for collection-group reads and search routing; their parent volume path remains authoritative. Their embedded `notes[]` records story-reference occurrences, and `adapted_chapter_ids[]` can point only to chapters in that parent volume. Firestore rules and index configuration live in [`firestore.rules`](firestore.rules) and [`firestore.indexes.json`](firestore.indexes.json).
 
 ### Reading and story order
 

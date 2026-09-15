@@ -20,8 +20,15 @@ import {
   type AdaptationEntryType,
   type AdaptationMedium,
   type AdaptationOrderEntry,
+  type ChapterNote,
 } from "@/app/types";
 import { compareAdaptations } from "@/libs/adaptations/order";
+import { getChaptersByVolume } from "@/libs/firebase/chapters";
+import { ResourceNotFoundError } from "@/libs/errors";
+import { firestoreEntityLookup } from "@/libs/entities/firestoreLookup";
+import { parseEntityId } from "@/libs/entities/keys";
+import { reconcileReferenceOccurrences } from "@/libs/entities/reconcile";
+import type { ReferenceOccurrence } from "@/libs/entities/references";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 
@@ -37,7 +44,19 @@ interface AdaptationDoc {
   source_url: string | null;
   source_img_url: string | null;
   description: string;
+  notes?: AdaptationNoteDoc[];
+  adapted_chapter_ids?: string[];
   sort_order: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+interface AdaptationNoteDoc {
+  id: string;
+  content: string;
+  character_ids?: string[];
+  mentioned_character_names?: string[];
+  references?: ReferenceOccurrence[];
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -53,9 +72,13 @@ export interface AdaptationCreatePayload {
   source_img_url?: string | null;
   description?: string;
   sort_order?: number;
+  adapted_chapter_ids?: string[];
 }
 
-export type AdaptationPayload = Partial<AdaptationCreatePayload>;
+export type AdaptationPayload = Partial<AdaptationCreatePayload> & {
+  notes?: ChapterNote[];
+  adapted_chapter_ids?: string[];
+};
 
 const MAX_DESCRIPTION_LENGTH = 500;
 const BATCH_CHUNK_SIZE = 450;
@@ -94,10 +117,86 @@ function toAdaptation(id: string, data: AdaptationDoc): Adaptation {
     source_url: data.source_url ?? null,
     source_img_url: data.source_img_url ?? null,
     description: data.description ?? "",
+    notes: (data.notes ?? [])
+      .map((note) => ({
+        id: note.id,
+        content: note.content,
+        character_ids: note.character_ids ?? [],
+        mentioned_character_names: note.mentioned_character_names ?? [],
+        references: note.references ?? [],
+        created_at: tsToIso(note.created_at),
+        updated_at: tsToIso(note.updated_at),
+      }))
+      .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    adapted_chapter_ids: data.adapted_chapter_ids ?? [],
     sort_order: data.sort_order,
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
   };
+}
+
+function notesToDoc(notes: ChapterNote[]): AdaptationNoteDoc[] {
+  return [...notes]
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map((note) => ({
+      id: note.id,
+      content: note.content,
+      character_ids: note.character_ids ?? [],
+      mentioned_character_names: note.mentioned_character_names ?? [],
+      references: note.references ?? [],
+      created_at: Timestamp.fromDate(new Date(note.created_at)),
+      updated_at: Timestamp.fromDate(new Date(note.updated_at)),
+    }));
+}
+
+function characterFields(references: ReferenceOccurrence[]) {
+  const character_ids = references.flatMap((occurrence) => {
+    if (
+      occurrence.token.status !== "resolved" ||
+      occurrence.token.reference.entityType !== "character"
+    )
+      return [];
+    const parsed = parseEntityId(occurrence.token.reference.entityId);
+    return parsed ? [parsed.sourceRecordId] : [];
+  });
+  const mentioned_character_names = references.flatMap((occurrence) => {
+    if (occurrence.token.status === "resolved")
+      return occurrence.token.reference.entityType === "character"
+        ? [occurrence.token.reference.label]
+        : [];
+    return occurrence.token.typed === null || occurrence.token.typed === "character"
+      ? [occurrence.token.label]
+      : [];
+  });
+  return {
+    character_ids: [...new Set(character_ids)],
+    mentioned_character_names: [...new Set(mentioned_character_names)],
+  };
+}
+
+async function resolveNotes(
+  novelId: string,
+  notes: ChapterNote[],
+  previousById: Map<string, AdaptationNoteDoc>,
+): Promise<ChapterNote[]> {
+  const lookup = firestoreEntityLookup();
+  return Promise.all(
+    notes.map(async (note) => {
+      const previous = previousById.get(note.id);
+      const references = await reconcileReferenceOccurrences(
+        novelId,
+        note.content,
+        previous
+          ? {
+              content: previous.content,
+              occurrences: previous.references ?? [],
+            }
+          : null,
+        lookup,
+      );
+      return { ...note, references, ...characterFields(references) };
+    }),
+  );
 }
 
 function requiredText(value: string, field: string): string {
@@ -175,6 +274,25 @@ function validatePayload(payload: AdaptationPayload): AdaptationPayload {
   return validated;
 }
 
+async function validateChapterIds(
+  novelId: string,
+  volumeId: string,
+  chapterIds: string[],
+): Promise<string[]> {
+  if (!Array.isArray(chapterIds) || chapterIds.some((id) => !id)) {
+    throw new Error("adapted_chapter_ids must contain chapter ids");
+  }
+  const ids = [...new Set(chapterIds)];
+  if (!ids.length) return [];
+  const available = new Set(
+    (await getChaptersByVolume(novelId, volumeId)).map((chapter) => chapter.id),
+  );
+  if (ids.some((id) => !available.has(id))) {
+    throw new Error("adapted chapters must belong to this volume");
+  }
+  return ids;
+}
+
 export async function getAdaptationsByVolume(
   novelId: string,
   volumeId: string,
@@ -183,6 +301,16 @@ export async function getAdaptationsByVolume(
   return snapshot.docs
     .map((item) => toAdaptation(item.id, item.data() as AdaptationDoc))
     .sort(compareAdaptations);
+}
+
+export async function getAdaptation(
+  novelId: string,
+  volumeId: string,
+  adaptationId: string,
+): Promise<Adaptation> {
+  const snapshot = await getDoc(adaptationRef(novelId, volumeId, adaptationId));
+  if (!snapshot.exists()) throw new ResourceNotFoundError("adaptation");
+  return toAdaptation(snapshot.id, snapshot.data() as AdaptationDoc);
 }
 
 export async function getAdaptationsForNovel(
@@ -227,6 +355,12 @@ export async function createAdaptation(
       source_url: validated.source_url ?? null,
       source_img_url: validated.source_img_url ?? null,
       description: validated.description ?? "",
+      notes: [],
+      adapted_chapter_ids: await validateChapterIds(
+        novelId,
+        volumeId,
+        payload.adapted_chapter_ids ?? [],
+      ),
       sort_order,
     }),
   );
@@ -240,12 +374,29 @@ export async function updateAdaptation(
   adaptationId: string,
   payload: AdaptationPayload,
 ): Promise<Adaptation> {
-  const update = validatePayload(payload);
+  const update = validatePayload(payload) as Record<string, unknown>;
   const ref = adaptationRef(
     novelId,
     volumeId,
     adaptationId,
   ) as DocumentReference<AdaptationDoc, AdaptationDoc>;
+  if (payload.notes !== undefined) {
+    const previous = await getDoc(ref);
+    if (!previous.exists()) throw new Error("Request failed.");
+    const notes = await resolveNotes(
+      novelId,
+      payload.notes,
+      new Map((previous.data().notes ?? []).map((note) => [note.id, note])),
+    );
+    update.notes = notesToDoc(notes);
+  }
+  if (payload.adapted_chapter_ids !== undefined) {
+    update.adapted_chapter_ids = await validateChapterIds(
+      novelId,
+      volumeId,
+      payload.adapted_chapter_ids,
+    );
+  }
   await updateDoc(ref, withUpdateTimestamp(update));
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) throw new Error("Request failed.");

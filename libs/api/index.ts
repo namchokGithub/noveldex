@@ -54,6 +54,7 @@ export type { EventPayload } from "@/libs/firebase/events";
 // Adaptations domain via Firestore
 export {
   getAdaptationsByVolume,
+  getAdaptation,
   getAdaptationsForNovel,
   createAdaptation,
   updateAdaptation,

@@ -130,6 +130,8 @@ describe("search normalizers", () => {
       source_url: null,
       source_img_url: null,
       description: "A decisive episode.",
+      notes: [],
+      adapted_chapter_ids: [],
       sort_order: 2,
       created_at: "",
       updated_at: "",

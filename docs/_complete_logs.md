@@ -116,6 +116,8 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Volume detail Adaptations summary — shows the most recently updated entry, source thumbnail/full-image modal, and link to all adaptations
 - [x] Novel-wide `/novels/{novelId}/adaptations` page from Explore — volume filter; Volume → medium/group layout; inline admin CRUD and per-volume/group reorder; guest read-only access
 - [x] Adaptation search documents — title, medium, group, description, volume context, and `/adaptations#adaptation-{id}` deep links with incremental index updates
+- [x] Adaptation notes — embedded timestamped `notes[]` with persisted story references, a compact three-note timeline preview, and a dedicated full Notes editor with pagination and scroll-to-top
+- [x] Adaptation ↔ Chapter mapping — `adapted_chapter_ids` is validated against the owning volume, selected in the adaptation form, and rendered as Chapter detail links in the timeline
 
 ## Phase 6: Polish (partial — remaining items still in PROGRESS.md)
 

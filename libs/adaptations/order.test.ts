@@ -16,6 +16,8 @@ function adaptation(overrides: Partial<Adaptation>): Adaptation {
     source_url: null,
     source_img_url: null,
     description: "",
+    notes: [],
+    adapted_chapter_ids: [],
     sort_order: 1,
     created_at: "",
     updated_at: "",

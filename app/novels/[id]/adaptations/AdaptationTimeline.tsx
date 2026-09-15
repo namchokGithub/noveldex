@@ -7,6 +7,7 @@ import type {
   Adaptation,
   AdaptationEntryType,
   AdaptationMedium,
+  ChapterSummary,
 } from "@/app/types";
 import {
   backLinkClassName,
@@ -40,6 +41,9 @@ import AdaptationFormFields, {
   type AdaptationFormState,
 } from "./AdaptationFormFields";
 import AdaptationImageModal from "./AdaptationImageModal";
+import AdaptationNotesPreview from "./AdaptationNotesPreview";
+import { formatChapterLabel } from "@/libs/chapterLabel";
+import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 
 const emptyForm = (volumeId = "", sortOrder = "1"): AdaptationFormState => ({
   volume_id: volumeId,
@@ -53,6 +57,7 @@ const emptyForm = (volumeId = "", sortOrder = "1"): AdaptationFormState => ({
   source_img_url: "",
   description: "",
   sort_order: sortOrder,
+  adapted_chapter_ids: [],
 });
 const formFor = (item: Adaptation): AdaptationFormState => ({
   volume_id: item.volume_id,
@@ -66,6 +71,7 @@ const formFor = (item: Adaptation): AdaptationFormState => ({
   source_img_url: item.source_img_url ?? "",
   description: item.description,
   sort_order: String(item.sort_order),
+  adapted_chapter_ids: item.adapted_chapter_ids,
 });
 
 export default function AdaptationTimeline({
@@ -73,19 +79,26 @@ export default function AdaptationTimeline({
   novelTitle,
   volumes,
   initialAdaptations,
+  chapters,
 }: {
   novelId: string;
   novelTitle: string;
   volumes: VolumeSearchSource[];
   initialAdaptations: Adaptation[];
+  chapters: ChapterSummary[];
 }) {
   const { t, language } = useI18n();
+  const chapterLabels = useChapterKindLabels();
   const { isAdmin } = useAuth();
   const router = useRouter();
-  const { upsert, discard } = useSearchIndex();
+  const { entityMap, upsert, discard } = useSearchIndex();
   const volumeById = useMemo(
     () => new Map(volumes.map((volume) => [volume.id, volume])),
     [volumes],
+  );
+  const chapterById = useMemo(
+    () => new Map(chapters.map((chapter) => [chapter.id, chapter])),
+    [chapters],
   );
   const [items, setItems] = useState(initialAdaptations);
   const [volumeFilter, setVolumeFilter] = useState("all");
@@ -120,14 +133,18 @@ export default function AdaptationTimeline({
     ),
   });
   const setAddForm = (next: AdaptationFormState) =>
-    setForm((current) =>
-      current.group_label !== next.group_label ||
-      current.group_sort_order !== next.group_sort_order ||
-      current.medium !== next.medium ||
-      current.volume_id !== next.volume_id
-        ? nextSortOrder(next)
-        : next,
-    );
+    setForm((current) => {
+      const volumeChanged = current.volume_id !== next.volume_id;
+      const normalized = volumeChanged
+        ? { ...next, adapted_chapter_ids: [] }
+        : next;
+      return current.group_label !== normalized.group_label ||
+        current.group_sort_order !== normalized.group_sort_order ||
+        current.medium !== normalized.medium ||
+        volumeChanged
+        ? nextSortOrder(normalized)
+        : normalized;
+    });
   const payload = (value: AdaptationFormState): AdaptationCreatePayload => ({
     medium: value.medium as AdaptationMedium,
     group_label: value.group_label,
@@ -139,6 +156,7 @@ export default function AdaptationTimeline({
     source_img_url: value.source_img_url || null,
     description: value.description,
     sort_order: Number(value.sort_order),
+    adapted_chapter_ids: value.adapted_chapter_ids,
   });
   const saveAdd = async (event: FormEvent) => {
     event.preventDefault();
@@ -151,7 +169,7 @@ export default function AdaptationTimeline({
         payload(form),
       );
       setItems((current) => [...current, saved]);
-      upsert(normalizeAdaptation(saved, volumeById.get(saved.volume_id)));
+      upsert(normalizeAdaptation(saved, volumeById.get(saved.volume_id), entityMap));
       setShowAdd(false);
       setForm(emptyForm(volumes[0]?.id));
       setSnackbar({ tone: "success", message: t("adaptations.addSuccess") });
@@ -178,7 +196,7 @@ export default function AdaptationTimeline({
       setItems((current) =>
         current.map((item) => (item.id === saved.id ? saved : item)),
       );
-      upsert(normalizeAdaptation(saved, volumeById.get(saved.volume_id)));
+      upsert(normalizeAdaptation(saved, volumeById.get(saved.volume_id), entityMap));
       setEditing(null);
       setSnackbar({ tone: "success", message: t("adaptations.editSuccess") });
       router.refresh();
@@ -306,6 +324,7 @@ export default function AdaptationTimeline({
               form={form}
               onChange={setAddForm}
               volumes={volumes}
+              chapters={chapters}
             />
             {error ? <FormError>{error}</FormError> : null}
             <div className="flex justify-end gap-2">
@@ -366,6 +385,22 @@ export default function AdaptationTimeline({
                                   {t("adaptations.source")}
                                 </a>
                               ) : null}
+                              {item.adapted_chapter_ids.length > 0 ? (
+                                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+                                  {item.adapted_chapter_ids.map((chapterId) => {
+                                    const chapter = chapterById.get(chapterId);
+                                    return chapter ? (
+                                      <Link
+                                        key={chapter.id}
+                                        href={`/novels/${novelId}/volumes/${item.volume_id}/chapters/${chapter.id}`}
+                                        className="text-sky-700 hover:underline">
+                                        {formatChapterLabel(chapter, chapterLabels)} · {chapter.title}
+                                      </Link>
+                                    ) : null;
+                                  })}
+                                </div>
+                              ) : null}
+                              <AdaptationNotesPreview adaptation={item} />
                               </div>
                             </div>
                             {isAdmin ? (
@@ -417,6 +452,7 @@ export default function AdaptationTimeline({
                                 form={form}
                                 onChange={setForm}
                                 volumes={volumes}
+                                chapters={chapters}
                                 volumeLocked
                               />
                               {error ? <FormError>{error}</FormError> : null}

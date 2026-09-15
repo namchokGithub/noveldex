@@ -204,6 +204,7 @@ export function normalizeEvent(
 export function normalizeAdaptation(
   adaptation: Adaptation,
   volume: VolumeSearchSource | undefined,
+  entityMap: EntityMap = new Map(),
 ): SearchDocument {
   const volumeContext = volume ? `Volume ${volume.number} ${volume.title}` : "";
   return {
@@ -220,10 +221,12 @@ export function normalizeAdaptation(
       adaptation.entry_type,
       String(adaptation.entry_number),
       volumeContext,
+      ...adaptation.notes.map((note) => note.content),
     ]
       .filter(Boolean)
       .join(" "),
     ...emptyFields(),
+    ...projectReferences(adaptation.notes, entityMap),
     route: adaptationRoute(adaptation.novel_id, adaptation.id),
   };
 }

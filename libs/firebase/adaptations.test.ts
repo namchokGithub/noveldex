@@ -57,6 +57,7 @@ describe("adaptations", () => {
       sort_order: 1,
     });
     expect(second.sort_order).toBe(2);
+    expect(first.notes).toEqual([]);
   });
 
   it("reads only one novel and follows the adaptation ordering contract", async () => {

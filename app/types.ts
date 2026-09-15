@@ -59,6 +59,8 @@ export interface Adaptation {
   source_url: string | null;
   source_img_url: string | null;
   description: string;
+  notes: ChapterNote[];
+  adapted_chapter_ids: string[];
   sort_order: number;
   created_at: string;
   updated_at: string;

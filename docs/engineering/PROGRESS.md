@@ -2,20 +2,6 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Adaptations — Later
-
-Later: Add notes to adaptations
-
-Do not include notes in the initial adaptation document. Decide between a bounded embedded list and an `adaptations/{adaptationId}/notes` subcollection when the note workflow is specified.
-
-Later: Link adaptation entry to novel chapters
-
-Optional mapping:
-
-- adapted_chapter_ids: string[]
-
-The parent path already identifies the adapted volume; do not add a duplicate `adapted_volume_id` field.
-
 ## Phase 6: Polish
 
 - [ ] Firestore read-cost + performance audit

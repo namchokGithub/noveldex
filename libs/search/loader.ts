@@ -80,7 +80,11 @@ async function loadNovel(
         ),
       ),
       ...adaptations.map((adaptation) =>
-        normalizeAdaptation(adaptation, volumeById.get(adaptation.volume_id)),
+        normalizeAdaptation(
+          adaptation,
+          volumeById.get(adaptation.volume_id),
+          entityMap,
+        ),
       ),
     ],
   };
