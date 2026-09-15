@@ -1,15 +1,44 @@
 # Novelndex
 
-Novelndex is a Next.js application for organizing novels, volumes, chapters, characters, events, and tags. It uses Cloud Firestore directly through the Firebase Web SDK.
+[![Next.js](https://img.shields.io/badge/Next.js-16.2.6-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.3.0-149ECA?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-11.10.0-DD2C00?logo=firebase&logoColor=white)](https://firebase.google.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Version](https://img.shields.io/badge/version-0.1.1-6B7280)](package.json)
 
-## Requirements
+Novelndex is a calm workspace for mapping a novel as you read or write it: volumes, chapters, notes, characters, story events, and adaptations live together in one searchable place.
 
-- Node.js 22 or later
+## What it supports
+
+- Volume-first chapter management with reading progress and special chapter entries
+- Notes, character/entity references, tags, and scoped command-palette search
+- Story timeline ordered by volume, chapter, page, and event position
+- Adaptation tracking for anime, manga, movies, and more — including source links and images
+- Public read-only guest mode with authenticated admin editing
+
+## Stack
+
+| Area | Technology |
+| --- | --- |
+| App | Next.js 16, React 19, TypeScript |
+| UI | Tailwind CSS 4 |
+| Data | Cloud Firestore via Firebase Web SDK Lite |
+| Authentication | Firebase Auth (email/password) |
+| Search | Client-side MiniSearch derived from Firestore data |
+| Testing | Vitest and Firebase emulator rules tests |
+| Optional edge target | Cloudflare Workers through Vinext |
+
+## Quick start
+
+### Requirements
+
+- Node.js 22 or newer
 - Corepack (included with supported Node.js releases)
 
-## Getting started
+### Run locally
 
-The application lives at the repository root; do not `cd web`.
+The application runs from the repository root.
 
 ```powershell
 corepack pnpm install
@@ -19,45 +48,70 @@ corepack pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Set the Firebase browser configuration in `.env.local`. To use the local Firestore emulator, set `NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1`.
+Add Firebase browser configuration to `.env.local`. To use the local Firebase services, set:
 
-## Commands
+```text
+NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1
+```
+
+Start Firestore and Auth emulators in a second terminal:
 
 ```powershell
-corepack pnpm dev
-corepack pnpm lint
-corepack pnpm test
-corepack pnpm build
 corepack pnpm emulators
-corepack pnpm build:cloudflare
-corepack pnpm preview:cloudflare
 ```
 
-If `make` is available, `make web` starts the application and `make firebase-emulators` starts the Firestore and Auth emulators. The PostgreSQL-related Make targets are retained solely for legacy backup and recovery work; the application does not use PostgreSQL at runtime.
+Create a local user in the Auth emulator UI at [http://127.0.0.1:4000/auth](http://127.0.0.1:4000/auth), then sign in from the header. Any authenticated user can edit; guests can read only.
 
-To sign in as an admin locally, visit the Auth emulator UI at [http://127.0.0.1:4000/auth](http://127.0.0.1:4000/auth) while the emulators are running and use "Add user" to create a local admin account, then sign in with those credentials from the app's header bar.
+## Architecture
 
-## Data model
+Novelndex talks directly to Firestore from the Next.js application. There is no application API server, SQL database, or server-side search service in the runtime path.
 
-Firestore stores novel data under `novels/{novelId}`. Volumes contain chapters, chapter-number markers, characters, events, and tags; character roles are stored globally in `character_roles`.
+```text
+novels/{novelId}
+├── volumes/{volumeId}
+│   ├── chapters/{chapterId}
+│   └── adaptations/{adaptationId}
+├── characters/{characterId}
+├── entities/{entityId}
+├── events/{eventId}
+├── tags/{tagId}
+└── chapterNumbers/{number}
 
-Firestore rules and indexes are defined at the repository root in `firestore.rules` and `firestore.indexes.json`.
+character_roles/{roleId}
+```
 
-### Chapter entries and reading order
+Adaptations duplicate `novel_id` and `volume_id` for collection-group reads and search routing; their parent volume path remains authoritative. Firestore rules and index configuration live in [`firestore.rules`](firestore.rules) and [`firestore.indexes.json`](firestore.indexes.json).
 
-Every chapter entry has a `sort_order` that controls its reading order within a volume. A regular `chapter` has a positive, novel-wide unique `number` and a matching `chapterNumbers/{number}` marker. Special entries (`prologue`, `epilogue`, `afterword`, `side_story`, and `other`) use `number: null` and do not create a marker; `other` requires `custom_label`.
+### Reading and story order
 
-The `backfill:chapter-entry-order` command adds these fields to chapters created before this model. Run a dry run first, then apply it with Application Default Credentials configured for the target Firebase project:
+`Chapter.sort_order` is the reading position inside one volume. A regular `chapter` also has a positive novel-wide `number` with a matching `chapterNumbers/{number}` marker. Special entries (`prologue`, `epilogue`, `afterword`, `side_story`, and `other`) do not use a number; `other` requires `custom_label`.
+
+Timeline events sort by volume → chapter → page → event position. Adaptations sort inside a volume by medium, group, and `sort_order`.
+
+## Common commands
+
+| Command | Purpose |
+| --- | --- |
+| `corepack pnpm dev` | Run the Next.js app locally |
+| `corepack pnpm lint` | Run ESLint |
+| `corepack pnpm test` | Run the Vitest suite |
+| `corepack pnpm build` | Create a production build |
+| `corepack pnpm emulators` | Start Firestore and Auth emulators |
+| `corepack pnpm build:cloudflare` | Build the Cloudflare/Vinext target |
+| `corepack pnpm preview:cloudflare` | Preview the Cloudflare build locally |
+
+To deploy Firestore rule or index changes, use the Firebase CLI. For example:
 
 ```powershell
-corepack pnpm backfill:chapter-entry-order -- --project <project-id> --dry-run
-corepack pnpm backfill:chapter-entry-order -- --project <project-id> --apply
+firebase deploy --only firestore:indexes
 ```
+
+Legacy PostgreSQL-related `make` commands exist only for backup and recovery material; the application does not use PostgreSQL at runtime.
 
 ## Documentation
 
 - [Current project context](docs/ai/CONTEXT.md)
+- [Contributor guidance](docs/ai/CLAUDE.md)
 - [Architecture decisions](docs/engineering/DECISIONS.md)
 - [Progress and backlog](docs/engineering/PROGRESS.md)
-- [Contributor guidance](docs/ai/CLAUDE.md)
 - [Cloudflare Workers deployment](docs/engineering/cloudflare-workers.md)
