@@ -121,6 +121,7 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 
 ## Phase 6: Polish (partial — remaining items still in PROGRESS.md)
 
+- [x] Cross-browser / device verification — manual verification completed; no issues reported in this round.
 - [x] Firestore read-cost + performance audit — volume-list aggregates now derive from one volume query plus one novel chapter collection-group query; volume detail avoids its duplicate aggregate read; Timeline loads lightweight metadata for every volume and reuses its character lookup for events. No schema or index changes were required.
 - [x] Confirm Dialog or Modal when Action Success/Fail
 - [x] Empty states in remaining pages
