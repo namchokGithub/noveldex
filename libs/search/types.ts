@@ -1,6 +1,13 @@
 import type { EntityId, EntityType } from "@/libs/entities/types";
 
-export type SearchDocumentType = "novel" | "volume" | "chapter" | "note" | "entity" | "event";
+export type SearchDocumentType =
+  | "novel"
+  | "volume"
+  | "chapter"
+  | "note"
+  | "entity"
+  | "event"
+  | "adaptation";
 
 export interface SearchDocument {
   id: string;
@@ -10,6 +17,7 @@ export interface SearchDocument {
   chapterId?: string;
   noteId?: string;
   eventId?: string;
+  adaptationId?: string;
   entityId?: EntityId;
   entityType?: EntityType;
   name?: string;
@@ -27,5 +35,12 @@ export interface SearchDocument {
 }
 
 export const SEARCH_TEXT_FIELDS: Array<keyof SearchDocument> = [
-  "name", "title", "author", "referenceNames", "aliases", "tags", "content", "description",
+  "name",
+  "title",
+  "author",
+  "referenceNames",
+  "aliases",
+  "tags",
+  "content",
+  "description",
 ];

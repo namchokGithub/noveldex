@@ -25,6 +25,47 @@ export interface Volume {
   updated_at: string;
 }
 
+export const ADAPTATION_MEDIA = [
+  "anime",
+  "manga",
+  "movie",
+  "ova",
+  "special",
+  "game",
+  "other",
+] as const;
+
+export const ADAPTATION_ENTRY_TYPES = [
+  "episode",
+  "chapter",
+  "volume",
+  "movie",
+  "special",
+] as const;
+
+export type AdaptationMedium = (typeof ADAPTATION_MEDIA)[number];
+export type AdaptationEntryType = (typeof ADAPTATION_ENTRY_TYPES)[number];
+
+export interface Adaptation {
+  id: string;
+  novel_id: string;
+  volume_id: string;
+  medium: AdaptationMedium;
+  group_label: string;
+  group_sort_order: number;
+  entry_type: AdaptationEntryType;
+  entry_number: number;
+  title: string;
+  source_url: string | null;
+  source_img_url: string | null;
+  description: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AdaptationOrderEntry = Pick<Adaptation, "id" | "sort_order">;
+
 export interface PaginationMeta {
   page: number;
   per_page: number;

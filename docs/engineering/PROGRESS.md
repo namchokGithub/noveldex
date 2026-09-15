@@ -2,84 +2,7 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Phase 5.1: Adaptations
-
-Add `adaptations` subcollection under each volume
-
-Path: `novels/{novelId}/volumes/{volumeId}/adaptations/{adaptationId}`
-
-Add adaptation data model
-
-Fields:
-
-- novel_id: string (duplicated parent context for collection-group search)
-- volume_id: string (duplicated parent context for search routes)
-- medium: anime | manga | movie | ova | special | game | other
-- group_label: Season 1 / Manga Volume 1
-- group_sort_order: number
-- entry_type: episode | chapter | volume | movie | special
-- entry_number: number
-- title: string
-- source_url?: string
-- source_img_url?: string
-- description?: string
-- sort_order: number
-- created_at: Timestamp
-- updated_at: Timestamp
-
-Ordering semantics:
-
-- `group_sort_order` orders groups within one medium.
-- `entry_number` is the source-facing number (for example, Episode 12).
-- `sort_order` orders entries within the same medium and group; it defaults to the next position.
-
-Show Adaptations section on Volume Detail
-
-Show only entries owned by that volume, with a link to the novel-wide Adaptations page.
-
-Group by:
-
-- medium
-- group_label
-- group_sort_order
-- sort_order / entry_number
-
-Add novel-wide Adaptations page
-
-- Route: `/novels/{novelId}/adaptations`
-- Entry point: Adaptations card in the Novel Detail Explore section
-- Load every adaptation for the novel through one collection-group query on `novel_id`
-- Show the owning volume context for every entry
-- Group the page by medium, group label, and the ordering fields above
-- Support inline admin CRUD/reorder and guest read-only access, following the Timeline interaction model
-
-Add admin CRUD
-
-- Add adaptation
-- Edit adaptation
-- Delete adaptation
-- Reorder adaptation entries if needed
-
-Add guest read-only view
-
-Guests can view adaptations but cannot mutate them.
-
-Add Adaptations to Search
-
-Include:
-
-- title
-- medium
-- group_label
-- description
-- related volume/chapter context
-
-Add search document types:
-
-- adaptation
-- adaptation_note later
-
-Adaptation search results route to `/novels/{novelId}/adaptations#adaptation-{id}`.
+## Adaptations — Later
 
 Later: Add notes to adaptations
 
@@ -98,6 +21,22 @@ The parent path already identifies the adapted volume; do not add a duplicate `a
 - [ ] Firestore read-cost + performance audit
 - [ ] [ ] Cross-browser / device verification
 - [ ] Production readiness checklist
+
+## Phase 7: Cross-reference Views
+
+- [ ] Character detail: show related notes, timeline events, adaptations
+- [ ] Entity detail: show related notes, timeline events, adaptations
+- [ ] Volume detail: show chapters, notes count, events, adaptations
+- [ ] Chapter detail: show linked entities, timeline events, adaptation links
+- [ ] Adaptation detail: show related volume/chapter/entities
+
+## Future: Adaptation Comparison
+
+- [ ] Compare LN volume ↔ Anime episodes
+- [ ] Compare LN volume ↔ Manga chapters
+- [ ] Mark skipped / changed / anime-original content
+- [ ] Add notes for differences
+- [ ] Search adaptation differences
 
 ## Fix & Issue
 

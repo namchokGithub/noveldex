@@ -51,6 +51,16 @@ export type { CharacterCreatePayload, CharacterUpdatePayload } from "@/libs/fire
 // Events domain via Firestore
 export { getEvents, createEvent, updateEvent, deleteEvent } from "@/libs/firebase/events";
 export type { EventPayload } from "@/libs/firebase/events";
+// Adaptations domain via Firestore
+export {
+  getAdaptationsByVolume,
+  getAdaptationsForNovel,
+  createAdaptation,
+  updateAdaptation,
+  deleteAdaptation,
+  reorderAdaptations,
+} from "@/libs/firebase/adaptations";
+export type { AdaptationCreatePayload, AdaptationPayload } from "@/libs/firebase/adaptations";
 export { createEntity, deleteEntity, getEntities, getEntity, updateEntity } from "@/libs/firebase/entities";
 export type { EntityCreatePayload, EntityUpdatePayload } from "@/libs/firebase/entities";
 export type { Entity, EntityId, EntityReference, EntityType, GenericEntityType } from "@/libs/entities/types";

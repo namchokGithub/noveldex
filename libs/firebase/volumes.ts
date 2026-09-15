@@ -54,6 +54,10 @@ function chaptersCol(novelId: string, volumeId: string) {
   return collection(db, "novels", novelId, "volumes", volumeId, "chapters");
 }
 
+function adaptationsCol(novelId: string, volumeId: string) {
+  return collection(db, "novels", novelId, "volumes", volumeId, "adaptations");
+}
+
 async function volumeAggregates(novelId: string, volumeId: string) {
   const col = chaptersCol(novelId, volumeId);
   const [totalSnap] = await Promise.all([getDocs(col)]);
@@ -269,7 +273,10 @@ export async function deleteVolume(
   novelId: string,
   volumeId: string,
 ): Promise<void> {
-  const chapterDocs = await getDocs(chaptersCol(novelId, volumeId));
+  const [chapterDocs, adaptationDocs] = await Promise.all([
+    getDocs(chaptersCol(novelId, volumeId)),
+    getDocs(adaptationsCol(novelId, volumeId)),
+  ]);
 
   for (let i = 0; i < chapterDocs.docs.length; i += BATCH_CHUNK_SIZE) {
     const chunk = chapterDocs.docs.slice(i, i + BATCH_CHUNK_SIZE);
@@ -282,6 +289,16 @@ export async function deleteVolume(
           doc(db, "novels", novelId, "chapterNumbers", String(number)),
         );
     });
+    await batch.commit();
+  }
+
+  for (let i = 0; i < adaptationDocs.docs.length; i += BATCH_CHUNK_SIZE) {
+    const batch = writeBatch(db);
+    adaptationDocs.docs
+      .slice(i, i + BATCH_CHUNK_SIZE)
+      .forEach((adaptationDoc) => {
+        batch.delete(adaptationDoc.ref);
+      });
     await batch.commit();
   }
 

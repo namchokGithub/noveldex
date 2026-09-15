@@ -2,20 +2,6 @@
 
 Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRESS.md) to keep that file focused on outstanding work. History only — do not edit completed entries here; add new completions as items finish in PROGRESS.md.
 
-## Phase 5: Admin + guest auth
-
-- [x] Firebase Auth (email/password), `AuthProvider`/`useAuth()`, sign-in/sign-out control in the header
-- [x] Every mutation UI (novel/volume/chapter/character/entity/timeline-event create, edit, delete, reorder, tag add/remove) gated behind `isAdmin`
-- [x] Firestore rule: guest reads everything; write requires an authenticated Firebase Auth user (ADR-012)
-- [x] `firestore.rules.test.ts` — automated rules-boundary coverage via `@firebase/rules-unit-testing`
-
-## Phase 3: Timeline + Search
-
-- [x] Generic Entity Reference System — six entity types with stable qualified IDs, aliases, typed and backward-compatible character references, persisted occurrences, and compatibility projections for existing character features
-- [x] One derived client-side MiniSearch index — normalized novels, volumes, chapters, notes, entities, and events; one provider/session; `SearchScope`; staged exact/prefix/fuzzy ranking; result limits; no Firestore reads per keystroke
-- [x] Search maintenance and UX — Thai/English tokenizer, incremental document/reference/tag refreshes, deletion cascades, chunked initial builds, vacuum scheduling, note deep links with read-mode highlights, and accessible command-palette navigation
-- [x] Growth benchmark — deterministic 5k/10k/25k/50k synthetic checkpoints with build, exact/fuzzy latency, memory, dataset-size, and mutation-maintenance measurements; IndexedDB and Web Worker remain deferred
-
 ## Firebase Migration and Cutover
 
 - [x] Plan 1 — Firebase foundation and `novels` domain
@@ -64,6 +50,22 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Timeline location + event characters — [plan](../superpowers/plans/2026-08-29-timeline-location-and-event-characters.md): events grouped by volume → chapter → page (`chapter_id`/`chapter_volume_id`/`page_number` in `libs/firebase/events.ts`) instead of by year; quick-create a character straight from the event form (`timeline/page.tsx` `onAddCharacter`/`quickAdd`)
 - [x] Handle unknown / approximate dates — superseded, not separately implemented: the location migration above dropped `story_date`-based sorting/grouping entirely (timeline now sorts by `sort_order` and groups by volume/chapter), so the ambiguous-date problem no longer applies to the timeline UI
 
+## Phase 3.1: Chapter Notes (ships ahead of full-text search)
+
+- [x] Chapter summary replaced by an editable, timestamped `notes[]` list — see ADR-008 in `docs/engineering/DECISIONS.md`
+- [x] `[[Name]]` mention tracking and character auto-linking from note content (`libs/firebase/mentions.ts`, `libs/firebase/chapters.ts`)
+- [x] Chapter notes pagination
+- [x] Scoped quick search (Ctrl+Shift+K command palette) across chapters/characters/events — client-side only, not the full-text search still tracked in PROGRESS.md
+- [x] Command palette shortcut made layout-independent (`event.code === 'KeyK'` alongside `event.key`)
+- [x] Chapter page widened (`maxWidth`) and summary/notes textareas resize to content instead of fixed `rows`
+
+## Phase 3.2: Timeline + Search
+
+- [x] Generic Entity Reference System — six entity types with stable qualified IDs, aliases, typed and backward-compatible character references, persisted occurrences, and compatibility projections for existing character features
+- [x] One derived client-side MiniSearch index — normalized novels, volumes, chapters, notes, entities, and events; one provider/session; `SearchScope`; staged exact/prefix/fuzzy ranking; result limits; no Firestore reads per keystroke
+- [x] Search maintenance and UX — Thai/English tokenizer, incremental document/reference/tag refreshes, deletion cascades, chunked initial builds, vacuum scheduling, note deep links with read-mode highlights, and accessible command-palette navigation
+- [x] Growth benchmark — deterministic 5k/10k/25k/50k synthetic checkpoints with build, exact/fuzzy latency, memory, dataset-size, and mutation-maintenance measurements; IndexedDB and Web Worker remain deferred
+
 ## Phase 4: Search + Tags
 
 - [x] tags table + migration (000007) — novel-scoped, unique per novel
@@ -95,20 +97,25 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Update Role + Charactor
 - [x] Charactors Paginator (URL search params, `app/novels/[id]/characters/page.tsx` + `CharacterList.tsx`) — same work as "paginator" above; removed from PROGRESS.md as a duplicate open item
 
-## Phase 3: Chapter Notes (ships ahead of full-text search)
-
-- [x] Chapter summary replaced by an editable, timestamped `notes[]` list — see ADR-008 in `docs/engineering/DECISIONS.md`
-- [x] `[[Name]]` mention tracking and character auto-linking from note content (`libs/firebase/mentions.ts`, `libs/firebase/chapters.ts`)
-- [x] Chapter notes pagination
-- [x] Scoped quick search (Ctrl+Shift+K command palette) across chapters/characters/events — client-side only, not the full-text search still tracked in PROGRESS.md
-- [x] Command palette shortcut made layout-independent (`event.code === 'KeyK'` alongside `event.key`)
-- [x] Chapter page widened (`maxWidth`) and summary/notes textareas resize to content instead of fixed `rows`
-
 ## Phase 4.6: Volume + Chapter Description
 
 - [x] Optional `description` field (max 500 characters) on both `Volume` and `Chapter`, editable only on their detail pages — not shown on list/card views, not part of the Ctrl+Shift+K quick search
 - [x] Chapter entry types and reading order — Prologue, Epilogue, Afterword, Side Story, and custom entries use `sort_order` without changing regular Chapter numbers
 - [x] Chapter entry migration and error-message consistency — `backfill:chapter-entry-order` supports `--dry-run` and `--apply`; form errors use localized validation messages instead of Firestore error text
+
+## Phase 5: Admin + guest auth
+
+- [x] Firebase Auth (email/password), `AuthProvider`/`useAuth()`, sign-in/sign-out control in the header
+- [x] Every mutation UI (novel/volume/chapter/character/entity/timeline-event create, edit, delete, reorder, tag add/remove) gated behind `isAdmin`
+- [x] Firestore rule: guest reads everything; write requires an authenticated Firebase Auth user (ADR-012)
+- [x] `firestore.rules.test.ts` — automated rules-boundary coverage via `@firebase/rules-unit-testing`
+
+## Phase 5.1: Adaptations
+
+- [x] Firestore adaptation documents at `novels/{novelId}/volumes/{volumeId}/adaptations/{adaptationId}` with parent-context fields, enum/URL validation, per-volume ordering, explicit volume-delete cascade, and a `novel_id` collection-group index config
+- [x] Volume detail Adaptations summary — shows the most recently updated entry, source thumbnail/full-image modal, and link to all adaptations
+- [x] Novel-wide `/novels/{novelId}/adaptations` page from Explore — volume filter; Volume → medium/group layout; inline admin CRUD and per-volume/group reorder; guest read-only access
+- [x] Adaptation search documents — title, medium, group, description, volume context, and `/adaptations#adaptation-{id}` deep links with incremental index updates
 
 ## Phase 6: Polish (partial — remaining items still in PROGRESS.md)
 

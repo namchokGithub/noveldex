@@ -4,6 +4,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { cardClassName, primaryButtonClassName } from "../ui";
 
 export default function NovelError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };

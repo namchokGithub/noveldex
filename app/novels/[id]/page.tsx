@@ -146,6 +146,10 @@ export default async function NovelPage({
                     <T k="novel.timelineHelp" />
                   </p>
                 </Link>
+                <Link href={`/novels/${id}/adaptations`} className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
+                  <p className="text-sm font-semibold text-stone-900"><T k="novel.adaptations" /></p>
+                  <p className="mt-1 hidden text-sm text-stone-500 sm:block"><T k="novel.adaptationsHelp" /></p>
+                </Link>
               </div>
             </section>
 
