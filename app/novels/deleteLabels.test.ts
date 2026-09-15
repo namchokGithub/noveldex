@@ -12,9 +12,22 @@ const chapterListSource = readFileSync(
   ),
   "utf8",
 );
+const chapterEditorSource = readFileSync(
+  fileURLToPath(
+    new URL(
+      "./[id]/volumes/[volumeId]/chapters/[chapterId]/ChapterEditor.tsx",
+      import.meta.url,
+    ),
+  ),
+  "utf8",
+);
 
 it("does not render hard-coded delete labels in admin lists", () => {
   expect(volumeManagerSource).not.toMatch(/>\s*Del\s*</);
   expect(chapterListSource).not.toMatch(/>\s*Del\s*</);
   expect(volumeManagerSource).not.toMatch(/>\s*Actions\s*</);
+});
+
+it("does not render mojibake in the all-tags dialog", () => {
+  expect(chapterEditorSource).not.toContain("Ã—");
 });
