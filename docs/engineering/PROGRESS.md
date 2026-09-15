@@ -4,8 +4,7 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 
 ## Phase 6: Polish
 
-- [ ] Firestore read-cost + performance audit
-- [ ] [ ] Cross-browser / device verification
+- [ ] Cross-browser / device verification
 - [ ] Production readiness checklist
 
 ## Phase 7: Cross-reference Views
