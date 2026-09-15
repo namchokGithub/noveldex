@@ -26,6 +26,7 @@ import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { normalizeEntity } from "@/libs/search/normalize";
 import { dependentRefreshes } from "@/libs/search/refresh";
 import { buildEntityId } from "@/libs/entities/keys";
+import { relatedNotesForCharacter } from "@/libs/characterRelatedNotes";
 
 export default function CharacterDetail({
   character,
@@ -117,6 +118,7 @@ export default function CharacterDetail({
   }
 
   const displayRole = character.role_name ?? character.role;
+  const relatedNotes = relatedNotesForCharacter(character.chapters ?? [], character.id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -281,6 +283,34 @@ export default function CharacterDetail({
                 </Link>
               </li>
             ))}
+          </ul>
+        </div>
+      )}
+
+      {relatedNotes.length > 0 && (
+        <div className={cardClassName}>
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
+            {t("character.relatedNotes")}
+          </h2>
+          <ul className={`${listClassName} divide-y divide-stone-200`}>
+            {relatedNotes.map(({ chapterId, note }) => {
+              const chapter = character.chapters?.find((item) => item.id === chapterId);
+              if (!chapter) return null;
+              return (
+                <li key={`${chapterId}-${note.id}`}>
+                  <Link
+                    href={`/novels/${novelId}/volumes/${chapter.volume_id}/chapters/${chapterId}?note=${encodeURIComponent(note.id)}`}
+                    className={`${listRowClassName} block`}>
+                    <p className="text-sm font-medium text-stone-900">
+                      <ChapterLabel chapter={chapter} />
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-stone-600">
+                      {note.content}
+                    </p>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

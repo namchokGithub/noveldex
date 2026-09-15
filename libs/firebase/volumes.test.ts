@@ -28,11 +28,13 @@ async function seedChapter(
   chapterId: string,
   number: number,
   read: boolean,
+  kind: "chapter" | "prologue" = "chapter",
 ) {
   await setDoc(
     doc(db, "novels", novelId, "volumes", volumeId, "chapters", chapterId),
     {
       number,
+      kind,
       title: `Chapter ${number}`,
       summary: "",
       read_at: read ? Timestamp.now() : null,
@@ -81,12 +83,12 @@ describe("volumes", () => {
 
   it("lists volumes paginated, ordered by number, with a novel-wide summary", async () => {
     for (let n = 1; n <= 7; n += 1) {
-      // eslint-disable-next-line no-await-in-loop
+       
       const v = await createVolume("novel-1", {
         number: n,
         title: `Volume ${n}`,
       });
-      // eslint-disable-next-line no-await-in-loop
+       
       await seedChapter("novel-1", v.id, `ch-${n}`, n, n % 2 === 0);
     }
 
@@ -110,6 +112,26 @@ describe("volumes", () => {
       total_volumes: 7,
       total_chapters: 7,
       read_count: 3,
+    });
+  });
+
+  it("excludes read special entries from volume and novel read counts", async () => {
+    const volume = await createVolume("novel-1", {
+      number: 1,
+      title: "Volume One",
+    });
+    await seedChapter("novel-1", volume.id, "chapter-1", 1, true);
+    await seedChapter("novel-1", volume.id, "prologue-1", 0, true, "prologue");
+
+    const result = await getVolumes("novel-1");
+
+    expect(result.items[0]).toMatchObject({
+      chapter_count: 1,
+      read_count: 1,
+    });
+    expect(result.summary).toMatchObject({
+      total_chapters: 1,
+      read_count: 1,
     });
   });
 

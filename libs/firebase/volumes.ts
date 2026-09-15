@@ -58,30 +58,49 @@ function adaptationsCol(novelId: string, volumeId: string) {
   return collection(db, "novels", novelId, "volumes", volumeId, "adaptations");
 }
 
-async function volumeAggregates(novelId: string, volumeId: string) {
-  const col = chaptersCol(novelId, volumeId);
-  const [totalSnap] = await Promise.all([getDocs(col)]);
+type VolumeAggregate = Pick<Volume, "chapter_count" | "read_count">;
 
-  const chapters = totalSnap.docs.filter(
-    (snapshot) => (snapshot.data().kind ?? "chapter") === "chapter",
-  );
+const EMPTY_VOLUME_AGGREGATE: VolumeAggregate = {
+  chapter_count: 0,
+  read_count: 0,
+};
 
-  const readChapters = chapters.filter(
-    (snapshot) => snapshot.data().read_at != null,
-  );
-
-  return {
-    chapter_count: chapters.length,
-    read_count: readChapters.length,
-  };
+function aggregateChaptersByVolume(
+  snapshots: Iterable<{ data: () => unknown }>,
+): Map<string, VolumeAggregate> {
+  const aggregates = new Map<string, VolumeAggregate>();
+  for (const snapshot of snapshots) {
+    const chapter = snapshot.data() as {
+      volume_id: string;
+      kind?: string;
+      read_at?: unknown | null;
+    };
+    if ((chapter.kind ?? "chapter") !== "chapter") continue;
+    const aggregate = aggregates.get(chapter.volume_id) ?? {
+      ...EMPTY_VOLUME_AGGREGATE,
+    };
+    aggregate.chapter_count += 1;
+    if (chapter.read_at != null) aggregate.read_count += 1;
+    aggregates.set(chapter.volume_id, aggregate);
+  }
+  return aggregates;
 }
 
-async function toVolume(
+async function volumeAggregates(novelId: string, volumeId: string) {
+  const snapshot = await getDocs(chaptersCol(novelId, volumeId));
+  return (
+    aggregateChaptersByVolume(snapshot.docs).get(volumeId) ??
+    EMPTY_VOLUME_AGGREGATE
+  );
+}
+
+export type VolumeMetadata = Omit<Volume, "chapter_count" | "read_count">;
+
+function toVolumeMetadata(
   novelId: string,
   id: string,
   data: VolumeDoc,
-): Promise<Volume> {
-  const { chapter_count, read_count } = await volumeAggregates(novelId, id);
+): VolumeMetadata {
   const title_en = data.title_en ?? data.title ?? "";
   const title_th = data.title_th ?? "";
   return {
@@ -92,10 +111,20 @@ async function toVolume(
     title_en,
     title_th,
     description: data.description ?? "",
-    chapter_count,
-    read_count,
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
+  };
+}
+
+async function toVolume(
+  novelId: string,
+  id: string,
+  data: VolumeDoc,
+  aggregate: VolumeAggregate = EMPTY_VOLUME_AGGREGATE,
+): Promise<Volume> {
+  return {
+    ...toVolumeMetadata(novelId, id, data),
+    ...aggregate,
   };
 }
 
@@ -126,39 +155,39 @@ export async function getVolumes(
     ? (options!.perPage as number)
     : 5;
 
-  const allSnap = await getDocs(
-    query(volumesCol(novelId), orderBy("number", "asc")),
-  );
+  const novelChapters = collectionGroup(db, "chapters");
+  const [allSnap, novelChaptersSnap] = await Promise.all([
+    getDocs(query(volumesCol(novelId), orderBy("number", "asc"))),
+    getDocs(query(novelChapters, where("novel_id", "==", novelId))),
+  ]);
   const totalItems = allSnap.size;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
   const start = (page - 1) * perPage;
   const pageDocs = allSnap.docs.slice(start, start + perPage);
+  const aggregates = aggregateChaptersByVolume(novelChaptersSnap.docs);
   const items = await Promise.all(
-    pageDocs.map((d) => toVolume(novelId, d.id, d.data() as VolumeDoc)),
+    pageDocs.map((d) =>
+      toVolume(
+        novelId,
+        d.id,
+        d.data() as VolumeDoc,
+        aggregates.get(d.id) ?? EMPTY_VOLUME_AGGREGATE,
+      ),
+    ),
   );
 
-  const novelChapters = collectionGroup(db, "chapters");
-  const [totalVolumesSnap, novelChaptersSnap, novelReadSnap] =
-    await Promise.all([
-      getDocs(volumesCol(novelId)),
-      getDocs(query(novelChapters, where("novel_id", "==", novelId))),
-      getDocs(
-        query(
-          novelChapters,
-          where("novel_id", "==", novelId),
-          where("read_at", "!=", null),
-        ),
-      ),
-    ]);
-
-  const chapters = novelChaptersSnap.docs.filter(
-    (snapshot) => (snapshot.data().kind ?? "chapter") === "chapter",
+  const summaryAggregate = [...aggregates.values()].reduce(
+    (summary, aggregate) => ({
+      chapter_count: summary.chapter_count + aggregate.chapter_count,
+      read_count: summary.read_count + aggregate.read_count,
+    }),
+    EMPTY_VOLUME_AGGREGATE,
   );
 
   const summary: VolumeListSummary = {
-    total_volumes: totalVolumesSnap.size,
-    total_chapters: chapters.length,
-    read_count: novelReadSnap.size,
+    total_volumes: totalItems,
+    total_chapters: summaryAggregate.chapter_count,
+    read_count: summaryAggregate.read_count,
   };
 
   return {
@@ -214,7 +243,25 @@ export async function getVolume(
   if (!snapshot.exists()) {
     throw new ResourceNotFoundError("volume");
   }
-  return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
+  return toVolume(
+    novelId,
+    snapshot.id,
+    snapshot.data() as VolumeDoc,
+    await volumeAggregates(novelId, volumeId),
+  );
+}
+
+export async function getVolumeMetadata(
+  novelId: string,
+  volumeId: string,
+): Promise<VolumeMetadata> {
+  const snapshot = await getDoc(
+    doc(db, "novels", novelId, "volumes", volumeId),
+  );
+  if (!snapshot.exists()) {
+    throw new ResourceNotFoundError("volume");
+  }
+  return toVolumeMetadata(novelId, snapshot.id, snapshot.data() as VolumeDoc);
 }
 
 export async function createVolume(
@@ -266,7 +313,12 @@ export async function updateVolume(
   ) as DocumentReference<VolumeDoc, VolumeDoc>;
   await updateDoc(ref, withUpdateTimestamp(update));
   const snapshot = await getDoc(ref);
-  return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
+  return toVolume(
+    novelId,
+    snapshot.id,
+    snapshot.data() as VolumeDoc,
+    await volumeAggregates(novelId, volumeId),
+  );
 }
 
 export async function deleteVolume(

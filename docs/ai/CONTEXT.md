@@ -33,7 +33,7 @@ corepack pnpm test
 
 Set Firebase browser configuration in `.env.local`. Use the Firestore emulator by setting `NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1`; production uses `0` and requires deliberate user approval for writes.
 
-Firestore Lite is REST-only: do not introduce listeners, offline persistence, or full-SDK aggregation calls into `libs/firebase`. The current app uses one-off reads and writes. Volume summaries count returned query documents because Lite does not expose `getCountFromServer`; revisit that read cost as novels grow.
+Firestore Lite is REST-only: do not introduce listeners, offline persistence, or full-SDK aggregation calls into `libs/firebase`. The current app uses one-off reads and writes. `getVolumes` derives volume and novel summaries from one volume query plus one returned chapter collection-group query because Lite does not expose `getCountFromServer`; revisit cursor pagination or denormalized counters as novels grow.
 
 PostgreSQL is only for restoring or inspecting legacy backups. `make db`, `make db-backup`, and `make db-restore` support that recovery path; no application code should depend on it.
 

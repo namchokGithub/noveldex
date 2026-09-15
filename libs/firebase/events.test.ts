@@ -1,8 +1,17 @@
 import { doc, setDoc, Timestamp, updateDoc } from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
-import { createEvent, deleteEvent, getEvents, updateEvent } from "./events";
-import { clearFirestoreEmulator, connectFirestoreTestEmulator } from "./testUtils";
+import {
+  createEvent,
+  deleteEvent,
+  getEvents,
+  getEventsByChapter,
+  updateEvent,
+} from "./events";
+import {
+  clearFirestoreEmulator,
+  connectFirestoreTestEmulator,
+} from "./testUtils";
 
 beforeAll(async () => {
   await connectFirestoreTestEmulator();
@@ -12,20 +21,33 @@ beforeEach(async () => {
   await clearFirestoreEmulator();
 });
 
-async function seedChapter(novelId: string, volumeId: string, chapterId: string, number: number, title: string) {
-  await setDoc(doc(db, "novels", novelId, "volumes", volumeId, "chapters", chapterId), {
-    number,
-    title,
-    summary: "",
-    read_at: null,
-    novel_id: novelId,
-    volume_id: volumeId,
-    tag_ids: [],
-    character_ids: [],
-  });
+async function seedChapter(
+  novelId: string,
+  volumeId: string,
+  chapterId: string,
+  number: number,
+  title: string,
+) {
+  await setDoc(
+    doc(db, "novels", novelId, "volumes", volumeId, "chapters", chapterId),
+    {
+      number,
+      title,
+      summary: "",
+      read_at: null,
+      novel_id: novelId,
+      volume_id: volumeId,
+      tag_ids: [],
+      character_ids: [],
+    },
+  );
 }
 
-async function seedCharacter(novelId: string, characterId: string, name: string) {
+async function seedCharacter(
+  novelId: string,
+  characterId: string,
+  name: string,
+) {
   await setDoc(doc(db, "novels", novelId, "characters", characterId), {
     name,
     aliases: [],
@@ -92,7 +114,9 @@ describe("events", () => {
     expect(moved.chapter_title).toBe("Second");
     expect(moved.chapter_number).toBe(2);
 
-    const cleared = await updateEvent("novel-1", event.id, { chapter_id: null });
+    const cleared = await updateEvent("novel-1", event.id, {
+      chapter_id: null,
+    });
     expect(cleared.chapter_id).toBeNull();
     expect(cleared.chapter_volume_id).toBeNull();
     expect(cleared.chapter_title).toBeNull();
@@ -120,6 +144,31 @@ describe("events", () => {
     expect(events.map((e) => e.title)).toEqual(["A", "B"]);
   });
 
+  it("lists only events linked to a chapter", async () => {
+    await seedChapter("novel-1", "vol-1", "chapter-1", 1, "First");
+    await seedChapter("novel-1", "vol-1", "chapter-2", 2, "Second");
+    await createEvent("novel-1", {
+      title: "Linked",
+      description: "",
+      story_date: "",
+      sort_order: 1,
+      chapter_id: "chapter-1",
+      chapter_volume_id: "vol-1",
+    });
+    await createEvent("novel-1", {
+      title: "Elsewhere",
+      description: "",
+      story_date: "",
+      sort_order: 2,
+      chapter_id: "chapter-2",
+      chapter_volume_id: "vol-1",
+    });
+
+    const events = await getEventsByChapter("novel-1", "chapter-1");
+
+    expect(events.map((event) => event.title)).toEqual(["Linked"]);
+  });
+
   it("resolves character_ids to character_names via getEvents", async () => {
     await seedCharacter("novel-1", "char-1", "Alice");
     const event = await createEvent("novel-1", {
@@ -138,6 +187,28 @@ describe("events", () => {
     const found = events.find((e) => e.id === event.id);
 
     expect(found?.character_names).toEqual(["Alice"]);
+  });
+
+  it("uses a supplied character-name map without reading characters again", async () => {
+    const event = await createEvent("novel-1", {
+      title: "Meeting",
+      description: "",
+      story_date: "Year 1",
+      sort_order: 0,
+      chapter_id: null,
+    });
+    await updateDoc(doc(db, "novels", "novel-1", "events", event.id), {
+      character_ids: ["char-from-page"],
+    });
+
+    const events = await getEvents(
+      "novel-1",
+      new Map([["char-from-page", "Alice"]]),
+    );
+
+    expect(
+      events.find((item) => item.id === event.id)?.character_names,
+    ).toEqual(["Alice"]);
   });
 
   it("persists page_number and character_ids supplied by the event form", async () => {

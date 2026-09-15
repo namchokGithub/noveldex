@@ -2,12 +2,8 @@
 
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import type {
-  ChapterKind,
-  CharacterRole,
-  NovelEvent,
-  Volume,
-} from "@/app/types";
+import type { ChapterKind, CharacterRole, NovelEvent } from "@/app/types";
+import type { VolumeSearchSource } from "@/libs/firebase/volumes";
 import { formatChapterLabel } from "@/libs/chapterLabel";
 import { localizedVolumeTitle } from "@/libs/volumeTitle";
 import { localizedChapterTitle } from "@/libs/chapterTitle";
@@ -38,7 +34,7 @@ import {
   getCharacterRoles,
   getChaptersFlat,
   getEvents,
-  getVolumes,
+  getVolumesFlat,
   updateEvent,
 } from "@/libs/api";
 import { userErrorMessage } from "@/libs/userErrorMessage";
@@ -69,7 +65,7 @@ interface FormState {
 }
 interface TimelineGroup {
   key: string;
-  volume: Volume | null;
+  volume: VolumeSearchSource | null;
   chapter: ChapterOption | null;
   events: NovelEvent[];
 }
@@ -94,7 +90,7 @@ export default function TimelinePage({
   const { entityMap, upsert, discard } = useSearchIndex();
   const [events, setEvents] = useState<NovelEvent[]>([]),
     [chapters, setChapters] = useState<ChapterOption[]>([]),
-    [volumes, setVolumes] = useState<Volume[]>([]),
+    [volumes, setVolumes] = useState<VolumeSearchSource[]>([]),
     [characters, setCharacters] = useState<CharacterOption[]>([]),
     [roles, setRoles] = useState<CharacterRole[]>([]),
     [loading, setLoading] = useState(true);
@@ -127,23 +123,35 @@ export default function TimelinePage({
     }
   }
   async function loadEvents() {
-    setEvents(await getEvents(novelId));
+    setEvents(
+      await getEvents(
+        novelId,
+        new Map(characters.map((character) => [character.id, character.name])),
+      ),
+    );
   }
   useEffect(() => {
     async function init() {
       setLoading(true);
       try {
-        const [ev, ch, char, page, role] = await Promise.all([
-          getEvents(novelId),
+        const charactersPromise = getAllCharacters(novelId);
+        const [ev, ch, char, volumeItems, role] = await Promise.all([
+          getEvents(
+            novelId,
+            charactersPromise.then(
+              (characters) =>
+                new Map(characters.map(({ id, name }) => [id, name])),
+            ),
+          ),
           getChaptersFlat(novelId),
-          getAllCharacters(novelId),
-          getVolumes(novelId, { perPage: 50 }),
+          charactersPromise,
+          getVolumesFlat(novelId),
           getCharacterRoles(),
         ]);
         setEvents(ev);
         setChapters(ch);
         setCharacters(char.map(({ id, name }) => ({ id, name })));
-        setVolumes(page.items);
+        setVolumes(volumeItems);
         setRoles(role);
       } catch {
         setSnackbar({ tone: "error", message: t("common.networkError") });
@@ -633,7 +641,7 @@ function EventFormFields({
   onChange: (form: FormState) => void;
   events: NovelEvent[];
   chapters: ChapterOption[];
-  volumes: Volume[];
+  volumes: VolumeSearchSource[];
   characters: CharacterOption[];
   roles: CharacterRole[];
   requireChapter?: boolean;

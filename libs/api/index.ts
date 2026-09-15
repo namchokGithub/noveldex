@@ -12,8 +12,21 @@ export {
 export type { TagCursor } from "@/libs/firebase/tags";
 
 // Volumes domain via Firestore
-export { getVolumes, getVolumesFlat, getVolume, createVolume, updateVolume, deleteVolume } from "@/libs/firebase/volumes";
-export type { VolumeCreatePayload, VolumePayload, VolumeSearchSource } from "@/libs/firebase/volumes";
+export {
+  getVolumes,
+  getVolumesFlat,
+  getVolume,
+  getVolumeMetadata,
+  createVolume,
+  updateVolume,
+  deleteVolume,
+} from "@/libs/firebase/volumes";
+export type {
+  VolumeCreatePayload,
+  VolumePayload,
+  VolumeMetadata,
+  VolumeSearchSource,
+} from "@/libs/firebase/volumes";
 
 // Chapters domain via Firestore
 export {
@@ -28,7 +41,11 @@ export {
   unlinkChapterTag,
   reorderChapters,
 } from "@/libs/firebase/chapters";
-export type { ChapterPayload, ChapterCreatePayload, ChapterOrderEntry } from "@/libs/firebase/chapters";
+export type {
+  ChapterPayload,
+  ChapterCreatePayload,
+  ChapterOrderEntry,
+} from "@/libs/firebase/chapters";
 
 // LastOrderNos domain via Firestore
 export { getLastOrderNos } from "@/libs/firebase/lastOrderNos";
@@ -46,14 +63,25 @@ export {
   updateCharacter,
   deleteCharacter,
 } from "@/libs/firebase/characters";
-export type { CharacterCreatePayload, CharacterUpdatePayload } from "@/libs/firebase/characters";
+export type {
+  CharacterCreatePayload,
+  CharacterUpdatePayload,
+} from "@/libs/firebase/characters";
 
 // Events domain via Firestore
-export { getEvents, createEvent, updateEvent, deleteEvent } from "@/libs/firebase/events";
+export {
+  getEvents,
+  getEventsByChapter,
+  getEventsByVolume,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+} from "@/libs/firebase/events";
 export type { EventPayload } from "@/libs/firebase/events";
 // Adaptations domain via Firestore
 export {
   getAdaptationsByVolume,
+  getAdaptationsByChapter,
   getAdaptation,
   getAdaptationsForNovel,
   createAdaptation,
@@ -61,7 +89,25 @@ export {
   deleteAdaptation,
   reorderAdaptations,
 } from "@/libs/firebase/adaptations";
-export type { AdaptationCreatePayload, AdaptationPayload } from "@/libs/firebase/adaptations";
-export { createEntity, deleteEntity, getEntities, getEntity, updateEntity } from "@/libs/firebase/entities";
-export type { EntityCreatePayload, EntityUpdatePayload } from "@/libs/firebase/entities";
-export type { Entity, EntityId, EntityReference, EntityType, GenericEntityType } from "@/libs/entities/types";
+export type {
+  AdaptationCreatePayload,
+  AdaptationPayload,
+} from "@/libs/firebase/adaptations";
+export {
+  createEntity,
+  deleteEntity,
+  getEntities,
+  getEntity,
+  updateEntity,
+} from "@/libs/firebase/entities";
+export type {
+  EntityCreatePayload,
+  EntityUpdatePayload,
+} from "@/libs/firebase/entities";
+export type {
+  Entity,
+  EntityId,
+  EntityReference,
+  EntityType,
+  GenericEntityType,
+} from "@/libs/entities/types";

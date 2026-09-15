@@ -170,6 +170,15 @@ const th = {
   "adaptations.viewAllNotes": "ดูโน้ตทั้งหมด {count} รายการ",
   "adaptations.deleteNoteTitle": "ลบโน้ตนี้ใช่ไหม?",
   "adaptations.deleteNoteBody": "โน้ตนี้จะถูกลบถาวร",
+  "chapter.related": "รายการที่เกี่ยวข้อง",
+  "chapter.linkedEntities": "ข้อมูลในเรื่อง",
+  "chapter.timelineEvents": "เหตุการณ์ในไทม์ไลน์",
+  "chapter.adaptationLinks": "สื่อดัดแปลง",
+  "chapter.viewTimeline": "ดูเหตุการณ์เพิ่มเติม {count} รายการ",
+  "chapter.viewAdaptations": "ดูสื่อดัดแปลงเพิ่มเติม {count} รายการ",
+  "volume.overview": "ภาพรวม",
+  "volume.notes": "โน้ต",
+  "volume.events": "เหตุการณ์ในไทม์ไลน์",
 
   "novels.dashboard": "แดชบอร์ด",
   "novels.libraryTitle": "Novelndex Library",
@@ -375,6 +384,7 @@ const th = {
   "character.aliases": "ชื่อเรียกอื่น",
   "character.noDescription": "ยังไม่มีคำอธิบาย",
   "character.appearsIn": "ปรากฏใน ({count})",
+  "character.relatedNotes": "โน้ตที่เกี่ยวข้อง",
   "character.saveSuccess": "อัปเดตตัวละครสำเร็จ",
 
   "entities.eyebrow": "เอนทิตี",

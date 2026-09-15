@@ -131,6 +131,7 @@ export interface ChapterSummary {
   title_en: string;
   title_th: string;
   summary?: string;
+  notes?: ChapterNote[];
   read_at: string | null;
   character_ids?: string[];
 }

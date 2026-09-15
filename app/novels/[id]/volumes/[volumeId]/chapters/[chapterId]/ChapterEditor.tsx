@@ -1028,7 +1028,7 @@ export default function ChapterEditor({
                       disabled={tagSaving}
                       className="text-amber-700 hover:text-amber-900 disabled:opacity-50"
                       aria-label={t("chapter.removeTag", { name: tag.name })}>
-                      Ã—
+                      ×
                     </button>
                   )}
                 </span>

@@ -10,6 +10,7 @@ import {
   query,
   Timestamp,
   updateDoc,
+  where,
 } from "firebase/firestore/lite";
 import type { NovelEvent } from "@/app/types";
 import { firestoreEntityLookup } from "@/libs/entities/firestoreLookup";
@@ -47,7 +48,7 @@ function toEvent(
   novelId: string,
   id: string,
   data: EventDoc,
-  characterNameById: Map<string, string>,
+  characterNameById: ReadonlyMap<string, string>,
 ): NovelEvent {
   const characterIds = data.character_ids ?? [];
   const characterNames = characterIds
@@ -113,7 +114,10 @@ async function resolveChapterFields(
   if (!snapshot.exists()) {
     throw new Error("Request failed.");
   }
-  const chapterData = snapshot.data() as { title: string; number: number | null };
+  const chapterData = snapshot.data() as {
+    title: string;
+    number: number | null;
+  };
   return {
     chapter_id: chapterId,
     chapter_volume_id: volumeId,
@@ -133,7 +137,10 @@ export interface EventPayload {
   character_ids?: string[];
 }
 
-export async function createEvent(novelId: string, payload: EventPayload): Promise<NovelEvent> {
+export async function createEvent(
+  novelId: string,
+  payload: EventPayload,
+): Promise<NovelEvent> {
   const chapterFields = await resolveChapterFields(
     novelId,
     payload.chapter_id,
@@ -148,7 +155,12 @@ export async function createEvent(novelId: string, payload: EventPayload): Promi
       sort_order: payload.sort_order ?? 0,
       page_number: payload.page_number ?? null,
       character_ids: payload.character_ids ?? [],
-      description_references: await reconcileReferenceOccurrences(novelId, payload.description ?? "", null, firestoreEntityLookup()),
+      description_references: await reconcileReferenceOccurrences(
+        novelId,
+        payload.description ?? "",
+        null,
+        firestoreEntityLookup(),
+      ),
       ...chapterFields,
     }),
   );
@@ -173,22 +185,34 @@ export async function updateEvent(
     update.description_references = await reconcileReferenceOccurrences(
       novelId,
       payload.description,
-      { content: data.description, occurrences: data.description_references ?? [] },
+      {
+        content: data.description,
+        occurrences: data.description_references ?? [],
+      },
       firestoreEntityLookup(),
     );
   }
   if (payload.story_date !== undefined) update.story_date = payload.story_date;
   if (payload.sort_order !== undefined) update.sort_order = payload.sort_order;
-  if (payload.page_number !== undefined) update.page_number = payload.page_number;
-  if (payload.character_ids !== undefined) update.character_ids = payload.character_ids;
+  if (payload.page_number !== undefined)
+    update.page_number = payload.page_number;
+  if (payload.character_ids !== undefined)
+    update.character_ids = payload.character_ids;
   if (payload.chapter_id !== undefined) {
     Object.assign(
       update,
-      await resolveChapterFields(novelId, payload.chapter_id, payload.chapter_volume_id),
+      await resolveChapterFields(
+        novelId,
+        payload.chapter_id,
+        payload.chapter_volume_id,
+      ),
     );
   }
 
-  const ref = eventRef(novelId, eventId) as DocumentReference<EventDoc, EventDoc>;
+  const ref = eventRef(novelId, eventId) as DocumentReference<
+    EventDoc,
+    EventDoc
+  >;
   await updateDoc(ref, withUpdateTimestamp(update));
   const snapshot = await getDoc(ref);
   const data = snapshot.data() as EventDoc;
@@ -196,15 +220,67 @@ export async function updateEvent(
   return toEvent(novelId, snapshot.id, data, nameById);
 }
 
-export async function getEvents(novelId: string): Promise<NovelEvent[]> {
-  const snapshot = await getDocs(query(eventsCol(novelId), orderBy("sort_order", "asc")));
-  // Fetch the novel's characters exactly once (not per event) to avoid N+1 reads —
-  // mirrors chapters.ts's getChaptersByVolume hoisting getTags(novelId) before its map.
-  const allCharacters = await getAllCharacters(novelId);
-  const nameById = new Map(allCharacters.map((c) => [c.id, c.name]));
-  return snapshot.docs.map((d) => toEvent(novelId, d.id, d.data() as EventDoc, nameById));
+export async function getEvents(
+  novelId: string,
+  characterNameById?:
+    | ReadonlyMap<string, string>
+    | Promise<ReadonlyMap<string, string>>,
+): Promise<NovelEvent[]> {
+  const [snapshot, nameById] = await Promise.all([
+    getDocs(query(eventsCol(novelId), orderBy("sort_order", "asc"))),
+    // Callers that already loaded characters (such as Timeline) can supply
+    // their lookup promise, so both queries remain parallel without a second
+    // complete character collection read.
+    characterNameById ??
+      getAllCharacters(novelId).then(
+        (characters) =>
+          new Map(
+            characters.map((character) => [character.id, character.name]),
+          ),
+      ),
+  ]);
+  return snapshot.docs.map((d) =>
+    toEvent(novelId, d.id, d.data() as EventDoc, nameById),
+  );
 }
 
-export async function deleteEvent(novelId: string, eventId: string): Promise<void> {
+export async function getEventsByChapter(
+  novelId: string,
+  chapterId: string,
+): Promise<NovelEvent[]> {
+  const snapshot = await getDocs(
+    query(eventsCol(novelId), where("chapter_id", "==", chapterId)),
+  );
+  return snapshot.docs
+    .map((item) =>
+      toEvent(novelId, item.id, item.data() as EventDoc, new Map()),
+    )
+    .sort(
+      (left, right) =>
+        left.sort_order - right.sort_order || left.id.localeCompare(right.id),
+    );
+}
+
+export async function getEventsByVolume(
+  novelId: string,
+  volumeId: string,
+): Promise<NovelEvent[]> {
+  const snapshot = await getDocs(
+    query(eventsCol(novelId), where("chapter_volume_id", "==", volumeId)),
+  );
+  return snapshot.docs
+    .map((item) =>
+      toEvent(novelId, item.id, item.data() as EventDoc, new Map()),
+    )
+    .sort(
+      (left, right) =>
+        left.sort_order - right.sort_order || left.id.localeCompare(right.id),
+    );
+}
+
+export async function deleteEvent(
+  novelId: string,
+  eventId: string,
+): Promise<void> {
   await deleteDoc(eventRef(novelId, eventId));
 }

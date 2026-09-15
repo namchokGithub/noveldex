@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import ChapterEditor from "./ChapterEditor";
 import ChapterNotesEditor from "./ChapterNotesEditor";
 import ChapterTitleEditor from "./ChapterTitleEditor";
+import ChapterCrossReferences from "./ChapterCrossReferences";
 import BackToTopButton from "@/app/novels/BackToTopButton";
 import {
   backLinkClassName,
@@ -11,7 +12,11 @@ import {
   SectionHeading,
 } from "@/app/novels/ui";
 import { T } from "@/components/i18n/I18nProvider";
-import { getChapter } from "@/libs/api";
+import {
+  getAdaptationsByChapter,
+  getChapter,
+  getEventsByChapter,
+} from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { formatChapterPrefix } from "@/libs/chapterLabel";
 
@@ -47,9 +52,15 @@ export default async function ChapterPage({
   const { find = "", note = "" } = await searchParams;
 
   let chapter;
+  let events;
+  let adaptations;
 
   try {
-    chapter = await getChapter(id, volumeId, chapterId);
+    [chapter, events, adaptations] = await Promise.all([
+      getChapter(id, volumeId, chapterId),
+      getEventsByChapter(id, chapterId),
+      getAdaptationsByChapter(id, volumeId, chapterId),
+    ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
     throw error;
@@ -100,6 +111,12 @@ export default async function ChapterPage({
               initialNoteId={note}
             />
           }
+        />
+        <ChapterCrossReferences
+          novelId={id}
+          chapter={chapter}
+          events={events}
+          adaptations={adaptations}
         />
         <BackToTopButton anchorId="chapter-back-link" />
       </div>

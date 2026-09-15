@@ -5,6 +5,7 @@ import BackToTopButton from "../../../BackToTopButton";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import AdaptationSection from "./AdaptationSection";
+import VolumeOverview from "./VolumeOverview";
 import LocalizedVolumeTitle from "@/components/volumes/LocalizedVolumeTitle";
 import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
 import { T } from "@/components/i18n/I18nProvider";
@@ -14,7 +15,14 @@ import {
   DashboardPage,
   SectionHeading,
 } from "@/app/novels/ui";
-import { getAdaptationsByVolume, getChaptersByVolume, getNovel, getTags, getVolume } from "@/libs/api";
+import {
+  getAdaptationsByVolume,
+  getChaptersByVolume,
+  getEventsByVolume,
+  getNovel,
+  getTags,
+  getVolumeMetadata,
+} from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 
 export default async function VolumePage({
@@ -24,18 +32,20 @@ export default async function VolumePage({
 }) {
   const { id, volumeId } = await params;
   let novel: Awaited<ReturnType<typeof getNovel>>;
-  let volume: Awaited<ReturnType<typeof getVolume>>;
+  let volume: Awaited<ReturnType<typeof getVolumeMetadata>>;
   let chapters: Awaited<ReturnType<typeof getChaptersByVolume>>;
   let tags: Awaited<ReturnType<typeof getTags>>;
   let adaptations: Awaited<ReturnType<typeof getAdaptationsByVolume>>;
+  let events: Awaited<ReturnType<typeof getEventsByVolume>>;
 
   try {
-    [novel, volume, chapters, tags, adaptations] = await Promise.all([
+    [novel, volume, chapters, tags, adaptations, events] = await Promise.all([
       getNovel(id),
-      getVolume(id, volumeId),
+      getVolumeMetadata(id, volumeId),
       getChaptersByVolume(id, volumeId),
       getTags(id),
       getAdaptationsByVolume(id, volumeId),
+      getEventsByVolume(id, volumeId),
     ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
@@ -83,7 +93,17 @@ export default async function VolumePage({
           initialDescription={volume.description}
           collapsedLines={3}
         />
-        <AdaptationSection novelId={id} volumeId={volumeId} adaptations={adaptations} />
+        <VolumeOverview
+          novelId={id}
+          chapters={chapters}
+          events={events}
+          adaptations={adaptations}
+        />
+        <AdaptationSection
+          novelId={id}
+          volumeId={volumeId}
+          adaptations={adaptations}
+        />
 
         <ChapterListWithFilters
           novelId={id}
