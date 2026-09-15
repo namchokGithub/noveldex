@@ -2,74 +2,96 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Phase 5: Adaptations
+## Phase 5.1: Adaptations
 
-- [ ] Add `adaptations` subcollection under each volume
+Add `adaptations` subcollection under each volume
 
-  Path:
-  `novels/{novelId}/volumes/{volumeId}/adaptations/{adaptationId}`
+Path: `novels/{novelId}/volumes/{volumeId}/adaptations/{adaptationId}`
 
-- [ ] Add adaptation data model
+Add adaptation data model
 
-  Fields:
-  - medium: anime | manga | movie | ova | special | game | other
-  - group_label: Season 1 / Manga Volume 1
-  - entry_type: episode | chapter | volume | movie | special
-  - entry_number: number
-  - title: string
-  - source_url?: string
-  - description?: string
-  - sort_order: number
-  - created_at
-  - updated_at
+Fields:
 
-- [ ] Show Adaptations section on Volume Detail
+- novel_id: string (duplicated parent context for collection-group search)
+- volume_id: string (duplicated parent context for search routes)
+- medium: anime | manga | movie | ova | special | game | other
+- group_label: Season 1 / Manga Volume 1
+- group_sort_order: number
+- entry_type: episode | chapter | volume | movie | special
+- entry_number: number
+- title: string
+- source_url?: string
+- source_img_url?: string
+- description?: string
+- sort_order: number
+- created_at: Timestamp
+- updated_at: Timestamp
 
-  Group by:
-  - medium
-  - group_label
-  - sort_order / entry_number
+Ordering semantics:
 
-- [ ] Add admin CRUD
-  - Add adaptation
-  - Edit adaptation
-  - Delete adaptation
-  - Reorder adaptation entries if needed
+- `group_sort_order` orders groups within one medium.
+- `entry_number` is the source-facing number (for example, Episode 12).
+- `sort_order` orders entries within the same medium and group; it defaults to the next position.
 
-- [ ] Add guest read-only view
+Show Adaptations section on Volume Detail
 
-  Guests can view adaptations but cannot mutate them.
+Show only entries owned by that volume, with a link to the novel-wide Adaptations page.
 
-- [ ] Add Adaptations to Search
+Group by:
 
-  Include:
-  - title
-  - medium
-  - group_label
-  - description
-  - related volume/chapter context
+- medium
+- group_label
+- group_sort_order
+- sort_order / entry_number
 
-  Add search document types:
-  - adaptation
-  - adaptation_note later
+Add novel-wide Adaptations page
 
-- [ ] Later: Add notes to adaptations
+- Route: `/novels/{novelId}/adaptations`
+- Entry point: Adaptations card in the Novel Detail Explore section
+- Load every adaptation for the novel through one collection-group query on `novel_id`
+- Show the owning volume context for every entry
+- Group the page by medium, group label, and the ordering fields above
+- Support inline admin CRUD/reorder and guest read-only access, following the Timeline interaction model
 
-  Start with embedded notes if simple:
+Add admin CRUD
 
-  `adaptations/{adaptationId}.notes[]`
+- Add adaptation
+- Edit adaptation
+- Delete adaptation
+- Reorder adaptation entries if needed
 
-  Each note supports:
-  - content
-  - tags
-  - generic entity references
-  - created_at / updated_at
+Add guest read-only view
 
-- [ ] Later: Link adaptation entry to novel chapters
+Guests can view adaptations but cannot mutate them.
 
-  Optional mapping:
-  - adapted_chapter_ids: string[]
-  - adapted_volume_id: string
+Add Adaptations to Search
+
+Include:
+
+- title
+- medium
+- group_label
+- description
+- related volume/chapter context
+
+Add search document types:
+
+- adaptation
+- adaptation_note later
+
+Adaptation search results route to `/novels/{novelId}/adaptations#adaptation-{id}`.
+
+Later: Add notes to adaptations
+
+Do not include notes in the initial adaptation document. Decide between a bounded embedded list and an `adaptations/{adaptationId}/notes` subcollection when the note workflow is specified.
+
+Later: Link adaptation entry to novel chapters
+
+Optional mapping:
+
+- adapted_chapter_ids: string[]
+
+The parent path already identifies the adapted volume; do not add a duplicate `adapted_volume_id` field.
 
 ## Phase 6: Polish
 
