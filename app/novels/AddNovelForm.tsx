@@ -152,7 +152,7 @@ export default function AddNovelForm() {
                 />
               </div>
               {error && <p className="text-sm text-rose-600">{error}</p>}
-              <div className="mt-2 flex justify-end gap-2">
+              <div className="mt-2 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
                   disabled={submitting}

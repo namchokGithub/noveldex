@@ -316,7 +316,7 @@ export default function VolumeManager({
                     <p className="text-sm text-rose-600">{error}</p>
                   ) : null}
 
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
                       disabled={saving}
@@ -355,7 +355,7 @@ export default function VolumeManager({
                     </p>
                   </Link>
                   {isAdmin ? (
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex w-full shrink-0 flex-wrap justify-end gap-2 sm:w-auto">
                       <button
                         type="button"
                         onClick={() => startEdit(volume)}

@@ -73,14 +73,8 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 
 ## Phase 6: Polish
 
-### Medium
-
-- [ ] Mobile-responsive layout
-
-### Large
-
 - [ ] Firestore read-cost + performance audit
-- [ ] Cross-browser / device verification
+- [ ] [ ] Cross-browser / device verification
 - [ ] Production readiness checklist
 
 ## Fix & Issue

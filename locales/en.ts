@@ -154,6 +154,7 @@ const en = {
   "novel.workspaceFallback":
     "Story workspace for chapters, timeline markers, and character tracking.",
   "novel.chapters": "Chapters",
+  "novel.volumes": "Volumes",
   "novel.read": "Read",
   "novel.explore": "Explore",
   "novel.characters": "Characters",

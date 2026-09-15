@@ -158,6 +158,7 @@ const th = {
   "novel.workspaceFallback":
     "พื้นที่ทำงานสำหรับตอน เหตุการณ์บนไทม์ไลน์ และการติดตามตัวละคร",
   "novel.chapters": "ตอน",
+  "novel.volumes": "เล่ม",
   "novel.read": "อ่านแล้ว",
   "novel.explore": "สำรวจ",
   "novel.characters": "ตัวละคร",

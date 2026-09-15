@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { Novel } from "../types";
 import { T } from "@/components/i18n/I18nProvider";
 import LocalizedDate from "@/components/i18n/LocalizedDate";
+import ExpandableDescription from "./ExpandableDescription";
 import { getNovels as getNovelsFromApi } from "@/libs/api";
 import NovelCover from "./NovelCover";
-import { CommandPaletteTrigger } from "@/components/commands/CommandPalette";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,7 @@ export default async function NovelsPage() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8f6f0_0%,#f3efe6_52%,#ece7db_100%)] px-4 py-6 text-stone-900 sm:px-6 sm:py-8">
-      <div className="mx-auto w-[60vw]">
+      <div className="mx-auto w-full max-w-6xl">
         <section className="rounded-[28px] border border-white/70 bg-white/80 p-4 shadow-[0_20px_80px_rgba(120,108,84,0.12)] backdrop-blur sm:p-6">
           <div className="flex flex-col gap-4 rounded-3xl border border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,240,232,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -62,13 +62,6 @@ export default async function NovelsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 sm:min-w-72 sm:max-w-sm sm:self-stretch lg:items-end">
-                {/* Disabled for now */}
-                {/* <div className="flex justify-start lg:justify-end">
-                  <AddNovelForm />
-                </div> */}
-                <CommandPaletteTrigger />
-              </div>
             </div>
 
             <div className="min-w-0">
@@ -144,11 +137,13 @@ export default async function NovelsPage() {
                         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-400">
                           <T k="common.overview" />
                         </p>
-                        <p className="mt-4 max-w-3xl text-base leading-8 text-stone-600">
+                        <ExpandableDescription
+                          collapsedLines={3}
+                          className="mt-4 max-w-3xl">
                           {featuredNovel.description || (
                             <T k="novels.noDescription" />
                           )}
-                        </p>
+                        </ExpandableDescription>
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">

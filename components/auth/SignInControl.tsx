@@ -225,7 +225,7 @@ export default function SignInControl() {
               {error}
             </p>
           ) : null}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
               disabled={submitting}

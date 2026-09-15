@@ -5,6 +5,10 @@
   --foreground: #171717;
 }
 
+html {
+  font-size: 15px;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
