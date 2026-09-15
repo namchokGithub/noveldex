@@ -52,7 +52,7 @@ export default function ConfirmDialog({
         <p className="text-sm leading-6 text-stone-600">{description}</p>
       </div>
 
-      <div className="mt-5 flex justify-end gap-2">
+      <div className="mt-5 flex flex-wrap justify-end gap-2">
         <button
           type="button"
           disabled={busy}

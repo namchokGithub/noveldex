@@ -299,7 +299,7 @@ export default function TimelinePage({
     }
   }
   return (
-    <DashboardPage maxWidth="w-[60vw]">
+    <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
         <Link href={`/novels/${novelId}`} className={backLinkClassName}>
           ← {t("nav.backToNovel")}
@@ -351,7 +351,7 @@ export default function TimelinePage({
             {addError && (
               <p className="mt-2 text-sm text-rose-600">{addError}</p>
             )}
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
                 disabled={addSaving}
@@ -387,7 +387,7 @@ export default function TimelinePage({
               </span>
             </button>
             {filterOpen && (
-              <div className="absolute left-0 top-full z-10 mt-2 min-w-56 overflow-hidden rounded-2xl border border-stone-200 bg-white py-1 shadow-lg">
+              <div className="absolute left-0 top-full z-10 mt-2 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-stone-200 bg-white py-1 shadow-lg">
                 {characters.map((character) => (
                   <label
                     key={character.id}
@@ -477,7 +477,7 @@ export default function TimelinePage({
                               {editError}
                             </p>
                           )}
-                          <div className="mt-4 flex justify-end gap-2">
+                          <div className="mt-4 flex flex-wrap justify-end gap-2">
                             <button
                               type="button"
                               disabled={editSaving}

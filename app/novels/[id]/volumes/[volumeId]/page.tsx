@@ -54,7 +54,7 @@ export default async function VolumePage({
           );
 
   return (
-    <DashboardPage maxWidth="w-[60vw]">
+    <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
         <Link
           id="volume-back-link"

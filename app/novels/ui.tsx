@@ -20,7 +20,7 @@ export const listClassName =
   "overflow-hidden rounded-[22px] border border-stone-200 bg-white/80 shadow-sm";
 
 export const listRowClassName =
-  "flex items-center justify-between gap-4 px-4 py-4 transition hover:bg-stone-50/90";
+  "flex flex-col items-stretch gap-3 px-4 py-4 transition hover:bg-stone-50/90 sm:flex-row sm:items-center sm:justify-between sm:gap-4";
 
 export const backLinkClassName =
   "inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white/80 px-3 py-1.5 text-sm text-stone-600 shadow-sm transition hover:border-stone-300 hover:text-stone-900";
@@ -80,13 +80,13 @@ export const compactEmptyStateClassName =
   "rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 px-4 py-5 text-center text-sm text-stone-500";
 
 export const modalBackdropClassName =
-  "fixed inset-3 z-50 flex items-center justify-center overflow-hidden rounded-[28px] bg-stone-950/42 px-4 backdrop-blur-md sm:inset-4 sm:rounded-[28px]";
+  "fixed inset-3 z-50 flex items-center justify-center overflow-y-auto rounded-[28px] bg-stone-950/42 px-4 py-4 backdrop-blur-md sm:inset-4 sm:rounded-[28px]";
 
 export const fullScreenModalBackdropClassName =
-  "fixed inset-0 z-50 flex items-center justify-center bg-stone-950/42 px-4 backdrop-blur-md";
+  "fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-stone-950/42 px-4 py-4 backdrop-blur-md";
 
 export const modalPanelClassName =
-  "w-full max-w-md rounded-[28px] border border-stone-200 bg-[linear-gradient(180deg,#fffdf8_0%,#f6f0e7_100%)] p-6 shadow-[0_24px_80px_rgba(28,25,23,0.28)]";
+  "max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[28px] border border-stone-200 bg-[linear-gradient(180deg,#fffdf8_0%,#f6f0e7_100%)] p-5 shadow-[0_24px_80px_rgba(28,25,23,0.28)] sm:p-6";
 
 export const skeletonClassName =
   "animate-pulse rounded-2xl bg-[linear-gradient(90deg,rgba(231,229,228,0.9),rgba(245,245,244,1),rgba(231,229,228,0.9))] bg-[length:200%_100%]";

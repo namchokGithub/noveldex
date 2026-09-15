@@ -106,7 +106,7 @@ export default function VolumeDescriptionEditor({
             </p>
           </div>
           {error && <FormError>{error}</FormError>}
-          <div className="mt-2 flex justify-end gap-2">
+          <div className="mt-2 flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={() => {

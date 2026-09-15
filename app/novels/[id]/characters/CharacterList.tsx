@@ -115,7 +115,7 @@ export default function CharacterList({
                   ) : null}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
                 <span
                   className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${roleColorClassNames[char.role] ?? roleColorClassNames.minor}`}>
                   {char.role_name ?? char.role}

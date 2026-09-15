@@ -193,7 +193,7 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
                   <p className="text-sm text-rose-600">{error}</p>
                 ) : null}
 
-                <div className="mt-1 flex justify-end gap-2">
+                <div className="mt-1 flex flex-wrap justify-end gap-2">
                   <button
                     type="button"
                     disabled={submitting}
@@ -234,7 +234,7 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
                   </p>
                 </div>
 
-                <div className="mt-5 flex justify-end gap-2">
+                <div className="mt-5 flex flex-wrap justify-end gap-2">
                   <button
                     type="button"
                     disabled={submitting}

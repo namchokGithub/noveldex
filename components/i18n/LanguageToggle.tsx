@@ -76,7 +76,7 @@ export default function LanguageToggle() {
   }
 
   return (
-    <div className="flex min-w-0 items-center justify-end gap-1 border-b border-stone-200 bg-white/85 px-3 py-2 backdrop-blur sm:fixed sm:right-4 sm:top-4 sm:z-40 sm:rounded-full sm:border sm:border-stone-200 sm:border-b-0 sm:p-1.5 sm:shadow-sm">
+    <div className="relative z-[45] flex min-w-0 items-center justify-end gap-1 border-b border-white/70 bg-[#fdfaf3]/88 px-3 py-2 shadow-[0_1px_0_rgba(255,255,255,0.8)] backdrop-blur sm:fixed sm:right-4 sm:top-4 sm:rounded-full sm:border sm:border-stone-200/80 sm:border-b sm:p-1.5 sm:shadow-[0_10px_30px_rgba(120,108,84,0.10)]">
       <CommandPaletteTrigger iconOnly />
       <div className="relative">
         <button

@@ -308,7 +308,7 @@ export default function ChapterNotesEditor({
                   showLessLabel={t("common.showLess")}
                 />
                 {isAdmin && (
-                  <div className="mt-3 flex justify-end gap-2">
+                  <div className="mt-3 flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => begin(note)}
@@ -566,7 +566,7 @@ function NoteForm({
           ))}
         </div>
       )}
-      <div className="mt-3 flex justify-end gap-2">
+      <div className="mt-3 flex flex-wrap justify-end gap-2">
         <button
           type="button"
           disabled={saving}

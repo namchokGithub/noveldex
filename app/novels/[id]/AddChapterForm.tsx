@@ -237,7 +237,7 @@ export default function AddChapterForm({
                   />
                 </div>
                 {error && <FormError>{error}</FormError>}
-                <div className="mt-1 flex justify-end gap-2">
+                <div className="mt-1 flex flex-wrap justify-end gap-2">
                   <button
                     type="button"
                     disabled={submitting}

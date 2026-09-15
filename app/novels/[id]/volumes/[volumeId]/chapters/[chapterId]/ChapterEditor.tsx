@@ -588,7 +588,7 @@ export default function ChapterEditor({
               <p className="text-xs text-stone-400">{description.length}/500</p>
             </div>
             {descriptionError && <FormError>{descriptionError}</FormError>}
-            <div className="mt-2 flex justify-end gap-2">
+            <div className="mt-2 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
                 onClick={cancelDescription}
@@ -702,7 +702,7 @@ export default function ChapterEditor({
                 className={inputClassName}
               />
               {readAtError && <FormError>{readAtError}</FormError>}
-              <div className="mt-3 flex justify-end gap-2">
+              <div className="mt-3 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
                   onClick={cancelReadAt}
@@ -801,7 +801,7 @@ export default function ChapterEditor({
                 </div>
               )}
               {entryError && <FormError>{entryError}</FormError>}
-              <div className="mt-3 flex justify-end gap-2">
+              <div className="mt-3 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
                   onClick={cancelEntry}
@@ -969,7 +969,7 @@ export default function ChapterEditor({
                     </p>
                   )}
                 </div>
-                <div className="mt-3 flex justify-end gap-2">
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
                   <button
                     type="button"
                     disabled={tagSaving}

@@ -119,3 +119,4 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Loading / saving / deleting states — route skeletons plus protected busy controls and labels across mutation flows
 - [x] Error handling + user-facing messages — localized mutation feedback, accessible Snackbar announcements, retryable route failures, and typed not-found handling
 - [x] Guest/Admin UX polish — read-only guest cue, guest entity detail view, and gated admin actions
+- [x] Mobile-responsive layout — compact header and lists, responsive overview/detail layouts, scroll-to-top, viewport-safe forms/modals, and mobile-safe Timeline/editor actions

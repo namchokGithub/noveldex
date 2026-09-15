@@ -165,7 +165,7 @@ export default function AddCharacterForm({
                 />
               </div>
               {error && <p className="text-sm text-rose-600">{error}</p>}
-              <div className="mt-1 flex justify-end gap-2">
+              <div className="mt-1 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
                   disabled={submitting}
