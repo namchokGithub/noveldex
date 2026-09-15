@@ -19,9 +19,9 @@ corepack pnpm build
 
 The repository root is the sole runtime application. Domain access lives in `libs/firebase`; `libs/api/index.ts` is a compatibility export surface, not an HTTP client.
 
-Firestore data is nested under `novels/{novelId}` for volumes, chapters, characters, tags, events, and chapter-number markers. Global character roles live in `character_roles`. Chapters carry an embedded `notes[]` list (timestamped entries with `[[Name]]` mention tracking and character auto-linking); the legacy `summary` field is still populated as a join of note content for older callers.
+Firestore data is nested under `novels/{novelId}` for volumes, chapters, adaptations, characters, tags, events, and chapter-number markers. Adaptations live at `volumes/{volumeId}/adaptations/{adaptationId}` and denormalize `novel_id` and `volume_id` for novel-wide collection-group queries. Global character roles live in `character_roles`. Chapters carry an embedded `notes[]` list (timestamped entries with `[[Name]]` mention tracking and character auto-linking); the legacy `summary` field is still populated as a join of note content for older callers.
 
-`sort_order` is the reading position within a volume. Keep regular chapter numbers novel-wide unique through `chapterNumbers/{number}` markers; special chapter entries use `number: null`, a `kind`, and `custom_label` only for `other`. Use `formatChapterLabel` for all user-visible chapter labels. Before releasing this model against existing data, run `backfill:chapter-entry-order` with `--dry-run`, then `--apply`.
+`sort_order` is the reading position within a volume. Keep regular chapter numbers novel-wide unique through `chapterNumbers/{number}` markers; special chapter entries use `number: null`, a `kind`, and `custom_label` only for `other`. Use `formatChapterLabel` for all user-visible chapter labels. Before releasing this model against existing data, run `corepack pnpm backfill:chapter-entry-order -- --project <id> --dry-run`, then its `--apply` counterpart.
 
 Firestore rules (ADR-012): reads stay public; writes require any authenticated Firebase Auth user. Phase 3 extends the client-side scoped search into one derived MiniSearch index fed by Firestore; it must not add Firestore full-text queries or an HTTP search endpoint.
 
