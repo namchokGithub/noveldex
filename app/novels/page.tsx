@@ -31,7 +31,7 @@ export default async function NovelsPage() {
   const featuredNovel = hasSingleNovel ? novels?.[0] : null;
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8f6f0_0%,#f3efe6_52%,#ece7db_100%)] px-4 py-6 text-stone-900 sm:px-6 sm:py-8">
+    <main className="theme-page min-h-screen bg-(image:--theme-page-gradient) px-4 py-6 text-stone-900 sm:px-6 sm:py-8">
       <div className="mx-auto w-full max-w-6xl">
         <section className="rounded-[28px] border border-white/70 bg-white/80 p-4 shadow-[0_20px_80px_rgba(120,108,84,0.12)] backdrop-blur sm:p-6">
           <div className="flex flex-col gap-4 rounded-3xl border border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,240,232,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-5">
@@ -61,7 +61,6 @@ export default async function NovelsPage() {
                   </p>
                 </div>
               </div>
-
             </div>
 
             <div className="min-w-0">

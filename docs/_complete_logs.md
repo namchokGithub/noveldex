@@ -103,6 +103,11 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Chapter entry types and reading order — Prologue, Epilogue, Afterword, Side Story, and custom entries use `sort_order` without changing regular Chapter numbers
 - [x] Chapter entry migration and error-message consistency — `backfill:chapter-entry-order` supports `--dry-run` and `--apply`; form errors use localized validation messages instead of Firestore error text
 
+## Future: Theme light/dark
+
+- [x] Three-way System / Light / Dark theme — browser-local preference, live system-scheme updates in System mode, hydration-safe initialization, and an accessible header picker
+- [x] Dark surface palette — shared pages, cards, forms, menus, modals, lists, status surfaces, and gradients adapt without any Firestore schema or account changes
+
 ## Phase 5: Admin + guest auth
 
 - [x] Firebase Auth (email/password), `AuthProvider`/`useAuth()`, sign-in/sign-out control in the header

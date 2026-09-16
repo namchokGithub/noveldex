@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import ExpandableDescription from "./ExpandableDescription";
 
 export const pageRootClassName =
-  "min-h-screen bg-[linear-gradient(180deg,#f8f6f0_0%,#f3efe6_52%,#ece7db_100%)] px-4 py-6 text-stone-900 sm:px-6 sm:py-8";
+  "theme-page min-h-screen bg-[image:var(--theme-page-gradient)] px-4 py-6 text-stone-900 sm:px-6 sm:py-8";
 
 export const shellClassName =
   "rounded-[28px] border border-white/70 bg-white/80 p-4 shadow-[0_20px_80px_rgba(120,108,84,0.12)] backdrop-blur sm:p-6";
 
 export const innerShellClassName =
-  "flex flex-col gap-5 rounded-[24px] border border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(245,240,232,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-5";
+  "flex flex-col gap-5 rounded-[24px] border border-stone-200/80 bg-[image:var(--theme-surface-gradient)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-5";
 
 export const cardClassName =
   "rounded-[22px] border border-stone-200 bg-white/80 p-5 shadow-[0_12px_32px_rgba(120,108,84,0.10)]";
@@ -86,7 +86,7 @@ export const fullScreenModalBackdropClassName =
   "fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-stone-950/42 px-4 py-4 backdrop-blur-md";
 
 export const modalPanelClassName =
-  "max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[28px] border border-stone-200 bg-[linear-gradient(180deg,#fffdf8_0%,#f6f0e7_100%)] p-5 shadow-[0_24px_80px_rgba(28,25,23,0.28)] sm:p-6";
+  "max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[28px] border border-stone-200 bg-[image:var(--theme-surface-gradient)] p-5 shadow-[0_24px_80px_rgba(28,25,23,0.28)] sm:p-6";
 
 export const skeletonClassName =
   "animate-pulse rounded-2xl bg-[linear-gradient(90deg,rgba(231,229,228,0.9),rgba(245,245,244,1),rgba(231,229,228,0.9))] bg-[length:200%_100%]";
