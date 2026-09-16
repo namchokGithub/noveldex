@@ -1,9 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getEntity } from "@/libs/api";
+import {
+  getAdaptationsForNovel,
+  getChapterNotesForEntity,
+  getEntity,
+  getEventsForEntity,
+} from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { DashboardPage, backLinkClassName } from "../../../ui";
 import EntityDetail from "./EntityDetail";
+import EntityCrossReferences from "./EntityCrossReferences";
+import { adaptationsForEntity } from "@/libs/entityCrossReferences";
 
 export default async function EntityPage({
   params,
@@ -12,8 +19,16 @@ export default async function EntityPage({
 }) {
   const { id, entityId } = await params;
   let entity: Awaited<ReturnType<typeof getEntity>>;
+  let notes: Awaited<ReturnType<typeof getChapterNotesForEntity>>;
+  let events: Awaited<ReturnType<typeof getEventsForEntity>>;
+  let adaptations: Awaited<ReturnType<typeof getAdaptationsForNovel>>;
   try {
-    entity = await getEntity(id, entityId);
+    [entity, notes, events, adaptations] = await Promise.all([
+      getEntity(id, entityId),
+      getChapterNotesForEntity(id, entityId),
+      getEventsForEntity(id, entityId),
+      getAdaptationsForNovel(id),
+    ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
     throw error;
@@ -25,6 +40,16 @@ export default async function EntityPage({
           ← Entities
         </Link>
         <EntityDetail novelId={id} entity={entity} />
+        <EntityCrossReferences
+          novelId={id}
+          notes={notes}
+          events={events}
+          adaptations={adaptationsForEntity(
+            adaptations,
+            entity.id,
+            new Set(notes.map(({ chapter }) => chapter.id)),
+          )}
+        />
       </div>
     </DashboardPage>
   );

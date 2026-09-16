@@ -25,6 +25,8 @@ import { reconcileReferenceOccurrences } from "@/libs/entities/reconcile";
 import type { ReferenceOccurrence } from "@/libs/entities/references";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getTags } from "./tags";
+import { notesForEntity } from "@/libs/entityCrossReferences";
+import type { EntityId } from "@/libs/entities/types";
 
 interface ChapterDoc {
   number: number | null;
@@ -265,6 +267,57 @@ export async function getChaptersFlatDetailed(novelId: string): Promise<Chapter[
   return chapters.sort(
     (a, b) => a.sort_order - b.sort_order ||
       (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER),
+  );
+}
+
+export interface EntityRelatedChapterNote {
+  chapter: ChapterSummary;
+  note: ChapterNote;
+}
+
+export async function getChapterNotesForEntity(
+  novelId: string,
+  entityId: EntityId,
+): Promise<EntityRelatedChapterNote[]> {
+  const snapshot = await getDocs(
+    query(collectionGroup(db, "chapters"), where("novel_id", "==", novelId)),
+  );
+  const entries = snapshot.docs.flatMap((document) => {
+    const data = document.data() as ChapterDoc;
+    const chapter: ChapterSummary = {
+      id: document.id,
+      volume_id: data.volume_id,
+      number: data.number,
+      sort_order: data.sort_order ?? data.number ?? 0,
+      kind: chapterKind(data.kind),
+      custom_label: data.custom_label ?? null,
+      title: data.title_en ?? data.title ?? "",
+      title_en: data.title_en ?? data.title ?? "",
+      title_th: data.title_th ?? "",
+      read_at: data.read_at ? tsToIso(data.read_at) : null,
+    };
+    return notesForEntity<
+      ChapterNoteDoc,
+      { chapter: ChapterSummary; notes: ChapterNoteDoc[] }
+    >([{ chapter, notes: data.notes ?? [] }], entityId).map(
+      ({ chapter: source, note }) => ({
+        chapter: source.chapter,
+        note: {
+          id: note.id,
+          content: note.content,
+          character_ids: note.character_ids ?? [],
+          mentioned_character_names: note.mentioned_character_names ?? [],
+          references: note.references ?? [],
+          created_at: tsToIso(note.created_at),
+          updated_at: tsToIso(note.updated_at),
+        },
+      }),
+    );
+  });
+  return entries.sort(
+    (left, right) =>
+      left.chapter.sort_order - right.chapter.sort_order ||
+      left.note.created_at.localeCompare(right.note.created_at),
   );
 }
 

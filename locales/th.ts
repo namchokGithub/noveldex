@@ -405,6 +405,13 @@ const th = {
   "entities.readOnly": "เอนทิตีนี้ดูข้อมูลได้อย่างเดียว",
   "entities.saveSuccess": "บันทึกเอนทิตีสำเร็จ",
   "entities.deleteSuccess": "ลบเอนทิตีสำเร็จ",
+  "entities.relatedRecords": "รายการที่เกี่ยวข้อง",
+  "entities.notes": "โน้ต",
+  "entities.moreNotes": "โน้ตเพิ่มเติม {count} รายการ",
+  "entities.timelineEvents": "เหตุการณ์ในไทม์ไลน์",
+  "entities.adaptations": "สื่อดัดแปลง",
+  "entities.viewTimeline": "ดูเหตุการณ์เพิ่มเติม {count} รายการ",
+  "entities.viewAdaptations": "ดูสื่อดัดแปลงเพิ่มเติม {count} รายการ",
 
   "timeline.eyebrow": "ไทม์ไลน์",
   "timeline.title": "ลำดับเรื่องราว",

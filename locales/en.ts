@@ -406,6 +406,13 @@ const en = {
   "entities.readOnly": "This entity is available to view only.",
   "entities.saveSuccess": "Entity saved successfully.",
   "entities.deleteSuccess": "Entity deleted successfully.",
+  "entities.relatedRecords": "Related records",
+  "entities.notes": "Notes",
+  "entities.moreNotes": "{count} more notes",
+  "entities.timelineEvents": "Timeline events",
+  "entities.adaptations": "Adaptations",
+  "entities.viewTimeline": "View all {count} more events",
+  "entities.viewAdaptations": "View all {count} more adaptations",
 
   "timeline.eyebrow": "Timeline",
   "timeline.title": "Story sequence",
