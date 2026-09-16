@@ -158,7 +158,8 @@ const en = {
   "adaptations.noteNumber": "Note {number}",
   "adaptations.noteContent": "Note",
   "adaptations.notePlaceholder": "Add an adaptation note…",
-  "adaptations.noteReferenceHint": "Use [[Character]] or [[location:Place]] to link story references.",
+  "adaptations.noteReferenceHint":
+    "Use [[Character]] or [[location:Place]] to link story references.",
   "adaptations.noteRequired": "Enter a note before saving.",
   "adaptations.notesSaved": "Notes updated successfully.",
   "adaptations.manageNotes": "Manage notes",
@@ -385,6 +386,11 @@ const en = {
   "character.noDescription": "No description.",
   "character.appearsIn": "Appears in ({count})",
   "character.relatedNotes": "Related notes",
+  "character.relatedRecords": "Related records",
+  "character.timelineEvents": "Timeline events",
+  "character.adaptations": "Adaptations",
+  "character.viewTimeline": "View all {count} more events",
+  "character.viewAdaptations": "View all {count} more adaptations",
   "character.saveSuccess": "Character updated successfully.",
 
   "entities.eyebrow": "Entities",

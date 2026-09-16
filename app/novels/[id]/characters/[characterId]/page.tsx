@@ -3,7 +3,14 @@ import { notFound } from "next/navigation";
 import CharacterDetail from "./CharacterDetail";
 import { backLinkClassName, DashboardPage } from "../../../ui";
 import { T } from "@/components/i18n/I18nProvider";
-import { getCharacter, getCharacterRoles, getNovel } from "@/libs/api";
+import {
+  getAdaptationsForNovel,
+  getCharacter,
+  getCharacterRoles,
+  getEventsForCharacter,
+  getNovel,
+} from "@/libs/api";
+import { adaptationsForCharacter } from "@/libs/characterCrossReferences";
 import { ResourceNotFoundError } from "@/libs/errors";
 
 export default async function CharacterPage({
@@ -15,13 +22,17 @@ export default async function CharacterPage({
 
   let character: Awaited<ReturnType<typeof getCharacter>>;
   let roles: Awaited<ReturnType<typeof getCharacterRoles>>;
+  let events: Awaited<ReturnType<typeof getEventsForCharacter>>;
+  let adaptations: Awaited<ReturnType<typeof getAdaptationsForNovel>>;
 
   try {
     // getNovel is fetched (and awaited) solely to 404 when the parent novel is gone.
-    [, character, roles] = await Promise.all([
+    [, character, roles, events, adaptations] = await Promise.all([
       getNovel(id),
       getCharacter(id, characterId),
       getCharacterRoles(),
+      getEventsForCharacter(id, characterId),
+      getAdaptationsForNovel(id),
     ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
@@ -35,7 +46,17 @@ export default async function CharacterPage({
           ← <T k="nav.characters" />
         </Link>
 
-        <CharacterDetail character={character} novelId={id} roles={roles} />
+        <CharacterDetail
+          character={character}
+          novelId={id}
+          roles={roles}
+          events={events}
+          adaptations={adaptationsForCharacter(
+            adaptations,
+            character.id,
+            new Set(character.chapters?.map((chapter) => chapter.id) ?? []),
+          )}
+        />
       </div>
     </DashboardPage>
   );

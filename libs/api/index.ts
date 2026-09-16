@@ -73,6 +73,7 @@ export {
   getEvents,
   getEventsByChapter,
   getEventsByVolume,
+  getEventsForCharacter,
   createEvent,
   updateEvent,
   deleteEvent,

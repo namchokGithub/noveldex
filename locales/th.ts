@@ -163,7 +163,8 @@ const th = {
   "adaptations.noteNumber": "โน้ต {number}",
   "adaptations.noteContent": "โน้ต",
   "adaptations.notePlaceholder": "เพิ่มโน้ตของสื่อดัดแปลง…",
-  "adaptations.noteReferenceHint": "ใช้ [[Character]] หรือ [[location:Place]] เพื่อเชื่อมโยงข้อมูลในเรื่อง",
+  "adaptations.noteReferenceHint":
+    "ใช้ [[Character]] หรือ [[location:Place]] เพื่อเชื่อมโยงข้อมูลในเรื่อง",
   "adaptations.noteRequired": "กรุณากรอกโน้ตก่อนบันทึก",
   "adaptations.notesSaved": "อัปเดตโน้ตสำเร็จ",
   "adaptations.manageNotes": "จัดการโน้ต",
@@ -385,6 +386,11 @@ const th = {
   "character.noDescription": "ยังไม่มีคำอธิบาย",
   "character.appearsIn": "ปรากฏใน ({count})",
   "character.relatedNotes": "โน้ตที่เกี่ยวข้อง",
+  "character.relatedRecords": "รายการที่เกี่ยวข้อง",
+  "character.timelineEvents": "เหตุการณ์ในไทม์ไลน์",
+  "character.adaptations": "สื่อดัดแปลง",
+  "character.viewTimeline": "ดูเหตุการณ์เพิ่มเติม {count} รายการ",
+  "character.viewAdaptations": "ดูสื่อดัดแปลงเพิ่มเติม {count} รายการ",
   "character.saveSuccess": "อัปเดตตัวละครสำเร็จ",
 
   "entities.eyebrow": "เอนทิตี",

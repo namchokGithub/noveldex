@@ -4,7 +4,6 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 
 ## Phase 7: Cross-reference Views (remaining)
 
-- [ ] Character detail: show related timeline events and adaptations
 - [ ] Entity detail: show related notes, timeline events, adaptations
 - [ ] Adaptation detail: show related volume/chapter/entities
 

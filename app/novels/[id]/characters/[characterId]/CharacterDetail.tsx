@@ -4,7 +4,12 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { Character, CharacterRole } from "../../../../types";
+import type {
+  Adaptation,
+  Character,
+  CharacterRole,
+  NovelEvent,
+} from "../../../../types";
 import {
   cardClassName,
   ghostButtonClassName,
@@ -27,15 +32,20 @@ import { normalizeEntity } from "@/libs/search/normalize";
 import { dependentRefreshes } from "@/libs/search/refresh";
 import { buildEntityId } from "@/libs/entities/keys";
 import { relatedNotesForCharacter } from "@/libs/characterRelatedNotes";
+import { crossReferencePreview } from "@/libs/crossReferencePreview";
 
 export default function CharacterDetail({
   character,
   novelId,
   roles,
+  events,
+  adaptations,
 }: {
   character: Character;
   novelId: string;
   roles: CharacterRole[];
+  events: NovelEvent[];
+  adaptations: Adaptation[];
 }) {
   const { t } = useI18n();
   const { documents, dependents, entityMap, upsertMany } = useSearchIndex();
@@ -118,7 +128,12 @@ export default function CharacterDetail({
   }
 
   const displayRole = character.role_name ?? character.role;
-  const relatedNotes = relatedNotesForCharacter(character.chapters ?? [], character.id);
+  const relatedNotes = relatedNotesForCharacter(
+    character.chapters ?? [],
+    character.id,
+  );
+  const eventPreview = crossReferencePreview(events);
+  const adaptationPreview = crossReferencePreview(adaptations);
 
   return (
     <div className="flex flex-col gap-6">
@@ -149,7 +164,10 @@ export default function CharacterDetail({
           </div>
           {editing ? (
             <div className="flex gap-2">
-              <button onClick={cancel} disabled={saving} className={ghostButtonClassName}>
+              <button
+                onClick={cancel}
+                disabled={saving}
+                className={ghostButtonClassName}>
                 {t("common.cancel")}
               </button>
               <button
@@ -294,7 +312,9 @@ export default function CharacterDetail({
           </h2>
           <ul className={`${listClassName} divide-y divide-stone-200`}>
             {relatedNotes.map(({ chapterId, note }) => {
-              const chapter = character.chapters?.find((item) => item.id === chapterId);
+              const chapter = character.chapters?.find(
+                (item) => item.id === chapterId,
+              );
               if (!chapter) return null;
               return (
                 <li key={`${chapterId}-${note.id}`}>
@@ -313,6 +333,73 @@ export default function CharacterDetail({
             })}
           </ul>
         </div>
+      )}
+
+      {(events.length > 0 || adaptations.length > 0) && (
+        <section className={cardClassName}>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+            {t("character.relatedRecords")}
+          </p>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {events.length > 0 ? (
+              <div className="rounded-2xl bg-stone-50 p-4 ring-1 ring-stone-200/70">
+                <h2 className="font-semibold text-stone-900">
+                  {t("character.timelineEvents")}
+                </h2>
+                <div className="mt-3 space-y-2">
+                  {eventPreview.items.map((event) => (
+                    <Link
+                      key={event.id}
+                      href={`/novels/${novelId}/timeline`}
+                      className="block rounded-xl px-2 py-1.5 text-sm text-stone-700 transition hover:bg-white hover:text-stone-950">
+                      {event.title || t("timeline.title")}
+                    </Link>
+                  ))}
+                  {eventPreview.remaining > 0 ? (
+                    <Link
+                      href={`/novels/${novelId}/timeline`}
+                      className="block px-2 py-1.5 text-sm font-medium text-stone-600 hover:text-stone-950">
+                      {t("character.viewTimeline", {
+                        count: eventPreview.remaining,
+                      })}
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {adaptations.length > 0 ? (
+              <div className="rounded-2xl bg-stone-50 p-4 ring-1 ring-stone-200/70">
+                <h2 className="font-semibold text-stone-900">
+                  {t("character.adaptations")}
+                </h2>
+                <div className="mt-3 space-y-2">
+                  {adaptationPreview.items.map((adaptation) => (
+                    <Link
+                      key={adaptation.id}
+                      href={`/novels/${novelId}/adaptations#adaptation-${adaptation.id}`}
+                      className="block rounded-xl px-2 py-1.5 text-sm text-stone-700 transition hover:bg-white hover:text-stone-950">
+                      <span className="font-medium">{adaptation.title}</span>
+                      <span className="ml-2 text-xs text-stone-400">
+                        {adaptation.medium} · {adaptation.entry_type}{" "}
+                        {adaptation.entry_number}
+                      </span>
+                    </Link>
+                  ))}
+                  {adaptationPreview.remaining > 0 ? (
+                    <Link
+                      href={`/novels/${novelId}/adaptations`}
+                      className="block px-2 py-1.5 text-sm font-medium text-stone-600 hover:text-stone-950">
+                      {t("character.viewAdaptations", {
+                        count: adaptationPreview.remaining,
+                      })}
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </section>
       )}
 
       <Snackbar

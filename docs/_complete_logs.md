@@ -137,3 +137,4 @@ Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRE
 - [x] Chapter detail — linked story entities, timeline events, and adaptations; event/adaptation previews show three items with a link to the complete novel-wide view
 - [x] Volume detail — overview summary of regular chapters, embedded notes, timeline events, and adaptations in the same volume
 - [x] Character detail — related note previews from existing chapter appearances, filtered by persisted note-level `character_ids` and deep-linked to the note
+- [x] Character detail — related timeline events and adaptations: events match manual participants or persisted description references; adaptations match mapped chapter appearances or persisted note references, with compact three-item previews
