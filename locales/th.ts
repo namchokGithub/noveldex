@@ -219,6 +219,7 @@ const th = {
   "novel.eyebrow": "นิยาย",
   "novel.workspaceFallback":
     "พื้นที่ทำงานสำหรับตอน เหตุการณ์บนไทม์ไลน์ และการติดตามตัวละคร",
+  "novel.viewCover": "ดูปกของ {title}",
   "novel.chapters": "ตอน",
   "novel.volumes": "เล่ม",
   "novel.read": "อ่านแล้ว",

@@ -215,6 +215,7 @@ const en = {
   "novel.eyebrow": "Novel",
   "novel.workspaceFallback":
     "Story workspace for chapters, timeline markers, and character tracking.",
+  "novel.viewCover": "View cover for {title}",
   "novel.chapters": "Chapters",
   "novel.volumes": "Volumes",
   "novel.read": "Read",
