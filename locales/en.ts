@@ -151,6 +151,7 @@ const en = {
   "adaptations.field.imageUrl": "Image URL",
   "adaptations.field.description": "Description",
   "adaptations.field.chapters": "Adapted chapters",
+  "adaptations.viewAllChapters": "View all {count} chapters",
   "adaptations.noChapters": "No chapters in this volume yet.",
   "adaptations.notes": "Notes",
   "adaptations.addNote": "Add note",

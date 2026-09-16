@@ -16,12 +16,15 @@ import {
   FormError,
   ghostButtonClassName,
   inputClassName,
+  modalPanelClassName,
   primaryButtonClassName,
+  secondaryButtonClassName,
   SectionHeading,
   Snackbar,
   smallLabelClassName,
 } from "@/app/novels/ui";
 import ConfirmDialog from "@/app/novels/ConfirmDialog";
+import ModalDialog from "@/components/a11y/ModalDialog";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { groupAdaptations } from "@/libs/adaptations/order";
@@ -43,6 +46,7 @@ import AdaptationFormFields, {
 import AdaptationImageModal from "./AdaptationImageModal";
 import AdaptationNotesPreview from "./AdaptationNotesPreview";
 import { formatChapterLabel } from "@/libs/chapterLabel";
+import { chapterPreview } from "@/libs/adaptations/chapterPreview";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 
 const emptyForm = (volumeId = "", sortOrder = "1"): AdaptationFormState => ({
@@ -108,6 +112,8 @@ export default function AdaptationTimeline({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Adaptation | null>(null);
+  const [chapterDialogAdaptation, setChapterDialogAdaptation] =
+    useState<Adaptation | null>(null);
   const [snackbar, setSnackbar] = useState<{
     tone: "success" | "error";
     message: string;
@@ -393,28 +399,38 @@ export default function AdaptationTimeline({
                                     {item.description}
                                   </p>
                                 ) : null}
-                                {item.adapted_chapter_ids.length > 0 ? (
-                                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
-                                    {item.adapted_chapter_ids.map(
-                                      (chapterId) => {
-                                        const chapter =
-                                          chapterById.get(chapterId);
-                                        return chapter ? (
-                                          <Link
-                                            key={chapter.id}
-                                            href={`/novels/${novelId}/volumes/${item.volume_id}/chapters/${chapter.id}`}
-                                            className="text-sky-700 hover:underline">
-                                            {formatChapterLabel(
-                                              chapter,
-                                              chapterLabels,
-                                            )}{" "}
-                                            · {chapter.title}
-                                          </Link>
-                                        ) : null;
-                                      },
-                                    )}
-                                  </div>
-                                ) : null}
+                                {item.adapted_chapter_ids.length > 0 ? (() => {
+                                  const { visibleId, hiddenIds } = chapterPreview(
+                                    item.adapted_chapter_ids,
+                                  );
+                                  const chapter = visibleId
+                                    ? chapterById.get(visibleId)
+                                    : undefined;
+                                  return (
+                                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                                      {chapter ? (
+                                        <Link
+                                          href={`/novels/${novelId}/volumes/${item.volume_id}/chapters/${chapter.id}`}
+                                          className="text-sky-700 hover:underline">
+                                          {formatChapterLabel(chapter, chapterLabels)} ·{" "}
+                                          {chapter.title}
+                                        </Link>
+                                      ) : null}
+                                      {hiddenIds.length > 0 ? (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setChapterDialogAdaptation(item)
+                                          }
+                                          className="text-sky-700 hover:underline">
+                                          {t("adaptations.viewAllChapters", {
+                                            count: item.adapted_chapter_ids.length,
+                                          })}
+                                        </button>
+                                      ) : null}
+                                    </div>
+                                  );
+                                })() : null}
                                 <AdaptationNotesPreview adaptation={item} />
                               </div>
                             </div>
@@ -509,6 +525,49 @@ export default function AdaptationTimeline({
           busy={busy}
           danger
         />
+        <ModalDialog
+          open={Boolean(chapterDialogAdaptation)}
+          onClose={() => setChapterDialogAdaptation(null)}
+          labelledBy="adaptation-chapters-title"
+          className={`${modalPanelClassName} max-w-lg`}>
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                {t("adaptations.field.chapters")}
+              </p>
+              <h3
+                id="adaptation-chapters-title"
+                className="mt-1 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+                {chapterDialogAdaptation
+                  ? t("adaptations.viewAllChapters", {
+                      count: chapterDialogAdaptation.adapted_chapter_ids.length,
+                    })
+                  : ""}
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setChapterDialogAdaptation(null)}
+              className={secondaryButtonClassName}>
+              {t("common.close")}
+            </button>
+          </div>
+          <ul className="max-h-96 space-y-2 overflow-y-auto pr-1">
+            {chapterDialogAdaptation?.adapted_chapter_ids.map((chapterId) => {
+              const chapter = chapterById.get(chapterId);
+              return chapter ? (
+                <li key={chapter.id}>
+                  <Link
+                    href={`/novels/${novelId}/volumes/${chapterDialogAdaptation.volume_id}/chapters/${chapter.id}`}
+                    onClick={() => setChapterDialogAdaptation(null)}
+                    className="block rounded-xl bg-stone-50 px-3 py-2 text-sm text-sky-700 ring-1 ring-stone-200/70 hover:underline">
+                    {formatChapterLabel(chapter, chapterLabels)} · {chapter.title}
+                  </Link>
+                </li>
+              ) : null;
+            })}
+          </ul>
+        </ModalDialog>
         <Snackbar
           open={Boolean(snackbar)}
           tone={snackbar?.tone}

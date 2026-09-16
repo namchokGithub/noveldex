@@ -156,6 +156,7 @@ const th = {
   "adaptations.field.imageUrl": "URL รูปภาพ",
   "adaptations.field.description": "คำอธิบาย",
   "adaptations.field.chapters": "ตอนที่ดัดแปลง",
+  "adaptations.viewAllChapters": "ดูตอนที่ดัดแปลงทั้งหมด {count} ตอน",
   "adaptations.noChapters": "ยังไม่มีตอนในเล่มนี้",
   "adaptations.notes": "โน้ต",
   "adaptations.addNote": "เพิ่มโน้ต",
