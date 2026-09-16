@@ -7,7 +7,6 @@ Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md)
 - [ ] Compare LN volume ↔ Anime episodes
 - [ ] Compare LN volume ↔ Manga chapters
 - [ ] Mark skipped / changed / anime-original content
-- [ ] Add notes for differences
 - [ ] Search adaptation differences
 
 ## Fix & Issue

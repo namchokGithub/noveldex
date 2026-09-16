@@ -169,7 +169,9 @@ export default function AdaptationTimeline({
         payload(form),
       );
       setItems((current) => [...current, saved]);
-      upsert(normalizeAdaptation(saved, volumeById.get(saved.volume_id), entityMap));
+      upsert(
+        normalizeAdaptation(saved, volumeById.get(saved.volume_id), entityMap),
+      );
       setShowAdd(false);
       setForm(emptyForm(volumes[0]?.id));
       setSnackbar({ tone: "success", message: t("adaptations.addSuccess") });
@@ -196,7 +198,9 @@ export default function AdaptationTimeline({
       setItems((current) =>
         current.map((item) => (item.id === saved.id ? saved : item)),
       );
-      upsert(normalizeAdaptation(saved, volumeById.get(saved.volume_id), entityMap));
+      upsert(
+        normalizeAdaptation(saved, volumeById.get(saved.volume_id), entityMap),
+      );
       setEditing(null);
       setSnackbar({ tone: "success", message: t("adaptations.editSuccess") });
       router.refresh();
@@ -364,44 +368,53 @@ export default function AdaptationTimeline({
                           key={item.id}
                           className="py-4 first:pt-0 last:pb-0">
                           <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="flex min-w-0 items-start gap-3">
+                            <div className="flex flex-1 min-w-0 items-start gap-3">
                               <AdaptationImageModal adaptation={item} />
                               <div className="min-w-0">
-                                <Link
-                                  href={`/novels/${novelId}/volumes/${item.volume_id}/adaptations/${item.id}`}
-                                  className="font-medium text-stone-900 transition hover:text-stone-600">
-                                  {item.entry_type} {item.entry_number} ·{" "}
-                                  {item.title}
-                                </Link>
-                              {item.description ? (
-                                <p className="mt-2 text-sm text-stone-600">
-                                  {item.description}
-                                </p>
-                              ) : null}
-                              {item.source_url ? (
-                                <a
-                                  className="mt-2 inline-block text-sm text-sky-700 hover:underline"
-                                  href={item.source_url}
-                                  target="_blank"
-                                  rel="noreferrer">
-                                  {t("adaptations.source")}
-                                </a>
-                              ) : null}
-                              {item.adapted_chapter_ids.length > 0 ? (
-                                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
-                                  {item.adapted_chapter_ids.map((chapterId) => {
-                                    const chapter = chapterById.get(chapterId);
-                                    return chapter ? (
-                                      <Link
-                                        key={chapter.id}
-                                        href={`/novels/${novelId}/volumes/${item.volume_id}/chapters/${chapter.id}`}
-                                        className="text-sky-700 hover:underline">
-                                        {formatChapterLabel(chapter, chapterLabels)} · {chapter.title}
-                                      </Link>
-                                    ) : null;
-                                  })}
+                                <div className="flex min-w-0 items-baseline gap-2">
+                                  <Link
+                                    href={`/novels/${novelId}/volumes/${item.volume_id}/adaptations/${item.id}`}
+                                    className="min-w-0 flex-1 truncate font-medium text-stone-900 transition hover:text-stone-600">
+                                    {item.entry_type} {item.entry_number} ·{" "}
+                                    {item.title}
+                                  </Link>
+                                  {item.source_url ? (
+                                    <a
+                                      className="shrink-0 text-sm text-sky-700 hover:underline"
+                                      href={item.source_url}
+                                      target="_blank"
+                                      rel="noreferrer">
+                                      {t("adaptations.source")}
+                                    </a>
+                                  ) : null}
                                 </div>
-                              ) : null}
+                                {item.description ? (
+                                  <p className="mt-2 text-sm text-stone-600">
+                                    {item.description}
+                                  </p>
+                                ) : null}
+                                {item.adapted_chapter_ids.length > 0 ? (
+                                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+                                    {item.adapted_chapter_ids.map(
+                                      (chapterId) => {
+                                        const chapter =
+                                          chapterById.get(chapterId);
+                                        return chapter ? (
+                                          <Link
+                                            key={chapter.id}
+                                            href={`/novels/${novelId}/volumes/${item.volume_id}/chapters/${chapter.id}`}
+                                            className="text-sky-700 hover:underline">
+                                            {formatChapterLabel(
+                                              chapter,
+                                              chapterLabels,
+                                            )}{" "}
+                                            · {chapter.title}
+                                          </Link>
+                                        ) : null;
+                                      },
+                                    )}
+                                  </div>
+                                ) : null}
                                 <AdaptationNotesPreview adaptation={item} />
                               </div>
                             </div>
