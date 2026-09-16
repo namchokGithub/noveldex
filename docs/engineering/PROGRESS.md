@@ -2,10 +2,6 @@
 
 Completed phases/items moved to [`docs/_complete_logs.md`](../_complete_logs.md) — this file tracks outstanding work only.
 
-## Phase 7: Cross-reference Views (remaining)
-
-- [ ] Adaptation detail: show related volume/chapter/entities
-
 ## Future: Adaptation Comparison
 
 - [ ] Compare LN volume ↔ Anime episodes
