@@ -367,10 +367,12 @@ export default function AdaptationTimeline({
                             <div className="flex min-w-0 items-start gap-3">
                               <AdaptationImageModal adaptation={item} />
                               <div className="min-w-0">
-                              <p className="font-medium text-stone-900">
-                                {item.entry_type} {item.entry_number} ·{" "}
-                                {item.title}
-                              </p>
+                                <Link
+                                  href={`/novels/${novelId}/volumes/${item.volume_id}/adaptations/${item.id}`}
+                                  className="font-medium text-stone-900 transition hover:text-stone-600">
+                                  {item.entry_type} {item.entry_number} ·{" "}
+                                  {item.title}
+                                </Link>
                               {item.description ? (
                                 <p className="mt-2 text-sm text-stone-600">
                                   {item.description}
@@ -400,7 +402,7 @@ export default function AdaptationTimeline({
                                   })}
                                 </div>
                               ) : null}
-                              <AdaptationNotesPreview adaptation={item} />
+                                <AdaptationNotesPreview adaptation={item} />
                               </div>
                             </div>
                             {isAdmin ? (

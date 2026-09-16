@@ -17,6 +17,8 @@ import { firestoreEntityLookup } from "@/libs/entities/firestoreLookup";
 import { reconcileReferenceOccurrences } from "@/libs/entities/reconcile";
 import type { ReferenceOccurrence } from "@/libs/entities/references";
 import { eventsForCharacter } from "@/libs/characterCrossReferences";
+import { eventsForEntity } from "@/libs/entityCrossReferences";
+import type { EntityId } from "@/libs/entities/types";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getAllCharacters } from "./characters";
@@ -294,6 +296,22 @@ export async function getEventsForCharacter(
           left.sort_order - right.sort_order || left.id.localeCompare(right.id),
       ),
     characterId,
+  );
+}
+
+export async function getEventsForEntity(
+  novelId: string,
+  entityId: EntityId,
+): Promise<NovelEvent[]> {
+  const snapshot = await getDocs(eventsCol(novelId));
+  return eventsForEntity(
+    snapshot.docs
+      .map((item) => toEvent(novelId, item.id, item.data() as EventDoc, new Map()))
+      .sort(
+        (left, right) =>
+          left.sort_order - right.sort_order || left.id.localeCompare(right.id),
+      ),
+    entityId,
   );
 }
 

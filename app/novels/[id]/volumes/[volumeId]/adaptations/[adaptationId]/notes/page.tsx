@@ -35,7 +35,7 @@ export default async function AdaptationNotesPage({
       <div className="space-y-5">
         <Link
           id="adaptation-notes-back-link"
-          href={`/novels/${id}/adaptations#adaptation-${adaptationId}`}
+          href={`/novels/${id}/volumes/${volumeId}/adaptations/${adaptationId}`}
           className={backLinkClassName}>
           ← {novel.title}
         </Link>
