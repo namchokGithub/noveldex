@@ -79,6 +79,7 @@ export default function VolumeSourceImageModal({ title, sourceImgUrl }: Props) {
               referrerPolicy="no-referrer"
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageFailed(true)}
+              unoptimized
               className={`h-[75dvh] w-auto max-h-[calc(100dvh-9rem)] max-w-[calc(100dvw-4rem)] rounded-2xl object-contain transition-opacity duration-200 ${
                 imageLoaded ? "opacity-100" : "opacity-0"
               }`}
