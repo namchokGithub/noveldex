@@ -11,12 +11,19 @@ type Props = {
   sourceImgUrl: string;
 };
 
+export function modalImageUrl(sourceImgUrl: string): string {
+  const url = new URL(sourceImgUrl);
+  url.searchParams.set("view", "modal");
+  return url.toString();
+}
+
 export default function VolumeSourceImageModal({ title, sourceImgUrl }: Props) {
   const { t } = useI18n();
   const titleId = useId();
   const [open, setOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const fullSizeImgUrl = modalImageUrl(sourceImgUrl);
 
   function openModal() {
     setImageLoaded(false);
@@ -72,7 +79,7 @@ export default function VolumeSourceImageModal({ title, sourceImgUrl }: Props) {
             </p>
           ) : (
             <Image
-              src={sourceImgUrl}
+              src={fullSizeImgUrl}
               alt={title}
               width={1280}
               height={1920}

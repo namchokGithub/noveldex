@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 
 import { I18nProvider } from "@/components/i18n/I18nProvider";
-import VolumeSourceImageModal from "./VolumeSourceImageModal";
+import VolumeSourceImageModal, { modalImageUrl } from "./VolumeSourceImageModal";
 
 it("renders an accessible thumbnail button for the volume source image", () => {
   const markup = renderToStaticMarkup(
@@ -15,4 +15,14 @@ it("renders an accessible thumbnail button for the volume source image", () => {
   );
 
   expect(markup).toContain('aria-label="View source image for Volume One"');
+});
+
+it("uses a distinct URL for the full-size modal image", () => {
+  expect(
+    modalImageUrl(
+      "https://static.wikia.nocookie.net/example/images/volume.jpg?cb=123",
+    ),
+  ).toBe(
+    "https://static.wikia.nocookie.net/example/images/volume.jpg?cb=123&view=modal",
+  );
 });
