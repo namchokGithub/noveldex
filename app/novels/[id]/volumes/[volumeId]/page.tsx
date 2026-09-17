@@ -6,6 +6,7 @@ import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import AdaptationSection from "./AdaptationSection";
 import VolumeOverview from "./VolumeOverview";
+import VolumeSourceImageModal from "./VolumeSourceImageModal";
 import LocalizedVolumeTitle from "@/components/volumes/LocalizedVolumeTitle";
 import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
 import { T } from "@/components/i18n/I18nProvider";
@@ -76,16 +77,26 @@ export default async function VolumePage({
           ← Back to {novel.title}
         </Link>
 
-        <SectionHeading
-          eyebrow={
-            <T k="volume.pageEyebrow" values={{ number: volume.number }} />
-          }
-          title={<LocalizedVolumeTitle volume={volume} />}
-          description={
-            <LocalizedVolumePageDescription updatedAt={volume.updated_at} />
-          }
-          action={<AddChapterForm novelId={id} volumeId={volume.id} />}
-        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          {volume.source_img_url ? (
+            <VolumeSourceImageModal
+              title={volume.title}
+              sourceImgUrl={volume.source_img_url}
+            />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <SectionHeading
+              eyebrow={
+                <T k="volume.pageEyebrow" values={{ number: volume.number }} />
+              }
+              title={<LocalizedVolumeTitle volume={volume} />}
+              description={
+                <LocalizedVolumePageDescription updatedAt={volume.updated_at} />
+              }
+              action={<AddChapterForm novelId={id} volumeId={volume.id} />}
+            />
+          </div>
+        </div>
 
         <VolumeDescriptionEditor
           novelId={id}

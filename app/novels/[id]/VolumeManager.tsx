@@ -63,6 +63,7 @@ export default function VolumeManager({
   const [number, setNumber] = useState("");
   const [titleEn, setTitleEn] = useState("");
   const [titleTh, setTitleTh] = useState("");
+  const [sourceImgUrl, setSourceImgUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -114,6 +115,7 @@ export default function VolumeManager({
     setNumber(String(volume.number));
     setTitleEn(volume.title_en ?? volume.title);
     setTitleTh(volume.title_th ?? "");
+    setSourceImgUrl(volume.source_img_url ?? "");
     setError(null);
   }
 
@@ -139,6 +141,7 @@ export default function VolumeManager({
         number: Number(number),
         title_en: titleEn,
         title_th: titleTh,
+        source_img_url: sourceImgUrl.trim() || null,
       });
       upsert(normalizeVolume(updated));
       setConfirmState(null);
@@ -308,6 +311,18 @@ export default function VolumeManager({
                         value={titleTh}
                         onChange={(event) => setTitleTh(event.target.value)}
                         className={inputClassName}
+                      />
+                    </div>
+                    <div className="sm:col-span-3">
+                      <label className={smallLabelClassName}>
+                        {t("addVolume.sourceImageUrl")}
+                      </label>
+                      <input
+                        type="url"
+                        value={sourceImgUrl}
+                        onChange={(event) => setSourceImgUrl(event.target.value)}
+                        className={inputClassName}
+                        placeholder="https://..."
                       />
                     </div>
                   </div>

@@ -11,6 +11,7 @@ type NovelCoverProps = {
   fallbackClassName?: string;
   titleClassName?: string;
   priority?: boolean;
+  fit?: "cover" | "contain";
 };
 
 function getInitials(title: string) {
@@ -34,6 +35,7 @@ export default function NovelCover({
   fallbackClassName = "",
   titleClassName = "",
   priority = false,
+  fit = "cover",
 }: NovelCoverProps) {
   const [failed, setFailed] = useState(false);
   if (!coverUrl || failed) {
@@ -56,7 +58,7 @@ export default function NovelCover({
       alt={alt ?? title}
       width={320}
       height={480}
-      className={className}
+      className={`${fit === "contain" ? "object-contain" : "object-cover"} ${className}`}
       onError={() => setFailed(true)}
       priority={priority}
       unoptimized

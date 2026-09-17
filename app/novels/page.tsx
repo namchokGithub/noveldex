@@ -103,10 +103,11 @@ export default async function NovelsPage() {
                             title={featuredNovel.title}
                             coverUrl={featuredNovel.cover_url}
                             alt={featuredNovel.title}
-                            className="h-56 w-40 rounded-[28px] object-cover shadow-[0_24px_50px_rgba(41,37,36,0.18)] sm:h-64 sm:w-44"
+                            className="h-56 w-40 rounded-[28px] bg-stone-100 shadow-[0_24px_50px_rgba(41,37,36,0.18)] sm:h-64 sm:w-44"
                             fallbackClassName="relative shadow-[0_24px_50px_rgba(41,37,36,0.22)]"
                             titleClassName="text-3xl"
                             priority
+                            fit="contain"
                           />
                           <div className="pointer-events-none absolute -inset-2 -z-10 rounded-4xl bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_56%),radial-gradient(circle_at_bottom,rgba(245,158,11,0.18),transparent_60%)] blur-2xl" />
                         </div>
@@ -190,9 +191,10 @@ export default async function NovelsPage() {
                               title={novel.title}
                               coverUrl={novel.cover_url}
                               alt={novel.title}
-                              className="h-16 w-12 shrink-0 rounded-2xl object-cover shadow-sm"
+                              className="h-16 w-12 shrink-0 rounded-2xl bg-stone-100 shadow-sm"
                               fallbackClassName="relative shadow-sm"
                               titleClassName="text-sm"
+                              fit="contain"
                             />
                             <div className="min-w-0">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">

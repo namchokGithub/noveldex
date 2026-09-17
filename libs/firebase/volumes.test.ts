@@ -67,6 +67,18 @@ describe("volumes", () => {
     expect(volume.created_at).toBe(volume.updated_at);
   });
 
+  it("persists an optional source image URL", async () => {
+    const volume = await createVolume("novel-1", {
+      number: 1,
+      title: "Volume One",
+      source_img_url: "https://images.example.com/volume-one.jpg",
+    });
+
+    expect(volume.source_img_url).toBe(
+      "https://images.example.com/volume-one.jpg",
+    );
+  });
+
   it("computes chapter_count and read_count for a single volume from its chapters", async () => {
     const volume = await createVolume("novel-1", {
       number: 1,

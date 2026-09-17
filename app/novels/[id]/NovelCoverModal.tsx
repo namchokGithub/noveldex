@@ -23,9 +23,10 @@ export default function NovelCoverModal({ title, coverUrl }: Props) {
         title={title}
         coverUrl={coverUrl}
         alt={title}
-        className="h-40 w-28 rounded-3xl object-cover shadow-[0_18px_36px_rgba(41,37,36,0.18)] sm:h-44 sm:w-32"
+        className="h-40 w-28 rounded-3xl bg-stone-100 shadow-[0_18px_36px_rgba(41,37,36,0.18)] sm:h-44 sm:w-32"
         fallbackClassName="relative shadow-[0_18px_36px_rgba(41,37,36,0.22)]"
         titleClassName="text-2xl"
+        fit="contain"
       />
     );
   }
@@ -41,7 +42,8 @@ export default function NovelCoverModal({ title, coverUrl }: Props) {
           title={title}
           coverUrl={coverUrl}
           alt=""
-          className="h-40 w-28 rounded-3xl object-cover shadow-[0_18px_36px_rgba(41,37,36,0.18)] sm:h-44 sm:w-32"
+          className="h-40 w-28 rounded-3xl bg-stone-100 shadow-[0_18px_36px_rgba(41,37,36,0.18)] sm:h-44 sm:w-32"
+          fit="contain"
         />
       </button>
       <ModalDialog

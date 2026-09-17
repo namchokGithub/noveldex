@@ -26,11 +26,23 @@ interface VolumeDoc {
   title_en?: string;
   title_th?: string;
   description?: string;
+  source_img_url?: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
 
 const MAX_DESCRIPTION_LENGTH = 500;
+
+function optionalUrl(value: string | null | undefined, field: string) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  try {
+    new URL(trimmed);
+  } catch {
+    throw new Error(`${field} must be a valid URL`);
+  }
+  return trimmed;
+}
 
 function validateDescription(description: string | undefined) {
   if (
@@ -111,6 +123,7 @@ function toVolumeMetadata(
     title_en,
     title_th,
     description: data.description ?? "",
+    source_img_url: data.source_img_url ?? null,
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
   };
@@ -135,6 +148,7 @@ export interface VolumeCreatePayload {
   title_en?: string;
   title_th?: string;
   description?: string;
+  source_img_url?: string | null;
 }
 
 export interface VolumePayload {
@@ -144,6 +158,7 @@ export interface VolumePayload {
   title_en?: string;
   title_th?: string;
   description?: string;
+  source_img_url?: string | null;
 }
 
 export async function getVolumes(
@@ -272,6 +287,7 @@ export async function createVolume(
   const title_en = (payload.title_en ?? payload.title ?? "").trim();
   if (!title_en) throw new Error("English volume title is required");
   const title_th = payload.title_th?.trim() ?? "";
+  const source_img_url = optionalUrl(payload.source_img_url, "source_img_url");
   const ref = await addDoc(
     volumesCol(novelId),
     withCreateTimestamps({
@@ -280,6 +296,7 @@ export async function createVolume(
       title_en,
       title_th,
       description: payload.description ?? "",
+      source_img_url,
     }),
   );
   const snapshot = await getDoc(ref);
@@ -304,6 +321,9 @@ export async function updateVolume(
     update.title_en = title_en;
   }
   if (payload.title_th !== undefined) update.title_th = payload.title_th.trim();
+  if (payload.source_img_url !== undefined) {
+    update.source_img_url = optionalUrl(payload.source_img_url, "source_img_url");
+  }
   const ref = doc(
     db,
     "novels",
