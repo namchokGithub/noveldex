@@ -193,6 +193,7 @@ export default async function NovelPage({
                   title_en: volume.title_en,
                   title_th: volume.title_th,
                   description: volume.description,
+                  source_img_url: volume.source_img_url,
                   chapter_count: volume.chapter_count,
                   read_count: volume.read_count,
                   created_at: volume.created_at,

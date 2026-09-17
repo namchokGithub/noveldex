@@ -19,6 +19,7 @@ export interface Volume {
   title_en: string;
   title_th: string;
   description: string;
+  source_img_url: string | null;
   chapter_count: number;
   read_count: number;
   created_at: string;

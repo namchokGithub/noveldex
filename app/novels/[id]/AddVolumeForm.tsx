@@ -23,6 +23,7 @@ interface VolumeDraft {
   number: number;
   title_en: string;
   title_th: string;
+  source_img_url: string;
 }
 
 interface SnackbarState {
@@ -67,8 +68,11 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
       .value;
     const title_th = (form.elements.namedItem("title_th") as HTMLInputElement)
       .value;
+    const source_img_url = (
+      form.elements.namedItem("source_img_url") as HTMLInputElement
+    ).value;
 
-    setDraft({ number, title_en, title_th });
+    setDraft({ number, title_en, title_th, source_img_url });
     setConfirmOpen(true);
   }
 
@@ -186,6 +190,17 @@ export default function AddVolumeForm({ novelId }: { novelId: string }) {
                     name="title_th"
                     className={inputClassName}
                     placeholder={t("addChapter.titleThaiPlaceholder")}
+                  />
+                </div>
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("addVolume.sourceImageUrl")}
+                  </label>
+                  <input
+                    name="source_img_url"
+                    type="url"
+                    className={inputClassName}
+                    placeholder="https://..."
                   />
                 </div>
 

@@ -265,6 +265,7 @@ const en = {
   "addVolume.eyebrow": "Volume",
   "addVolume.title": "Create volume",
   "addVolume.numberRequired": "Number *",
+  "addVolume.sourceImageUrl": "Source image URL (optional)",
   "addVolume.titlePlaceholder": "Volume 1",
   "addVolume.confirmEyebrow": "Confirm",
   "addVolume.confirmTitle": "Create this volume?",
@@ -296,6 +297,7 @@ const en = {
   "volume.descriptionPlaceholder": "Short volume description",
   "volume.saveDescription": "Save description",
   "volume.descriptionSaved": "Description saved successfully.",
+  "volume.viewImage": "View source image for {title}",
   "volume.pageEyebrow": "Volume {number}",
   "volume.pageDescription":
     "Manage chapters inside this volume. Updated {date}.",
