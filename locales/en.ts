@@ -297,6 +297,7 @@ const en = {
   "volume.descriptionPlaceholder": "Short volume description",
   "volume.saveDescription": "Save description",
   "volume.descriptionSaved": "Description saved successfully.",
+  "volume.imageLoadFailed": "The source image could not be loaded.",
   "volume.viewImage": "View source image for {title}",
   "volume.pageEyebrow": "Volume {number}",
   "volume.pageDescription":

@@ -300,6 +300,7 @@ const th = {
   "volume.descriptionPlaceholder": "คำอธิบายสั้น ๆ ของเล่มนี้",
   "volume.saveDescription": "บันทึกคำอธิบาย",
   "volume.descriptionSaved": "บันทึกคำอธิบายสำเร็จ",
+  "volume.imageLoadFailed": "ไม่สามารถโหลดรูปต้นฉบับได้",
   "volume.viewImage": "ดูรูปต้นฉบับของ {title}",
   "volume.pageEyebrow": "เล่ม {number}",
   "volume.pageDescription": "จัดการตอนในเล่มนี้ อัปเดต {date}",
