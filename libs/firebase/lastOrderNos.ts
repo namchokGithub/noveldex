@@ -27,7 +27,9 @@ export async function getLastOrderNos(params: {
         limit(1),
       ),
     );
-    volume = snapshot.empty ? 0 : (snapshot.docs[0].data() as { number: number }).number;
+    volume = snapshot.empty
+      ? 0
+      : (snapshot.docs[0].data() as { number: number }).number;
   }
 
   let chapter = 0;
@@ -35,12 +37,18 @@ export async function getLastOrderNos(params: {
     const snapshot = await getDocs(
       query(
         collectionGroup(db, "chapters"),
-        where(params.novel_id ? "novel_id" : "volume_id", "==", params.novel_id ?? params.volume_id),
+        where(
+          params.volume_id ? "volume_id" : "novel_id",
+          "==",
+          params.volume_id ?? params.novel_id,
+        ),
         orderBy("number", "desc"),
         limit(1),
       ),
     );
-    chapter = snapshot.empty ? 0 : (snapshot.docs[0].data() as { number: number }).number;
+    chapter = snapshot.empty
+      ? 0
+      : (snapshot.docs[0].data() as { number: number }).number;
   }
 
   return { volume, chapter };

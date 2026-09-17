@@ -7,13 +7,13 @@ The repository root is a Next.js 16 / React 19 application that accesses Cloud F
 Firestore structure:
 
 - `novels/{novelId}`
-- nested `volumes/{volumeId}/chapters/{chapterId}`, `chapterNumbers/{number}`, and `adaptations/{adaptationId}`
+- nested `volumes/{volumeId}/chapters/{chapterId}`, `volumes/{volumeId}/chapterNumbers/{number}`, and `adaptations/{adaptationId}`
 - nested `characters`, `entities`, `events`, and `tags`; `entities` stores locations, skills, organizations, items, and concepts while characters retain their existing collection
 - global `character_roles`
 
 Chapters carry an embedded `notes[]` list with timestamped entries and persisted generic entity-reference occurrences. `[[Name]]` remains a character reference for compatibility; typed references support locations, skills, organizations, items, and concepts. Legacy character fields remain for existing filters and counts. The legacy `summary` field is still populated as a join of note content for older callers; do not remove it without a migration. Volumes and chapters also carry an optional `description` string (max 500 characters), shown only on their detail pages.
 
-Chapter entries use ADR-009: `sort_order` controls reading order only within a volume. Regular `chapter` entries retain their novel-wide unique positive `number` and a `chapterNumbers` marker. `prologue`, `epilogue`, `afterword`, `side_story`, and `other` entries store `number: null`; only `other` needs a nonempty `custom_label`. Use `formatChapterLabel` from `libs/chapterLabel.ts` for every user-facing label, and run `pnpm backfill:chapter-entry-order -- --project <id> --dry-run` before its `--apply` counterpart when upgrading existing Firestore data.
+Chapter entries use ADR-009: `sort_order` controls reading order only within a volume. Regular `chapter` entries retain a positive `number` unique to that volume and a volume-scoped `chapterNumbers` marker. `prologue`, `epilogue`, `afterword`, `side_story`, and `other` entries store `number: null`; only `other` needs a nonempty `custom_label`. Use `formatChapterLabel` from `libs/chapterLabel.ts` for every user-facing label. When upgrading the marker layout, run `pnpm backfill:volume-chapter-numbers -- --project <id>` first, review the dry-run, then rerun with `--apply`.
 
 Timeline events use story order: `volume.number → chapter.sort_order → page_number → event.sort_order → event.id`. Event `sort_order` is a position only within the same volume, chapter, and page. The Add Event form derives its default as the next position in that group (`max + 1`); it does not renumber existing events when inserting a value in the middle.
 

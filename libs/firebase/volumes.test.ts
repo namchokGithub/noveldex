@@ -46,9 +46,20 @@ async function seedChapter(
       updated_at: Timestamp.now(),
     },
   );
-  await setDoc(doc(db, "novels", novelId, "chapterNumbers", String(number)), {
-    chapter_id: chapterId,
-  });
+  await setDoc(
+    doc(
+      db,
+      "novels",
+      novelId,
+      "volumes",
+      volumeId,
+      "chapterNumbers",
+      String(number),
+    ),
+    {
+      chapter_id: chapterId,
+    },
+  );
 }
 
 describe("volumes", () => {
@@ -95,12 +106,11 @@ describe("volumes", () => {
 
   it("lists volumes paginated, ordered by number, with a novel-wide summary", async () => {
     for (let n = 1; n <= 7; n += 1) {
-       
       const v = await createVolume("novel-1", {
         number: n,
         title: `Volume ${n}`,
       });
-       
+
       await seedChapter("novel-1", v.id, `ch-${n}`, n, n % 2 === 0);
     }
 
@@ -219,12 +229,32 @@ describe("volumes", () => {
 
     expect(
       (
-        await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "1"))
+        await getDoc(
+          doc(
+            db,
+            "novels",
+            "novel-1",
+            "volumes",
+            "vol-1",
+            "chapterNumbers",
+            "1",
+          ),
+        )
       ).exists(),
     ).toBe(false);
     expect(
       (
-        await getDoc(doc(db, "novels", "novel-1", "chapterNumbers", "2"))
+        await getDoc(
+          doc(
+            db,
+            "novels",
+            "novel-1",
+            "volumes",
+            "vol-1",
+            "chapterNumbers",
+            "2",
+          ),
+        )
       ).exists(),
     ).toBe(false);
 

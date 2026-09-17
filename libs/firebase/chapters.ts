@@ -14,7 +14,14 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore/lite";
-import type { Chapter, ChapterKind, ChapterNote, ChapterSummary, ChapterWithCharacters, Tag } from "@/app/types";
+import type {
+  Chapter,
+  ChapterKind,
+  ChapterNote,
+  ChapterSummary,
+  ChapterWithCharacters,
+  Tag,
+} from "@/app/types";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
 import { db } from "./app";
@@ -56,8 +63,13 @@ const MAX_DESCRIPTION_LENGTH = 500;
 const MAX_CUSTOM_LABEL_LENGTH = 80;
 
 function validateDescription(description: string | undefined) {
-  if (description !== undefined && description.length > MAX_DESCRIPTION_LENGTH) {
-    throw new Error(`description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer`);
+  if (
+    description !== undefined &&
+    description.length > MAX_DESCRIPTION_LENGTH
+  ) {
+    throw new Error(
+      `description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer`,
+    );
   }
 }
 
@@ -65,14 +77,22 @@ function chapterKind(value: ChapterKind | undefined): ChapterKind {
   return value && CHAPTER_KINDS.includes(value) ? value : "chapter";
 }
 
-function validateEntry(kind: ChapterKind, number: number | null, customLabel: string | null) {
+function validateEntry(
+  kind: ChapterKind,
+  number: number | null,
+  customLabel: string | null,
+) {
   if (kind === "chapter" && (!Number.isInteger(number) || (number ?? 0) < 1)) {
     throw new Error("chapter number must be a positive integer");
   }
-  if (kind !== "chapter" && number !== null) throw new Error("special entries cannot have a chapter number");
-  if (kind === "other" && !customLabel?.trim()) throw new Error("a custom label is required for Other");
+  if (kind !== "chapter" && number !== null)
+    throw new Error("special entries cannot have a chapter number");
+  if (kind === "other" && !customLabel?.trim())
+    throw new Error("a custom label is required for Other");
   if (customLabel && customLabel.length > MAX_CUSTOM_LABEL_LENGTH) {
-    throw new Error(`custom label must be ${MAX_CUSTOM_LABEL_LENGTH} characters or fewer`);
+    throw new Error(
+      `custom label must be ${MAX_CUSTOM_LABEL_LENGTH} characters or fewer`,
+    );
   }
 }
 
@@ -87,17 +107,42 @@ interface ChapterNoteDoc {
 }
 
 function notesForChapter(data: ChapterDoc): ChapterNote[] {
-  if (data.notes) return data.notes
-    .map((note) => ({ id: note.id, content: note.content, character_ids: note.character_ids ?? [], mentioned_character_names: note.mentioned_character_names ?? [], references: note.references, created_at: tsToIso(note.created_at), updated_at: tsToIso(note.updated_at) }))
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  if (data.notes)
+    return data.notes
+      .map((note) => ({
+        id: note.id,
+        content: note.content,
+        character_ids: note.character_ids ?? [],
+        mentioned_character_names: note.mentioned_character_names ?? [],
+        references: note.references,
+        created_at: tsToIso(note.created_at),
+        updated_at: tsToIso(note.updated_at),
+      }))
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
   if (!data.summary) return [];
-  return [{ id: "legacy-summary", content: data.summary, character_ids: [], created_at: tsToIso(data.created_at), updated_at: tsToIso(data.updated_at) }];
+  return [
+    {
+      id: "legacy-summary",
+      content: data.summary,
+      character_ids: [],
+      created_at: tsToIso(data.created_at),
+      updated_at: tsToIso(data.updated_at),
+    },
+  ];
 }
 
 function notesToDoc(notes: ChapterNote[]): ChapterNoteDoc[] {
   return [...notes]
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
-    .map((note) => ({ id: note.id, content: note.content, character_ids: note.character_ids ?? [], mentioned_character_names: note.mentioned_character_names ?? [], references: note.references ?? [], created_at: Timestamp.fromDate(new Date(note.created_at)), updated_at: Timestamp.fromDate(new Date(note.updated_at)) }));
+    .map((note) => ({
+      id: note.id,
+      content: note.content,
+      character_ids: note.character_ids ?? [],
+      mentioned_character_names: note.mentioned_character_names ?? [],
+      references: note.references ?? [],
+      created_at: Timestamp.fromDate(new Date(note.created_at)),
+      updated_at: Timestamp.fromDate(new Date(note.updated_at)),
+    }));
 }
 
 function chaptersCol(novelId: string, volumeId: string) {
@@ -108,8 +153,16 @@ function chapterRef(novelId: string, volumeId: string, chapterId: string) {
   return doc(db, "novels", novelId, "volumes", volumeId, "chapters", chapterId);
 }
 
-function markerRef(novelId: string, number: number) {
-  return doc(db, "novels", novelId, "chapterNumbers", String(number));
+function markerRef(novelId: string, volumeId: string, number: number) {
+  return doc(
+    db,
+    "novels",
+    novelId,
+    "volumes",
+    volumeId,
+    "chapterNumbers",
+    String(number),
+  );
 }
 
 function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
@@ -142,36 +195,62 @@ function resolveTags(tagIds: string[], byId: Map<string, Tag>): Tag[] {
   return tagIds.map((id) => byId.get(id)).filter((t): t is Tag => Boolean(t));
 }
 
-async function tagsForChapter(novelId: string, tagIds: string[]): Promise<Tag[]> {
+async function tagsForChapter(
+  novelId: string,
+  tagIds: string[],
+): Promise<Tag[]> {
   if (tagIds.length === 0) return [];
   const allTags = await getTags(novelId);
   return resolveTags(tagIds, new Map(allTags.map((t) => [t.id, t])));
 }
 
-async function hydrateNoteReferences(novelId: string, notes: ChapterNoteDoc[]): Promise<ChapterNoteDoc[]> {
+async function hydrateNoteReferences(
+  novelId: string,
+  notes: ChapterNoteDoc[],
+): Promise<ChapterNoteDoc[]> {
   const lookup = firestoreEntityLookup();
-  return Promise.all(notes.map(async (note) => note.references !== undefined ? note : {
-    ...note,
-    references: await reconcileReferenceOccurrences(novelId, note.content, null, lookup),
-  }));
+  return Promise.all(
+    notes.map(async (note) =>
+      note.references !== undefined
+        ? note
+        : {
+            ...note,
+            references: await reconcileReferenceOccurrences(
+              novelId,
+              note.content,
+              null,
+              lookup,
+            ),
+          },
+    ),
+  );
 }
 
 function characterMentionNames(references: ReferenceOccurrence[]) {
-  return [...new Set(references.flatMap((occurrence) => {
-    if (occurrence.token.status === "resolved") {
-      return occurrence.token.reference.entityType === "character"
-        ? [occurrence.token.reference.label]
-        : [];
-    }
-    return occurrence.token.typed === null || occurrence.token.typed === "character"
-      ? [occurrence.token.label]
-      : [];
-  }))];
+  return [
+    ...new Set(
+      references.flatMap((occurrence) => {
+        if (occurrence.token.status === "resolved") {
+          return occurrence.token.reference.entityType === "character"
+            ? [occurrence.token.reference.label]
+            : [];
+        }
+        return occurrence.token.typed === null ||
+          occurrence.token.typed === "character"
+          ? [occurrence.token.label]
+          : [];
+      }),
+    ),
+  ];
 }
 
 function legacyCharacterFields(references: ReferenceOccurrence[]) {
   const characterIds = references.flatMap((occurrence) => {
-    if (occurrence.token.status !== "resolved" || occurrence.token.reference.entityType !== "character") return [];
+    if (
+      occurrence.token.status !== "resolved" ||
+      occurrence.token.reference.entityType !== "character"
+    )
+      return [];
     const parsed = parseEntityId(occurrence.token.reference.entityId);
     return parsed ? [parsed.sourceRecordId] : [];
   });
@@ -187,14 +266,30 @@ async function resolveNotes(
   previousById: Map<string, ChapterNoteDoc>,
 ): Promise<ChapterNote[]> {
   const lookup = firestoreEntityLookup();
-  return Promise.all(notes.map(async (note) => {
-    const previous = previousById.get(note.id);
-    const references = await reconcileReferenceOccurrences(novelId, note.content, previous ? { content: previous.content, occurrences: previous.references ?? [] } : null, lookup);
-    return { ...note, references, ...legacyCharacterFields(references) };
-  }));
+  return Promise.all(
+    notes.map(async (note) => {
+      const previous = previousById.get(note.id);
+      const references = await reconcileReferenceOccurrences(
+        novelId,
+        note.content,
+        previous
+          ? {
+              content: previous.content,
+              occurrences: previous.references ?? [],
+            }
+          : null,
+        lookup,
+      );
+      return { ...note, references, ...legacyCharacterFields(references) };
+    }),
+  );
 }
 
-function incrementCounts(counts: Map<string, number>, characterIds: string[], amount: number): void {
+function incrementCounts(
+  counts: Map<string, number>,
+  characterIds: string[],
+  amount: number,
+): void {
   characterIds.forEach((id) => {
     const next = (counts.get(id) ?? 0) + amount;
     if (next <= 0) counts.delete(id);
@@ -210,63 +305,95 @@ export async function getChaptersByVolume(
   // Fetch the novel's tags exactly once (not per chapter) to avoid N+1 reads.
   const allTags = await getTags(novelId);
   const byId = new Map(allTags.map((t) => [t.id, t]));
-  return (await Promise.all(snapshot.docs.map(async (d) => {
-    const data = d.data() as ChapterDoc;
-    const notes = await hydrateNoteReferences(novelId, data.notes ?? []);
-    return toChapter(d.id, { ...data, notes }, resolveTags(data.tag_ids ?? [], byId));
-  }))).sort((a, b) => a.sort_order - b.sort_order);
+  return (
+    await Promise.all(
+      snapshot.docs.map(async (d) => {
+        const data = d.data() as ChapterDoc;
+        const notes = await hydrateNoteReferences(novelId, data.notes ?? []);
+        return toChapter(
+          d.id,
+          { ...data, notes },
+          resolveTags(data.tag_ids ?? [], byId),
+        );
+      }),
+    )
+  ).sort((a, b) => a.sort_order - b.sort_order);
 }
 
-export async function getChaptersFlat(novelId: string): Promise<ChapterSummary[]> {
-  const snapshot = await getDocs(query(collectionGroup(db, "chapters"), where("novel_id", "==", novelId)));
-  return snapshot.docs.map((d) => {
-    const data = d.data() as {
-      volume_id: string;
-      number: number | null;
-      sort_order?: number;
-      kind?: ChapterKind;
-      custom_label?: string | null;
-      title?: string;
-      title_en?: string;
-      title_th?: string;
-      summary?: string;
-      notes?: ChapterNoteDoc[];
-      read_at: Timestamp | null;
-      character_ids?: string[];
-    };
-    return {
-      id: d.id,
-      volume_id: data.volume_id,
-      number: data.number,
-      sort_order: data.sort_order ?? data.number ?? 0,
-      kind: chapterKind(data.kind),
-      custom_label: data.custom_label ?? null,
-      title: data.title_en || data.title || "",
-      title_en: data.title_en ?? data.title ?? "",
-      title_th: data.title_th ?? "",
-      summary: data.notes?.map((note) => note.content).join("\n") ?? data.summary ?? "",
-      read_at: data.read_at ? tsToIso(data.read_at) : null,
-      character_ids: data.character_ids ?? [],
-    };
-  }).sort((a, b) => a.sort_order - b.sort_order || (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER));
+export async function getChaptersFlat(
+  novelId: string,
+): Promise<ChapterSummary[]> {
+  const snapshot = await getDocs(
+    query(collectionGroup(db, "chapters"), where("novel_id", "==", novelId)),
+  );
+  return snapshot.docs
+    .map((d) => {
+      const data = d.data() as {
+        volume_id: string;
+        number: number | null;
+        sort_order?: number;
+        kind?: ChapterKind;
+        custom_label?: string | null;
+        title?: string;
+        title_en?: string;
+        title_th?: string;
+        summary?: string;
+        notes?: ChapterNoteDoc[];
+        read_at: Timestamp | null;
+        character_ids?: string[];
+      };
+      return {
+        id: d.id,
+        volume_id: data.volume_id,
+        number: data.number,
+        sort_order: data.sort_order ?? data.number ?? 0,
+        kind: chapterKind(data.kind),
+        custom_label: data.custom_label ?? null,
+        title: data.title_en || data.title || "",
+        title_en: data.title_en ?? data.title ?? "",
+        title_th: data.title_th ?? "",
+        summary:
+          data.notes?.map((note) => note.content).join("\n") ??
+          data.summary ??
+          "",
+        read_at: data.read_at ? tsToIso(data.read_at) : null,
+        character_ids: data.character_ids ?? [],
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.sort_order - b.sort_order ||
+        (a.number ?? Number.MAX_SAFE_INTEGER) -
+          (b.number ?? Number.MAX_SAFE_INTEGER),
+    );
 }
 
 // Search needs the canonical chapter form, including notes, tags, and persisted
 // reference occurrences.  Keep this separate from the lighter list-page shape.
-export async function getChaptersFlatDetailed(novelId: string): Promise<Chapter[]> {
+export async function getChaptersFlatDetailed(
+  novelId: string,
+): Promise<Chapter[]> {
   const snapshot = await getDocs(
     query(collectionGroup(db, "chapters"), where("novel_id", "==", novelId)),
   );
   const allTags = await getTags(novelId);
   const tagsById = new Map(allTags.map((tag) => [tag.id, tag]));
-  const chapters = await Promise.all(snapshot.docs.map(async (snapshot) => {
-    const data = snapshot.data() as ChapterDoc;
-    const notes = await hydrateNoteReferences(novelId, data.notes ?? []);
-    return toChapter(snapshot.id, { ...data, notes }, resolveTags(data.tag_ids ?? [], tagsById));
-  }));
+  const chapters = await Promise.all(
+    snapshot.docs.map(async (snapshot) => {
+      const data = snapshot.data() as ChapterDoc;
+      const notes = await hydrateNoteReferences(novelId, data.notes ?? []);
+      return toChapter(
+        snapshot.id,
+        { ...data, notes },
+        resolveTags(data.tag_ids ?? [], tagsById),
+      );
+    }),
+  );
   return chapters.sort(
-    (a, b) => a.sort_order - b.sort_order ||
-      (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER),
+    (a, b) =>
+      a.sort_order - b.sort_order ||
+      (a.number ?? Number.MAX_SAFE_INTEGER) -
+        (b.number ?? Number.MAX_SAFE_INTEGER),
   );
 }
 
@@ -334,16 +461,22 @@ export async function getChapter(
   const tags = await tagsForChapter(novelId, data.tag_ids ?? []);
   const notes = await hydrateNoteReferences(novelId, data.notes ?? []);
   const chapter = toChapter(snapshot.id, { ...data, notes }, tags);
-  const mentioned_character_names = [...new Set([
-    ...(data.mentioned_character_names ?? []),
-    ...chapter.notes.flatMap((note) => note.references
-      ? characterMentionNames(note.references)
-      : note.mentioned_character_names ?? []),
-  ])];
+  const mentioned_character_names = [
+    ...new Set([
+      ...(data.mentioned_character_names ?? []),
+      ...chapter.notes.flatMap((note) =>
+        note.references
+          ? characterMentionNames(note.references)
+          : (note.mentioned_character_names ?? []),
+      ),
+    ]),
+  ];
   const characters =
     (data.character_ids ?? []).length === 0
       ? []
-      : await getCharactersByIds(novelId, data.character_ids ?? []).catch(() => []);
+      : await getCharactersByIds(novelId, data.character_ids ?? []).catch(
+          () => [],
+        );
   return { ...chapter, characters, mentioned_character_names };
 }
 
@@ -369,14 +502,36 @@ export async function createChapter(
   if (!title_en) throw new Error("English chapter title is required");
   const title_th = payload.title_th?.trim() ?? "";
   const kind = chapterKind(payload.kind);
-  const number = kind === "chapter" ? payload.number ?? null : null;
-  const customLabel = kind === "other" ? payload.custom_label?.trim() ?? null : null;
+  const number = kind === "chapter" ? (payload.number ?? null) : null;
+  const customLabel =
+    kind === "other" ? (payload.custom_label?.trim() ?? null) : null;
   validateEntry(kind, number, customLabel);
   const chapterRefNew = doc(chaptersCol(novelId, volumeId));
   const existingInVolume = await getDocs(chaptersCol(novelId, volumeId));
-  const sortOrder = existingInVolume.docs.reduce((largest, document) => Math.max(largest, (document.data() as ChapterDoc).sort_order ?? (document.data() as ChapterDoc).number ?? 0), 0) + 1;
+  const sortOrder =
+    existingInVolume.docs.reduce(
+      (largest, document) =>
+        Math.max(
+          largest,
+          (document.data() as ChapterDoc).sort_order ??
+            (document.data() as ChapterDoc).number ??
+            0,
+        ),
+      0,
+    ) + 1;
   const now = new Date().toISOString();
-  const rawNotes = payload.notes ?? (payload.summary ? [{ id: crypto.randomUUID(), content: payload.summary, created_at: now, updated_at: now }] : []);
+  const rawNotes =
+    payload.notes ??
+    (payload.summary
+      ? [
+          {
+            id: crypto.randomUUID(),
+            content: payload.summary,
+            created_at: now,
+            updated_at: now,
+          },
+        ]
+      : []);
   const notes = await resolveNotes(novelId, rawNotes, new Map());
   const counts = new Map<string, number>();
   const nameCounts = new Map<string, number>();
@@ -387,9 +542,10 @@ export async function createChapter(
 
   await runTransaction(db, async (tx) => {
     if (number !== null) {
-      const marker = markerRef(novelId, number);
+      const marker = markerRef(novelId, volumeId, number);
       const existing = await tx.get(marker);
-      if (existing.exists()) throw new Error("chapter number already exists in this novel");
+      if (existing.exists())
+        throw new Error("chapter number already exists in this volume");
       tx.set(marker, { chapter_id: chapterRefNew.id });
     }
     tx.set(
@@ -406,7 +562,9 @@ export async function createChapter(
         summary: payload.summary ?? "",
         description: payload.description ?? "",
         notes: notesToDoc(notes),
-        read_at: payload.read_at ? Timestamp.fromDate(new Date(payload.read_at)) : null,
+        read_at: payload.read_at
+          ? Timestamp.fromDate(new Date(payload.read_at))
+          : null,
         novel_id: novelId,
         volume_id: volumeId,
         tag_ids: [],
@@ -456,9 +614,12 @@ export async function updateChapter(
   }
   if (payload.title_th !== undefined) update.title_th = payload.title_th.trim();
   if (payload.summary !== undefined) update.summary = payload.summary;
-  if (payload.description !== undefined) update.description = payload.description;
+  if (payload.description !== undefined)
+    update.description = payload.description;
   if (payload.read_at !== undefined) {
-    update.read_at = payload.read_at ? Timestamp.fromDate(new Date(payload.read_at)) : null;
+    update.read_at = payload.read_at
+      ? Timestamp.fromDate(new Date(payload.read_at))
+      : null;
   }
 
   if (payload.notes !== undefined) {
@@ -466,7 +627,10 @@ export async function updateChapter(
     const snapshot = await getDoc(ref);
     if (!snapshot.exists()) throw new Error("Request failed.");
     const data = snapshot.data() as ChapterDoc;
-    const previousNotes = await hydrateNoteReferences(novelId, data.notes ?? []);
+    const previousNotes = await hydrateNoteReferences(
+      novelId,
+      data.notes ?? [],
+    );
     const previousById = new Map(previousNotes.map((note) => [note.id, note]));
     const notes = await resolveNotes(novelId, payload.notes, previousById);
     const counts = new Map<string, number>();
@@ -483,9 +647,15 @@ export async function updateChapter(
     update.mentioned_character_name_counts = Object.fromEntries(nameCounts);
   }
 
-  const changesEntryIdentity = payload.kind !== undefined || payload.number !== undefined || payload.custom_label !== undefined;
+  const changesEntryIdentity =
+    payload.kind !== undefined ||
+    payload.number !== undefined ||
+    payload.custom_label !== undefined;
   if (!changesEntryIdentity) {
-    await updateDoc(chapterRef(novelId, volumeId, chapterId), withUpdateTimestamp(update));
+    await updateDoc(
+      chapterRef(novelId, volumeId, chapterId),
+      withUpdateTimestamp(update),
+    );
   } else {
     await runTransaction(db, async (tx) => {
       const ref = chapterRef(novelId, volumeId, chapterId);
@@ -494,20 +664,34 @@ export async function updateChapter(
       const current = snapshot.data() as ChapterDoc;
       const currentKind = chapterKind(current.kind);
       const kind = chapterKind(payload.kind ?? currentKind);
-      const number = kind === "chapter" ? payload.number ?? current.number : null;
-      const customLabel = kind === "other" ? (payload.custom_label ?? current.custom_label ?? "").trim() : null;
+      const number =
+        kind === "chapter" ? (payload.number ?? current.number) : null;
+      const customLabel =
+        kind === "other"
+          ? (payload.custom_label ?? current.custom_label ?? "").trim()
+          : null;
       validateEntry(kind, number, customLabel);
 
       if (current.number !== number) {
-        if (current.number !== null) tx.delete(markerRef(novelId, current.number));
+        if (current.number !== null)
+          tx.delete(markerRef(novelId, volumeId, current.number));
         if (number !== null) {
-          const marker = markerRef(novelId, number);
+          const marker = markerRef(novelId, volumeId, number);
           const existing = await tx.get(marker);
-          if (existing.exists() && existing.data().chapter_id !== chapterId) throw new Error("chapter number already exists in this novel");
+          if (existing.exists() && existing.data().chapter_id !== chapterId)
+            throw new Error("chapter number already exists in this volume");
           tx.set(marker, { chapter_id: chapterId });
         }
       }
-      tx.update(ref, withUpdateTimestamp({ ...update, kind, number, custom_label: customLabel }));
+      tx.update(
+        ref,
+        withUpdateTimestamp({
+          ...update,
+          kind,
+          number,
+          custom_label: customLabel,
+        }),
+      );
     });
   }
   const snapshot = await getDoc(chapterRef(novelId, volumeId, chapterId));
@@ -529,7 +713,7 @@ export async function deleteChapter(
     if (!snapshot.exists()) return;
     const { number } = snapshot.data() as ChapterDoc;
     tx.delete(ref);
-    if (number !== null) tx.delete(markerRef(novelId, number));
+    if (number !== null) tx.delete(markerRef(novelId, volumeId, number));
   });
 }
 

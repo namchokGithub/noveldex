@@ -14,6 +14,7 @@
     "backfill:event-locations": "tsx --env-file=.env.local scripts/one-off/backfill-event-locations.ts",
     "backfill:chapter-notes": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-notes.ts",
     "backfill:chapter-entry-order": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-entry-order.ts",
+    "backfill:volume-chapter-numbers": "tsx --env-file=.env.local scripts/one-off/backfill-volume-chapter-numbers.ts",
     "backfill:entity-references": "tsx --env-file=.env.local scripts/one-off/backfill-entity-references.ts",
     "benchmark:search": "node --expose-gc --import tsx scripts/one-off/benchmark-search-index.ts",
     "dev:cloudflare": "vinext dev --port 3001",

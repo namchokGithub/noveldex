@@ -47,6 +47,14 @@
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "novel_id", "order": "ASCENDING" },
+        { "fieldPath": "number", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "chapters",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "novel_id", "order": "ASCENDING" },
         { "fieldPath": "number", "order": "ASCENDING" }
       ]
     }

@@ -70,12 +70,12 @@ Novelndex talks directly to Firestore from the Next.js application. There is no 
 novels/{novelId}
 ├── volumes/{volumeId}
 │   ├── chapters/{chapterId}
+│   ├── chapterNumbers/{number}
 │   └── adaptations/{adaptationId}  # embedded notes[] and adapted_chapter_ids[]
 ├── characters/{characterId}
 ├── entities/{entityId}
 ├── events/{eventId}
 ├── tags/{tagId}
-└── chapterNumbers/{number}
 
 character_roles/{roleId}
 ```
@@ -84,7 +84,7 @@ Adaptations duplicate `novel_id` and `volume_id` for collection-group reads and 
 
 ### Reading and story order
 
-`Chapter.sort_order` is the reading position inside one volume. A regular `chapter` also has a positive novel-wide `number` with a matching `chapterNumbers/{number}` marker. Special entries (`prologue`, `epilogue`, `afterword`, `side_story`, and `other`) do not use a number; `other` requires `custom_label`.
+`Chapter.sort_order` is the reading position inside one volume. A regular `chapter` also has a positive number unique to that volume, with a matching `chapterNumbers/{number}` marker below the volume. Special entries (`prologue`, `epilogue`, `afterword`, `side_story`, and `other`) do not use a number; `other` requires `custom_label`.
 
 Timeline events sort by volume → chapter → page → event position. Adaptations sort inside a volume by medium, group, and `sort_order`.
 

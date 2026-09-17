@@ -2,7 +2,10 @@ import { doc, setDoc } from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import { getLastOrderNos } from "./lastOrderNos";
-import { clearFirestoreEmulator, connectFirestoreTestEmulator } from "./testUtils";
+import {
+  clearFirestoreEmulator,
+  connectFirestoreTestEmulator,
+} from "./testUtils";
 
 beforeAll(async () => {
   await connectFirestoreTestEmulator();
@@ -18,10 +21,19 @@ describe("getLastOrderNos", () => {
   });
 
   it("returns the highest volume number for a novel_id", async () => {
-    await setDoc(doc(db, "novels", "novel-1", "volumes", "v1"), { number: 3, title: "A" });
-    await setDoc(doc(db, "novels", "novel-1", "volumes", "v2"), { number: 7, title: "B" });
+    await setDoc(doc(db, "novels", "novel-1", "volumes", "v1"), {
+      number: 3,
+      title: "A",
+    });
+    await setDoc(doc(db, "novels", "novel-1", "volumes", "v2"), {
+      number: 7,
+      title: "B",
+    });
 
-    expect(await getLastOrderNos({ novel_id: "novel-1" })).toEqual({ volume: 7, chapter: 0 });
+    expect(await getLastOrderNos({ novel_id: "novel-1" })).toEqual({
+      volume: 7,
+      chapter: 0,
+    });
   });
 
   it("returns the highest chapter number for a volume_id, via the denormalized volume_id field", async () => {
@@ -34,19 +46,44 @@ describe("getLastOrderNos", () => {
       { number: 9, title: "B", volume_id: "v1", novel_id: "novel-1" },
     );
 
-    expect(await getLastOrderNos({ volume_id: "v1" })).toEqual({ volume: 0, chapter: 9 });
+    expect(await getLastOrderNos({ volume_id: "v1" })).toEqual({
+      volume: 0,
+      chapter: 9,
+    });
   });
 
   it("returns both when both params are given", async () => {
-    await setDoc(doc(db, "novels", "novel-1", "volumes", "v1"), { number: 2, title: "A" });
+    await setDoc(doc(db, "novels", "novel-1", "volumes", "v1"), {
+      number: 2,
+      title: "A",
+    });
     await setDoc(
       doc(db, "novels", "novel-1", "volumes", "v1", "chapters", "c1"),
       { number: 5, title: "X", volume_id: "v1", novel_id: "novel-1" },
     );
 
-    expect(await getLastOrderNos({ novel_id: "novel-1", volume_id: "v1" })).toEqual({
+    expect(
+      await getLastOrderNos({ novel_id: "novel-1", volume_id: "v1" }),
+    ).toEqual({
       volume: 2,
       chapter: 5,
+    });
+  });
+
+  it("uses volume_id for the chapter default when both scopes are given", async () => {
+    await setDoc(
+      doc(db, "novels", "novel-1", "volumes", "v1", "chapters", "c1"),
+      { number: 1, title: "Volume one", volume_id: "v1", novel_id: "novel-1" },
+    );
+    await setDoc(
+      doc(db, "novels", "novel-1", "volumes", "v2", "chapters", "c2"),
+      { number: 9, title: "Volume two", volume_id: "v2", novel_id: "novel-1" },
+    );
+
+    expect(
+      await getLastOrderNos({ novel_id: "novel-1", volume_id: "v1" }),
+    ).toMatchObject({
+      chapter: 1,
     });
   });
 });

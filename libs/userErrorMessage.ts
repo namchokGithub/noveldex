@@ -17,7 +17,7 @@ export function userErrorMessage(error: unknown, t: Translate): string {
   if (message === "chapter number must be a positive integer") {
     return t("chapter.entryNumberRequired");
   }
-  if (message === "chapter number already exists in this novel") {
+  if (message === "chapter number already exists in this volume") {
     return t("chapter.entryNumberDuplicate");
   }
   if (message === "a custom label is required for Other") {
@@ -29,7 +29,9 @@ export function userErrorMessage(error: unknown, t: Translate): string {
   if (message.startsWith("custom label must be ")) {
     return t("chapter.entryCustomLabelTooLong", { limit: 80 });
   }
-  const tagLength = message.match(/^Tag names cannot exceed (\d+) characters\.$/);
+  const tagLength = message.match(
+    /^Tag names cannot exceed (\d+) characters\.$/,
+  );
   if (tagLength) {
     return t("chapter.tagNameTooLong", { max: Number(tagLength[1]) });
   }

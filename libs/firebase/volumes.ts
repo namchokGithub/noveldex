@@ -322,7 +322,10 @@ export async function updateVolume(
   }
   if (payload.title_th !== undefined) update.title_th = payload.title_th.trim();
   if (payload.source_img_url !== undefined) {
-    update.source_img_url = optionalUrl(payload.source_img_url, "source_img_url");
+    update.source_img_url = optionalUrl(
+      payload.source_img_url,
+      "source_img_url",
+    );
   }
   const ref = doc(
     db,
@@ -358,7 +361,15 @@ export async function deleteVolume(
       batch.delete(chapterDoc.ref);
       if (number !== null)
         batch.delete(
-          doc(db, "novels", novelId, "chapterNumbers", String(number)),
+          doc(
+            db,
+            "novels",
+            novelId,
+            "volumes",
+            volumeId,
+            "chapterNumbers",
+            String(number),
+          ),
         );
     });
     await batch.commit();
