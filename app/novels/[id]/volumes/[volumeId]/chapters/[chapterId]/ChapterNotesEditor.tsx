@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ChapterNote, Character, Tag } from "@/app/types";
+import type { Entity } from "@/libs/entities/types";
 import {
   CHAPTER_SEARCH_SOURCE_EVENT,
   type ChapterSearchSource,
@@ -22,11 +23,12 @@ import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { nextListIndex } from "@/libs/keyboardList";
-import { completeActiveMention } from "@/libs/mentionCompletion";
 import { shouldCancelInlineEdit } from "@/libs/inlineEditKeyboard";
 import { normalizeChapter, normalizeNote } from "@/libs/search/normalize";
 import { diffNotes } from "@/libs/search/diffNotes";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
+import { RichNoteContent, RichNoteEditor } from "@/components/notes/RichNoteEditor";
+import type { RichNoteDocument } from "@/libs/richNotes/document";
 
 function nextId() {
   return crypto.randomUUID();
@@ -36,6 +38,7 @@ const NOTES_PER_PAGE = 5;
 export default function ChapterNotesEditor({
   notes: initialNotes,
   characters,
+  entities,
   tags,
   novelId,
   volumeId,
@@ -45,6 +48,7 @@ export default function ChapterNotesEditor({
 }: {
   notes: ChapterNote[];
   characters: Character[];
+  entities: Entity[];
   tags: Tag[];
   novelId: string;
   volumeId: string;
@@ -61,6 +65,7 @@ export default function ChapterNotesEditor({
     [page, setPage] = useState(1),
     [editingId, setEditingId] = useState<string | null>(null),
     [draft, setDraft] = useState(""),
+    [draftJson, setDraftJson] = useState<RichNoteDocument | undefined>(),
     [saving, setSaving] = useState(false),
     [error, setError] = useState<string | null>(null),
     [highlight, setHighlight] = useState<{
@@ -68,7 +73,6 @@ export default function ChapterNotesEditor({
       query: string;
     } | null>(null);
   useResetOnSignOut(isAdmin, () => setEditingId(null));
-  const refs = useRef(new Map<string, HTMLTextAreaElement>());
   const totalPages = Math.max(1, Math.ceil(notes.length / NOTES_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
   const firstNoteIndex = (currentPage - 1) * NOTES_PER_PAGE;
@@ -156,6 +160,7 @@ export default function ChapterNotesEditor({
   function begin(note?: ChapterNote) {
     setEditingId(note?.id ?? "__new__");
     setDraft(note?.content ?? "");
+    setDraftJson(note?.content_json);
     setError(null);
   }
   async function save() {
@@ -168,14 +173,14 @@ export default function ChapterNotesEditor({
     const now = new Date().toISOString();
     const note =
       editingId === "__new__"
-        ? { id: nextId(), content, created_at: now, updated_at: now }
+        ? { id: nextId(), content, ...(draftJson ? { content_json: draftJson } : {}), created_at: now, updated_at: now }
         : notes.find((item) => item.id === editingId);
     if (!note) return;
     const next =
       editingId === "__new__"
         ? [...notes, note]
         : notes.map((item) =>
-            item.id === note.id ? { ...item, content, updated_at: now } : item,
+            item.id === note.id ? { ...item, content, ...(draftJson ? { content_json: draftJson } : {}), updated_at: now } : item,
           );
     setSaving(true);
     setError(null);
@@ -200,6 +205,7 @@ export default function ChapterNotesEditor({
         setPage(Math.ceil(updated.notes.length / NOTES_PER_PAGE));
       setEditingId(null);
       setDraft("");
+      setDraftJson(undefined);
       router.refresh();
     } catch (cause) {
       setError(userErrorMessage(cause, t));
@@ -241,17 +247,6 @@ export default function ChapterNotesEditor({
       setSaving(false);
     }
   }
-  function mentionSuggestions(value: string, cursor: number) {
-    const match = value.slice(0, cursor).match(/\[\[([^\]]*)$/);
-    if (!match) return [];
-    return characters
-      .filter((character) =>
-        character.name
-          .toLocaleLowerCase()
-          .startsWith(match[1].toLocaleLowerCase()),
-      )
-      .map((character) => character.name);
-  }
   return (
     <section className={cardClassName}>
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -286,11 +281,9 @@ export default function ChapterNotesEditor({
             {editingId === note.id ? (
               <NoteForm
                 value={draft}
-                onChange={setDraft}
-                inputRef={(node) => {
-                  if (node) refs.current.set(note.id, node);
-                }}
-                suggestionsFor={mentionSuggestions}
+                contentJson={draftJson}
+                onChange={(next) => { setDraft(next.content); setDraftJson(next.contentJson); }}
+                entities={entities}
                 onSave={() => void save()}
                 onCancel={() => setEditingId(null)}
                 saving={saving}
@@ -299,6 +292,7 @@ export default function ChapterNotesEditor({
               <>
                 <CollapsibleNoteContent
                   content={note.content}
+                  contentJson={note.content_json}
                   highlight={
                     highlight?.noteId === note.id ? highlight.query : ""
                   }
@@ -332,11 +326,9 @@ export default function ChapterNotesEditor({
           <article className="rounded-2xl border border-dashed border-stone-300 p-4">
             <NoteForm
               value={draft}
-              onChange={setDraft}
-              inputRef={(node) => {
-                if (node) refs.current.set("__new__", node);
-              }}
-              suggestionsFor={mentionSuggestions}
+              contentJson={draftJson}
+              onChange={(next) => { setDraft(next.content); setDraftJson(next.contentJson); }}
+              entities={entities}
               onSave={() => void save()}
               onCancel={() => setEditingId(null)}
               saving={saving}
@@ -381,6 +373,7 @@ export default function ChapterNotesEditor({
 
 function CollapsibleNoteContent({
   content,
+  contentJson,
   highlight,
   characters,
   novelId,
@@ -388,6 +381,7 @@ function CollapsibleNoteContent({
   showLessLabel,
 }: {
   content: string;
+  contentJson?: RichNoteDocument;
   highlight: string;
   characters: Character[];
   novelId: string;
@@ -396,7 +390,7 @@ function CollapsibleNoteContent({
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = content.length > 600;
-  const elements = content.split(/\[\[([^\]]+)\]\]/).map((part, index) => {
+  const elements = contentJson ? <RichNoteContent content={content} contentJson={contentJson} /> : content.split(/\[\[([^\]]+)\]\]/).map((part, index) => {
     if (index % 2 === 0)
       return <span key={index}>{highlightText(part, highlight)}</span>;
     const character = characters.find((item) => item.name === part);
@@ -416,10 +410,11 @@ function CollapsibleNoteContent({
 
   return (
     <>
-      <p
-        className={`whitespace-pre-wrap text-sm leading-7 text-stone-700 ${isLong && !expanded ? "max-h-64 overflow-hidden" : ""}`}>
-        {elements}
-      </p>
+      {contentJson ? (
+        <div className={isLong && !expanded ? "max-h-64 overflow-hidden" : ""}>{elements}</div>
+      ) : (
+        <p className={`whitespace-pre-wrap text-sm leading-7 text-stone-700 ${isLong && !expanded ? "max-h-64 overflow-hidden" : ""}`}>{elements}</p>
+      )}
       {isLong && (
         <button
           type="button"
@@ -449,7 +444,9 @@ function highlightText(value: string, query: string) {
 
 function NoteForm({
   value,
+  contentJson,
   onChange,
+  entities,
   inputRef,
   suggestionsFor,
   onSave,
@@ -457,9 +454,11 @@ function NoteForm({
   saving,
 }: {
   value: string;
-  onChange: (value: string) => void;
-  inputRef: (node: HTMLTextAreaElement | null) => void;
-  suggestionsFor: (value: string, cursor: number) => string[];
+  contentJson?: RichNoteDocument;
+  onChange: (value: { content: string; contentJson: RichNoteDocument }) => void;
+  entities: import("@/libs/entities/types").Entity[];
+  inputRef?: (node: HTMLTextAreaElement | null) => void;
+  suggestionsFor?: (value: string, cursor: number) => string[];
   onSave: () => void;
   onCancel: () => void;
   saving: boolean;
@@ -468,17 +467,28 @@ function NoteForm({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
+  return (
+    <div>
+      <label className={smallLabelClassName}>{t("chapter.noteContent")}</label>
+      <RichNoteEditor initialContent={value} initialContentJson={contentJson} entities={entities} onChange={onChange} />
+      <div className="mt-3 flex flex-wrap justify-end gap-2">
+        <button type="button" disabled={saving} onClick={onCancel} className={secondaryButtonClassName}>{t("common.cancel")}</button>
+        <button type="button" onClick={onSave} disabled={saving} className={primaryButtonClassName}>{saving ? t("common.saving") : t("common.save")}</button>
+      </div>
+    </div>
+  );
+
   function resize(node: HTMLTextAreaElement | null) {
     if (!node) return;
     node.style.height = "auto";
     node.style.height = `${node.scrollHeight}px`;
   }
   function refreshSuggestions(nextValue: string, cursor: number) {
-    setSuggestions(suggestionsFor(nextValue, cursor));
+    setSuggestions(suggestionsFor?.(nextValue, cursor) ?? []);
     setActiveSuggestionIndex(-1);
   }
   function update(event: React.ChangeEvent<HTMLTextAreaElement>) {
-    onChange(event.target.value);
+    onChange({ content: event.target.value, contentJson: contentJson ?? { type: "doc", content: [] } });
     refreshSuggestions(
       event.target.value,
       event.target.selectionStart ?? event.target.value.length,
@@ -486,7 +496,8 @@ function NoteForm({
     resize(event.target);
   }
   function selectSuggestion(name: string) {
-    onChange(completeActiveMention(value, name));
+    void name;
+    onChange({ content: value, contentJson: contentJson ?? { type: "doc", content: [] } });
     setSuggestions([]);
     setActiveSuggestionIndex(-1);
   }
@@ -520,7 +531,7 @@ function NoteForm({
       <label className={smallLabelClassName}>{t("chapter.noteContent")}</label>
       <textarea
         ref={(node) => {
-          inputRef(node);
+          inputRef?.(node);
           resize(node);
         }}
         value={value}

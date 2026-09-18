@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import type { Adaptation, ChapterNote, Character } from "@/app/types";
+import type { Entity } from "@/libs/entities/types";
 import ConfirmDialog from "@/app/novels/ConfirmDialog";
 import {
   FormError,
   ghostButtonClassName,
-  inputClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
   smallLabelClassName,
@@ -17,6 +16,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { updateAdaptation } from "@/libs/api";
 import { userErrorMessage } from "@/libs/userErrorMessage";
+import { RichNoteContent, RichNoteEditor } from "@/components/notes/RichNoteEditor";
+import type { RichNoteDocument } from "@/libs/richNotes/document";
 
 const NOTES_PER_PAGE = 5;
 
@@ -27,11 +28,13 @@ function nextId() {
 export default function AdaptationNotesEditor({
   adaptation,
   characters,
+  genericEntities,
   onUpdated,
   onMessage,
 }: {
   adaptation: Adaptation;
   characters: Character[];
+  genericEntities: Entity[];
   onUpdated?: (adaptation: Adaptation) => void;
   onMessage?: (message: string) => void;
 }) {
@@ -41,6 +44,7 @@ export default function AdaptationNotesEditor({
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ChapterNote | null>(null);
   const [draft, setDraft] = useState("");
+  const [draftJson, setDraftJson] = useState<RichNoteDocument | undefined>();
   const [deleting, setDeleting] = useState<ChapterNote | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,10 +53,12 @@ export default function AdaptationNotesEditor({
   const currentPage = Math.min(page, pages);
   const firstIndex = (currentPage - 1) * NOTES_PER_PAGE;
   const visibleNotes = notes.slice(firstIndex, firstIndex + NOTES_PER_PAGE);
+  const entities = useMemo(() => [...characters.map((character) => ({ id: `${adaptation.novel_id}:character:${character.id}`, novelId: adaptation.novel_id, type: "character" as const, name: character.name, aliases: character.aliases, description: character.description })), ...genericEntities], [adaptation.novel_id, characters, genericEntities]);
 
   function begin(note?: ChapterNote) {
     setEditing(note ?? { id: "", content: "", created_at: "", updated_at: "" });
     setDraft(note?.content ?? "");
+    setDraftJson(note?.content_json);
     setError(null);
   }
 
@@ -89,8 +95,8 @@ export default function AdaptationNotesEditor({
     }
     const now = new Date().toISOString();
     const note = editing.id
-      ? { ...editing, content, updated_at: now }
-      : { id: nextId(), content, created_at: now, updated_at: now };
+      ? { ...editing, content, ...(draftJson ? { content_json: draftJson } : {}), updated_at: now }
+      : { id: nextId(), content, ...(draftJson ? { content_json: draftJson } : {}), created_at: now, updated_at: now };
     const next = editing.id
       ? notes.map((item) => (item.id === note.id ? note : item))
       : [...notes, note];
@@ -98,6 +104,7 @@ export default function AdaptationNotesEditor({
       if (!editing.id) setPage(Math.ceil(next.length / NOTES_PER_PAGE));
       setEditing(null);
       setDraft("");
+      setDraftJson(undefined);
     }
   }
 
@@ -130,10 +137,10 @@ export default function AdaptationNotesEditor({
               <time dateTime={note.updated_at}>{new Date(note.updated_at).toLocaleString(language)}</time>
             </div>
             {editing?.id === note.id ? (
-              <NoteForm value={draft} onChange={setDraft} onSave={() => void save()} onCancel={() => setEditing(null)} saving={saving} />
+              <NoteForm value={draft} contentJson={draftJson} entities={entities} onChange={(next) => { setDraft(next.content); setDraftJson(next.contentJson); }} onSave={() => void save()} onCancel={() => setEditing(null)} saving={saving} />
             ) : (
               <>
-                <NoteContent content={note.content} characters={characters} novelId={adaptation.novel_id} />
+                <RichNoteContent content={note.content} contentJson={note.content_json} />
                 {isAdmin ? (
                   <div className="mt-3 flex justify-end gap-2">
                     <button type="button" className={secondaryButtonClassName} onClick={() => begin(note)}>{t("common.edit")}</button>
@@ -146,7 +153,7 @@ export default function AdaptationNotesEditor({
         ))}
         {editing && !editing.id ? (
           <article className="rounded-2xl border border-dashed border-stone-300 p-3">
-            <NoteForm value={draft} onChange={setDraft} onSave={() => void save()} onCancel={() => setEditing(null)} saving={saving} />
+            <NoteForm value={draft} contentJson={draftJson} entities={entities} onChange={(next) => { setDraft(next.content); setDraftJson(next.contentJson); }} onSave={() => void save()} onCancel={() => setEditing(null)} saving={saving} />
           </article>
         ) : null}
         {notes.length === 0 && !editing ? <p className="py-3 text-sm text-stone-500">{t("adaptations.noNotes")}</p> : null}
@@ -183,19 +190,11 @@ export default function AdaptationNotesEditor({
   );
 }
 
-function NoteContent({ content, characters, novelId }: { content: string; characters: Character[]; novelId: string }) {
-  return <p className="whitespace-pre-wrap text-sm leading-7 text-stone-700">{content.split(/\[\[([^\]]+)\]\]/).map((part, index) => {
-    if (index % 2 === 0) return <span key={index}>{part}</span>;
-    const character = characters.find((item) => item.name === part);
-    return character ? <Link key={index} href={`/novels/${novelId}/characters/${character.id}`} className="font-medium text-sky-700 underline decoration-sky-200 underline-offset-4">{part}</Link> : <span key={index} className="text-stone-500">{part}</span>;
-  })}</p>;
-}
-
-function NoteForm({ value, onChange, onSave, onCancel, saving }: { value: string; onChange: (value: string) => void; onSave: () => void; onCancel: () => void; saving: boolean }) {
+function NoteForm({ value, contentJson, entities, onChange, onSave, onCancel, saving }: { value: string; contentJson?: RichNoteDocument; entities: import("@/libs/entities/types").Entity[]; onChange: (value: { content: string; contentJson: RichNoteDocument }) => void; onSave: () => void; onCancel: () => void; saving: boolean }) {
   const { t } = useI18n();
   return <div>
     <label className={smallLabelClassName}>{t("adaptations.noteContent")}</label>
-    <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} className={`${inputClassName} min-h-28 resize-y`} placeholder={t("adaptations.notePlaceholder")} />
+    <RichNoteEditor initialContent={value} initialContentJson={contentJson} entities={entities} onChange={onChange} />
     <p className="mt-2 text-xs text-stone-500">{t("adaptations.noteReferenceHint")}</p>
     <div className="mt-3 flex justify-end gap-2">
       <button type="button" disabled={saving} onClick={onCancel} className={secondaryButtonClassName}>{t("common.cancel")}</button>

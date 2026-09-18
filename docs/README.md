@@ -36,6 +36,7 @@ Technical decisions and project roadmap.
 |------|---------|
 | [DECISIONS.md](engineering/DECISIONS.md) | Architecture Decision Records (ADRs). Why things are the way they are. |
 | [PROGRESS.md](engineering/PROGRESS.md) | Phase tracker and feature checklist. |
+| [superpowers/plans/](superpowers/plans/) | Feature implementation plans used by the Superpowers workflow. |
 
 **New engineering docs go here:**
 - Architecture decision → append to `engineering/DECISIONS.md`

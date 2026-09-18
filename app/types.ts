@@ -1,4 +1,5 @@
 import type { ReferenceOccurrence } from "@/libs/entities/references";
+import type { RichNoteDocument } from "@/libs/richNotes/document";
 
 export interface Novel {
   id: string;
@@ -140,6 +141,7 @@ export interface ChapterSummary {
 export interface ChapterNote {
   id: string;
   content: string;
+  content_json?: RichNoteDocument;
   character_ids?: string[];
   mentioned_character_names?: string[];
   references?: ReferenceOccurrence[];

@@ -2,6 +2,12 @@
 
 Completed items moved out of [`docs/engineering/PROGRESS.md`](engineering/PROGRESS.md) to keep that file focused on outstanding work. History only — do not edit completed entries here; add new completions as items finish in PROGRESS.md.
 
+## 2026-09-18 — Rich Note Editor v1
+
+- Replaced Chapter and Adaptation note textareas with a shared Tiptap editor and read-only JSON renderer. Existing plain-text notes are converted lazily on their next edit; `content` remains the derived plain-text compatibility and search value.
+- Added the approved formatting toolbar, safe `http`/`https`/`mailto` links, entity-reference insertion, and `[[` autocomplete with type filtering (`character`, `location`, `skill`, `organization`, `item`, `concept`). Entity data is loaded by the page Server Components.
+- Persisted optional `content_json` in both Firestore note adapters while retaining the existing reference reconciliation and MiniSearch contract.
+
 ## Firebase Migration and Cutover
 
 - [x] Plan 1 — Firebase foundation and `novels` domain
