@@ -29,6 +29,7 @@ import { diffNotes } from "@/libs/search/diffNotes";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import { RichNoteContent, RichNoteEditor } from "@/components/notes/RichNoteEditor";
 import type { RichNoteDocument } from "@/libs/richNotes/document";
+import ConfirmDialog from "@/app/novels/ConfirmDialog";
 
 function nextId() {
   return crypto.randomUUID();
@@ -66,13 +67,17 @@ export default function ChapterNotesEditor({
     [editingId, setEditingId] = useState<string | null>(null),
     [draft, setDraft] = useState(""),
     [draftJson, setDraftJson] = useState<RichNoteDocument | undefined>(),
+    [deleting, setDeleting] = useState<ChapterNote | null>(null),
     [saving, setSaving] = useState(false),
     [error, setError] = useState<string | null>(null),
     [highlight, setHighlight] = useState<{
       noteId: string;
       query: string;
     } | null>(null);
-  useResetOnSignOut(isAdmin, () => setEditingId(null));
+  useResetOnSignOut(isAdmin, () => {
+    setEditingId(null);
+    setDeleting(null);
+  });
   const totalPages = Math.max(1, Math.ceil(notes.length / NOTES_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
   const firstNoteIndex = (currentPage - 1) * NOTES_PER_PAGE;
@@ -213,9 +218,9 @@ export default function ChapterNotesEditor({
       setSaving(false);
     }
   }
-  async function remove(note: ChapterNote) {
-    if (!window.confirm(t("chapter.deleteNoteConfirm"))) return;
-    const next = notes.filter((item) => item.id !== note.id);
+  async function remove() {
+    if (!deleting) return;
+    const next = notes.filter((item) => item.id !== deleting.id);
     setSaving(true);
     try {
       const updated = await updateChapter(novelId, volumeId, chapterId, {
@@ -234,6 +239,7 @@ export default function ChapterNotesEditor({
         normalizeChapter(novelId, updated, entityMap, labels),
       ]);
       setNotes(updated.notes);
+      setDeleting(null);
       setPage((current) =>
         Math.min(
           current,
@@ -311,7 +317,7 @@ export default function ChapterNotesEditor({
                     </button>
                     <button
                       type="button"
-                      onClick={() => void remove(note)}
+                      onClick={() => setDeleting(note)}
                       disabled={saving}
                       className={secondaryButtonClassName}>
                       {t("common.delete")}
@@ -367,6 +373,18 @@ export default function ChapterNotesEditor({
         </div>
       )}
       {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
+      <ConfirmDialog
+        open={isAdmin && Boolean(deleting)}
+        eyebrow={t("chapter.notes")}
+        title={t("chapter.deleteNoteTitle")}
+        description={t("chapter.deleteNoteBody")}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        onConfirm={() => void remove()}
+        onCancel={() => setDeleting(null)}
+        busy={saving}
+        danger
+      />
     </section>
   );
 }

@@ -344,6 +344,8 @@ const th = {
   "chapter.notePlaceholder": "เขียนโน้ต ใช้ [[ชื่อตัวละคร]] เพื่อเชื่อมตัวละคร",
   "chapter.noteRequired": "โน้ตต้องไม่ว่าง",
   "chapter.deleteNoteConfirm": "ลบโน้ตนี้ใช่ไหม? การกระทำนี้ย้อนกลับไม่ได้",
+  "chapter.deleteNoteTitle": "ลบโน้ตนี้ใช่ไหม?",
+  "chapter.deleteNoteBody": "โน้ตนี้จะถูกลบถาวร",
   "chapter.saveDate": "บันทึกวันที่",
   "chapter.characters": "ตัวละคร",
   "chapter.noLinkedCharacters": "ยังไม่มีตัวละครที่เชื่อมไว้",
