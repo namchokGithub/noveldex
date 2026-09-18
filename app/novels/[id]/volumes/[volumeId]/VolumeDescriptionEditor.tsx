@@ -18,7 +18,7 @@ import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import ExpandableDescription from "@/app/novels/ExpandableDescription";
 
-const MAX_DESCRIPTION_LENGTH = 500;
+const MAX_DESCRIPTION_LENGTH = 1000;
 
 export default function VolumeDescriptionEditor({
   novelId,

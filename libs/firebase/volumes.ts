@@ -31,7 +31,7 @@ interface VolumeDoc {
   updated_at: Timestamp;
 }
 
-const MAX_DESCRIPTION_LENGTH = 500;
+const MAX_DESCRIPTION_LENGTH = 1000;
 
 function optionalUrl(value: string | null | undefined, field: string) {
   const trimmed = value?.trim();
