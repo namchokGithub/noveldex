@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import ChapterEditor from "./ChapterEditor";
 import ChapterNotesEditor from "./ChapterNotesEditor";
@@ -23,6 +24,13 @@ import { buildEntityId } from "@/libs/entities/keys";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { formatChapterPrefix } from "@/libs/chapterLabel";
 
+// Next.js calls generateMetadata and the page body separately for the same
+// request; cache() dedupes their getChapter() calls into a single Firestore read.
+// Scoped to this server-only route file, not the shared libs/firebase export
+// (ChapterEditor also calls getChapter client-side after mutations and must
+// always get a fresh read there).
+const getChapterCached = cache(getChapter);
+
 export async function generateMetadata({
   params,
 }: {
@@ -31,7 +39,7 @@ export async function generateMetadata({
   const { id, volumeId, chapterId } = await params;
 
   try {
-    const chapter = await getChapter(id, volumeId, chapterId);
+    const chapter = await getChapterCached(id, volumeId, chapterId);
 
     return {
       title: chapter.title_en || chapter.title,
@@ -61,7 +69,7 @@ export default async function ChapterPage({
 
   try {
     const [loadedChapter, loadedEvents, loadedAdaptations, characters, genericEntities] = await Promise.all([
-      getChapter(id, volumeId, chapterId),
+      getChapterCached(id, volumeId, chapterId),
       getEventsByChapter(id, chapterId),
       getAdaptationsByChapter(id, volumeId, chapterId),
       getAllCharacters(id),

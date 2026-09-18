@@ -303,10 +303,13 @@ function incrementCounts(
 export async function getChaptersByVolume(
   novelId: string,
   volumeId: string,
+  tags?: Tag[] | Promise<Tag[]>,
 ): Promise<Chapter[]> {
   const snapshot = await getDocs(chaptersCol(novelId, volumeId));
   // Fetch the novel's tags exactly once (not per chapter) to avoid N+1 reads.
-  const allTags = await getTags(novelId);
+  // Callers that already loaded tags (such as the Volume page) can supply
+  // their tags promise so both reads share a single tags collection fetch.
+  const allTags = await (tags ?? getTags(novelId));
   const byId = new Map(allTags.map((t) => [t.id, t]));
   return (
     await Promise.all(
