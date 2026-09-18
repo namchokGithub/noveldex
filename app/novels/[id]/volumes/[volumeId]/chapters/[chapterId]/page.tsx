@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import ChapterEditor from "./ChapterEditor";
 import ChapterNotesEditor from "./ChapterNotesEditor";
@@ -14,11 +15,21 @@ import {
 import { T } from "@/components/i18n/I18nProvider";
 import {
   getAdaptationsByChapter,
+  getAllCharacters,
   getChapter,
+  getEntities,
   getEventsByChapter,
 } from "@/libs/api";
+import { buildEntityId } from "@/libs/entities/keys";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { formatChapterPrefix } from "@/libs/chapterLabel";
+
+// Next.js calls generateMetadata and the page body separately for the same
+// request; cache() dedupes their getChapter() calls into a single Firestore read.
+// Scoped to this server-only route file, not the shared libs/firebase export
+// (ChapterEditor also calls getChapter client-side after mutations and must
+// always get a fresh read there).
+const getChapterCached = cache(getChapter);
 
 export async function generateMetadata({
   params,
@@ -28,7 +39,7 @@ export async function generateMetadata({
   const { id, volumeId, chapterId } = await params;
 
   try {
-    const chapter = await getChapter(id, volumeId, chapterId);
+    const chapter = await getChapterCached(id, volumeId, chapterId);
 
     return {
       title: chapter.title_en || chapter.title,
@@ -54,13 +65,23 @@ export default async function ChapterPage({
   let chapter;
   let events;
   let adaptations;
+  let noteEntities;
 
   try {
-    [chapter, events, adaptations] = await Promise.all([
-      getChapter(id, volumeId, chapterId),
+    const [loadedChapter, loadedEvents, loadedAdaptations, characters, genericEntities] = await Promise.all([
+      getChapterCached(id, volumeId, chapterId),
       getEventsByChapter(id, chapterId),
       getAdaptationsByChapter(id, volumeId, chapterId),
+      getAllCharacters(id),
+      getEntities(id),
     ]);
+    chapter = loadedChapter;
+    events = loadedEvents;
+    adaptations = loadedAdaptations;
+    noteEntities = [
+      ...characters.map((character) => ({ id: buildEntityId(id, "character", character.id), novelId: id, type: "character" as const, name: character.name, aliases: character.aliases, description: character.description })),
+      ...genericEntities,
+    ];
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
     throw error;
@@ -103,6 +124,7 @@ export default async function ChapterPage({
             <ChapterNotesEditor
               notes={chapter.notes}
               characters={chapter.characters}
+              entities={noteEntities}
               tags={chapter.tags}
               novelId={id}
               volumeId={volumeId}

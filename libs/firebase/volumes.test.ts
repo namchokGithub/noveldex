@@ -203,14 +203,22 @@ describe("volumes", () => {
     expect(updated.number).toBe(1);
   });
 
-  it("rejects a volume description longer than 500 characters", async () => {
+  it("accepts a 1000-character volume description and rejects a longer one", async () => {
     await expect(
       createVolume("novel-1", {
         number: 1,
         title: "Volume One",
-        description: "x".repeat(501),
+        description: "x".repeat(1000),
       }),
-    ).rejects.toThrow("description must be 500 characters or fewer");
+    ).resolves.toMatchObject({ description: "x".repeat(1000) });
+
+    await expect(
+      createVolume("novel-1", {
+        number: 2,
+        title: "Volume Two",
+        description: "x".repeat(1001),
+      }),
+    ).rejects.toThrow("description must be 1000 characters or fewer");
   });
 
   it("throws when getting a volume that does not exist", async () => {

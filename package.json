@@ -25,8 +25,16 @@
     "dev:vinext": "vinext dev --port 3001"
   },
   "dependencies": {
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/extension-highlight": "^3.31.3",
+    "@tiptap/extension-link": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
+    "@tiptap/suggestion": "^3.31.3",
     "@vinext/cloudflare": "1.0.0-beta.7",
     "firebase": "^11.10.0",
+    "lucide-react": "^1.47.0",
     "minisearch": "^7.2.0",
     "next": "16.2.6",
     "react": "19.3.0",

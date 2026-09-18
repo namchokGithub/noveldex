@@ -8,7 +8,7 @@ import {
   DashboardPage,
   SectionHeading,
 } from "@/app/novels/ui";
-import { getAdaptation, getAllCharacters, getNovel } from "@/libs/api";
+import { getAdaptation, getAllCharacters, getEntities, getNovel } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 
 export default async function AdaptationNotesPage({
@@ -20,11 +20,13 @@ export default async function AdaptationNotesPage({
   let novel: Awaited<ReturnType<typeof getNovel>>;
   let adaptation: Awaited<ReturnType<typeof getAdaptation>>;
   let characters: Awaited<ReturnType<typeof getAllCharacters>>;
+  let genericEntities: Awaited<ReturnType<typeof getEntities>>;
   try {
-    [novel, adaptation, characters] = await Promise.all([
+    [novel, adaptation, characters, genericEntities] = await Promise.all([
       getNovel(id),
       getAdaptation(id, volumeId, adaptationId),
       getAllCharacters(id),
+      getEntities(id),
     ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
@@ -44,7 +46,7 @@ export default async function AdaptationNotesPage({
           title={adaptation.title}
           description={<T k="adaptations.notes" />}
         />
-        <AdaptationNotesEditor adaptation={adaptation} characters={characters} />
+        <AdaptationNotesEditor adaptation={adaptation} characters={characters} genericEntities={genericEntities} />
         <BackToTopButton anchorId="adaptation-notes-back-link" />
       </div>
     </DashboardPage>

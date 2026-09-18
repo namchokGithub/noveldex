@@ -99,6 +99,7 @@ function validateEntry(
 interface ChapterNoteDoc {
   id: string;
   content: string;
+  content_json?: ChapterNote["content_json"];
   character_ids?: string[];
   mentioned_character_names?: string[];
   references?: ReferenceOccurrence[];
@@ -112,6 +113,7 @@ function notesForChapter(data: ChapterDoc): ChapterNote[] {
       .map((note) => ({
         id: note.id,
         content: note.content,
+        content_json: note.content_json,
         character_ids: note.character_ids ?? [],
         mentioned_character_names: note.mentioned_character_names ?? [],
         references: note.references,
@@ -137,6 +139,7 @@ function notesToDoc(notes: ChapterNote[]): ChapterNoteDoc[] {
     .map((note) => ({
       id: note.id,
       content: note.content,
+      ...(note.content_json ? { content_json: note.content_json } : {}),
       character_ids: note.character_ids ?? [],
       mentioned_character_names: note.mentioned_character_names ?? [],
       references: note.references ?? [],
@@ -300,10 +303,13 @@ function incrementCounts(
 export async function getChaptersByVolume(
   novelId: string,
   volumeId: string,
+  tags?: Tag[] | Promise<Tag[]>,
 ): Promise<Chapter[]> {
   const snapshot = await getDocs(chaptersCol(novelId, volumeId));
   // Fetch the novel's tags exactly once (not per chapter) to avoid N+1 reads.
-  const allTags = await getTags(novelId);
+  // Callers that already loaded tags (such as the Volume page) can supply
+  // their tags promise so both reads share a single tags collection fetch.
+  const allTags = await (tags ?? getTags(novelId));
   const byId = new Map(allTags.map((t) => [t.id, t]));
   return (
     await Promise.all(

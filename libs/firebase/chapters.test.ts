@@ -243,6 +243,10 @@ describe("chapters", () => {
       {
         id: "note-1",
         content: "First note",
+        content_json: {
+          type: "doc" as const,
+          content: [{ type: "paragraph", content: [{ type: "text", text: "First note" }] }],
+        },
         created_at: "2026-08-29T00:00:00.000Z",
         updated_at: "2026-08-29T00:00:00.000Z",
       },

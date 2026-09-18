@@ -5,6 +5,7 @@ Navigation index. All project documentation lives here.
 | File | Purpose |
 |------|---------|
 | [_complete_logs.md](_complete_logs.md) | Completed work log — items closed out of `engineering/PROGRESS.md`, kept for history. |
+| [firebase-recheck.md](firebase-recheck.md) | Firestore read-usage audit — prioritized checklist of found/fixed/open read-cost issues. |
 
 ---
 
@@ -36,6 +37,7 @@ Technical decisions and project roadmap.
 |------|---------|
 | [DECISIONS.md](engineering/DECISIONS.md) | Architecture Decision Records (ADRs). Why things are the way they are. |
 | [PROGRESS.md](engineering/PROGRESS.md) | Phase tracker and feature checklist. |
+| [superpowers/plans/](superpowers/plans/) | Feature implementation plans used by the Superpowers workflow. |
 
 **New engineering docs go here:**
 - Architecture decision → append to `engineering/DECISIONS.md`

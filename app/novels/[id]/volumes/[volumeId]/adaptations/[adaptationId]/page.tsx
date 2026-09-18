@@ -13,7 +13,7 @@ import {
   getAdaptation,
   getChaptersByVolume,
   getNovel,
-  getVolume,
+  getVolumeMetadata,
 } from "@/libs/api";
 import { linkedEntitiesForAdaptation } from "@/libs/adaptationDetailRelations";
 import { ResourceNotFoundError } from "@/libs/errors";
@@ -25,14 +25,17 @@ export default async function AdaptationDetailPage({
 }) {
   const { id, volumeId, adaptationId } = await params;
   let novel: Awaited<ReturnType<typeof getNovel>>;
-  let volume: Awaited<ReturnType<typeof getVolume>>;
+  let volume: Awaited<ReturnType<typeof getVolumeMetadata>>;
   let adaptation: Awaited<ReturnType<typeof getAdaptation>>;
   let chapters: Awaited<ReturnType<typeof getChaptersByVolume>>;
 
   try {
+    // This page only reads volume.number/title, so fetch metadata only —
+    // getVolume() would also aggregate chapter_count/read_count by reading
+    // every chapter in the volume a second time (chapters is already fetched below).
     [novel, volume, adaptation, chapters] = await Promise.all([
       getNovel(id),
-      getVolume(id, volumeId),
+      getVolumeMetadata(id, volumeId),
       getAdaptation(id, volumeId, adaptationId),
       getChaptersByVolume(id, volumeId),
     ]);

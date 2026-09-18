@@ -344,6 +344,8 @@ const en = {
     "Write a note. Use [[Character name]] to link a character.",
   "chapter.noteRequired": "A note cannot be empty.",
   "chapter.deleteNoteConfirm": "Delete this note? This cannot be undone.",
+  "chapter.deleteNoteTitle": "Delete this note?",
+  "chapter.deleteNoteBody": "This note will be permanently deleted.",
   "chapter.saveDate": "Save date",
   "chapter.characters": "Characters",
   "chapter.noLinkedCharacters": "No characters linked yet.",

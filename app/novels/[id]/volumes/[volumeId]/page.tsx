@@ -40,11 +40,14 @@ export default async function VolumePage({
   let events: Awaited<ReturnType<typeof getEventsByVolume>>;
 
   try {
+    // Shared so getChaptersByVolume's internal tag lookup and this page's own
+    // tags read hit Firestore once instead of twice for the same collection.
+    const tagsPromise = getTags(id);
     [novel, volume, chapters, tags, adaptations, events] = await Promise.all([
       getNovel(id),
       getVolumeMetadata(id, volumeId),
-      getChaptersByVolume(id, volumeId),
-      getTags(id),
+      getChaptersByVolume(id, volumeId, tagsPromise),
+      tagsPromise,
       getAdaptationsByVolume(id, volumeId),
       getEventsByVolume(id, volumeId),
     ]);

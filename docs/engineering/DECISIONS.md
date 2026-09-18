@@ -90,6 +90,16 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 **Decision:** Keep `[[Name]]` as the backward-compatible shorthand for a character reference. Use `[[type:Name]]` for an explicit reference, where `type` is one of `character`, `location`, `skill`, `organization`, `item`, or `concept`.
 
+**Reference quick reference:**
+
+- `[[Rimuru]]` — character shorthand
+- `[[character:Rimuru]]`
+- `[[location:Tempest]]`
+- `[[skill:Predator]]`
+- `[[organization:Jura Tempest Federation]]`
+- `[[item:Anti-Magic Mask]]`
+- `[[concept:Magicules]]`
+
 **Why:** Different entity types can share a name. Explicit types make references unambiguous while preserving existing chapter notes that use the character-only shorthand.
 
 **Resolution:** Names and aliases resolve only within the owning novel and requested type. Untyped `[[Name]]` resolves as `character` only; it never infers another entity type. Unknown, malformed, or ambiguous tokens remain searchable text and are not silently linked.

@@ -54,6 +54,7 @@ interface AdaptationDoc {
 interface AdaptationNoteDoc {
   id: string;
   content: string;
+  content_json?: ChapterNote["content_json"];
   character_ids?: string[];
   mentioned_character_names?: string[];
   references?: ReferenceOccurrence[];
@@ -121,6 +122,7 @@ function toAdaptation(id: string, data: AdaptationDoc): Adaptation {
       .map((note) => ({
         id: note.id,
         content: note.content,
+        content_json: note.content_json,
         character_ids: note.character_ids ?? [],
         mentioned_character_names: note.mentioned_character_names ?? [],
         references: note.references ?? [],
@@ -141,6 +143,7 @@ function notesToDoc(notes: ChapterNote[]): AdaptationNoteDoc[] {
     .map((note) => ({
       id: note.id,
       content: note.content,
+      ...(note.content_json ? { content_json: note.content_json } : {}),
       character_ids: note.character_ids ?? [],
       mentioned_character_names: note.mentioned_character_names ?? [],
       references: note.references ?? [],
