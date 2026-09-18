@@ -6,9 +6,11 @@ export interface RichNoteNode {
   attrs?: {
     entityType?: EntityType;
     label?: string;
+    href?: string | null;
+    linkedKeyword?: boolean;
   };
   content?: RichNoteNode[];
-  marks?: Array<{ type: string }>;
+  marks?: Array<{ type: string; attrs?: { href?: string } }>;
 }
 
 export interface RichNoteDocument {

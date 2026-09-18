@@ -27,7 +27,10 @@ import { shouldCancelInlineEdit } from "@/libs/inlineEditKeyboard";
 import { normalizeChapter, normalizeNote } from "@/libs/search/normalize";
 import { diffNotes } from "@/libs/search/diffNotes";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
-import { RichNoteContent, RichNoteEditor } from "@/components/notes/RichNoteEditor";
+import {
+  RichNoteContent,
+  RichNoteEditor,
+} from "@/components/notes/RichNoteEditor";
 import type { RichNoteDocument } from "@/libs/richNotes/document";
 import ConfirmDialog from "@/app/novels/ConfirmDialog";
 
@@ -178,14 +181,27 @@ export default function ChapterNotesEditor({
     const now = new Date().toISOString();
     const note =
       editingId === "__new__"
-        ? { id: nextId(), content, ...(draftJson ? { content_json: draftJson } : {}), created_at: now, updated_at: now }
+        ? {
+            id: nextId(),
+            content,
+            ...(draftJson ? { content_json: draftJson } : {}),
+            created_at: now,
+            updated_at: now,
+          }
         : notes.find((item) => item.id === editingId);
     if (!note) return;
     const next =
       editingId === "__new__"
         ? [...notes, note]
         : notes.map((item) =>
-            item.id === note.id ? { ...item, content, ...(draftJson ? { content_json: draftJson } : {}), updated_at: now } : item,
+            item.id === note.id
+              ? {
+                  ...item,
+                  content,
+                  ...(draftJson ? { content_json: draftJson } : {}),
+                  updated_at: now,
+                }
+              : item,
           );
     setSaving(true);
     setError(null);
@@ -288,7 +304,10 @@ export default function ChapterNotesEditor({
               <NoteForm
                 value={draft}
                 contentJson={draftJson}
-                onChange={(next) => { setDraft(next.content); setDraftJson(next.contentJson); }}
+                onChange={(next) => {
+                  setDraft(next.content);
+                  setDraftJson(next.contentJson);
+                }}
                 entities={entities}
                 onSave={() => void save()}
                 onCancel={() => setEditingId(null)}
@@ -333,7 +352,10 @@ export default function ChapterNotesEditor({
             <NoteForm
               value={draft}
               contentJson={draftJson}
-              onChange={(next) => { setDraft(next.content); setDraftJson(next.contentJson); }}
+              onChange={(next) => {
+                setDraft(next.content);
+                setDraftJson(next.contentJson);
+              }}
               entities={entities}
               onSave={() => void save()}
               onCancel={() => setEditingId(null)}
@@ -408,30 +430,44 @@ function CollapsibleNoteContent({
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = content.length > 600;
-  const elements = contentJson ? <RichNoteContent content={content} contentJson={contentJson} /> : content.split(/\[\[([^\]]+)\]\]/).map((part, index) => {
-    if (index % 2 === 0)
-      return <span key={index}>{highlightText(part, highlight)}</span>;
-    const character = characters.find((item) => item.name === part);
-    return character ? (
-      <Link
-        key={index}
-        href={`/novels/${novelId}/characters/${character.id}`}
-        className="font-medium text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-900">
-        {part}
-      </Link>
-    ) : (
-      <span key={index} className="text-stone-400">
-        {part}
-      </span>
-    );
-  });
+  const elements = contentJson ? (
+    <RichNoteContent
+      content={content}
+      contentJson={contentJson}
+      characters={characters}
+      novelId={novelId}
+    />
+  ) : (
+    content.split(/\[\[([^\]]+)\]\]/).map((part, index) => {
+      if (index % 2 === 0)
+        return <span key={index}>{highlightText(part, highlight)}</span>;
+      const character = characters.find((item) => item.name === part);
+      return character ? (
+        <Link
+          key={index}
+          href={`/novels/${novelId}/characters/${character.id}`}
+          className="font-medium text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-900">
+          {part}
+        </Link>
+      ) : (
+        <span key={index} className="text-stone-400">
+          {part}
+        </span>
+      );
+    })
+  );
 
   return (
     <>
       {contentJson ? (
-        <div className={isLong && !expanded ? "max-h-64 overflow-hidden" : ""}>{elements}</div>
+        <div className={isLong && !expanded ? "max-h-64 overflow-hidden" : ""}>
+          {elements}
+        </div>
       ) : (
-        <p className={`whitespace-pre-wrap text-sm leading-7 text-stone-700 ${isLong && !expanded ? "max-h-64 overflow-hidden" : ""}`}>{elements}</p>
+        <p
+          className={`whitespace-pre-wrap text-sm leading-7 text-stone-700 ${isLong && !expanded ? "max-h-64 overflow-hidden" : ""}`}>
+          {elements}
+        </p>
       )}
       {isLong && (
         <button
@@ -488,10 +524,27 @@ function NoteForm({
   return (
     <div>
       <label className={smallLabelClassName}>{t("chapter.noteContent")}</label>
-      <RichNoteEditor initialContent={value} initialContentJson={contentJson} entities={entities} onChange={onChange} />
+      <RichNoteEditor
+        initialContent={value}
+        initialContentJson={contentJson}
+        entities={entities}
+        onChange={onChange}
+      />
       <div className="mt-3 flex flex-wrap justify-end gap-2">
-        <button type="button" disabled={saving} onClick={onCancel} className={secondaryButtonClassName}>{t("common.cancel")}</button>
-        <button type="button" onClick={onSave} disabled={saving} className={primaryButtonClassName}>{saving ? t("common.saving") : t("common.save")}</button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={onCancel}
+          className={secondaryButtonClassName}>
+          {t("common.cancel")}
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving}
+          className={primaryButtonClassName}>
+          {saving ? t("common.saving") : t("common.save")}
+        </button>
       </div>
     </div>
   );
@@ -506,7 +559,10 @@ function NoteForm({
     setActiveSuggestionIndex(-1);
   }
   function update(event: React.ChangeEvent<HTMLTextAreaElement>) {
-    onChange({ content: event.target.value, contentJson: contentJson ?? { type: "doc", content: [] } });
+    onChange({
+      content: event.target.value,
+      contentJson: contentJson ?? { type: "doc", content: [] },
+    });
     refreshSuggestions(
       event.target.value,
       event.target.selectionStart ?? event.target.value.length,
@@ -515,7 +571,10 @@ function NoteForm({
   }
   function selectSuggestion(name: string) {
     void name;
-    onChange({ content: value, contentJson: contentJson ?? { type: "doc", content: [] } });
+    onChange({
+      content: value,
+      contentJson: contentJson ?? { type: "doc", content: [] },
+    });
     setSuggestions([]);
     setActiveSuggestionIndex(-1);
   }
@@ -543,74 +602,4 @@ function NoteForm({
       if (shouldCancelInlineEdit(event.key, saving)) onCancel();
     }
   }
-
-  return (
-    <div>
-      <label className={smallLabelClassName}>{t("chapter.noteContent")}</label>
-      <textarea
-        ref={(node) => {
-          inputRef?.(node);
-          resize(node);
-        }}
-        value={value}
-        onChange={update}
-        onKeyDown={handleKeyDown}
-        onKeyUp={(event) => {
-          if (!["ArrowUp", "ArrowDown", "Enter", "Escape"].includes(event.key))
-            refreshSuggestions(
-              event.currentTarget.value,
-              event.currentTarget.selectionStart ??
-                event.currentTarget.value.length,
-            );
-        }}
-        rows={4}
-        aria-controls="mention-suggestions"
-        aria-activedescendant={
-          activeSuggestionIndex >= 0
-            ? `mention-option-${suggestions[activeSuggestionIndex]}`
-            : undefined
-        }
-        className={`${inputClassName} min-h-32 resize-none overflow-hidden`}
-        placeholder={t("chapter.notePlaceholder")}
-      />
-      {suggestions.length > 0 && (
-        <div
-          id="mention-suggestions"
-          role="listbox"
-          className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-stone-200 bg-white py-1 shadow-sm">
-          {suggestions.map((name, index) => (
-            <button
-              id={`mention-option-${name}`}
-              key={name}
-              type="button"
-              role="option"
-              aria-selected={index === activeSuggestionIndex}
-              onMouseDown={(event) => {
-                event.preventDefault();
-                selectSuggestion(name);
-              }}
-              className={`block w-full px-3 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-50 ${index === activeSuggestionIndex ? "bg-stone-50" : ""}`}>
-              {name}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="mt-3 flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={onCancel}
-          className={secondaryButtonClassName}>
-          {t("common.cancel")}
-        </button>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className={primaryButtonClassName}>
-          {saving ? t("common.saving") : t("common.save")}
-        </button>
-      </div>
-    </div>
-  );
 }
