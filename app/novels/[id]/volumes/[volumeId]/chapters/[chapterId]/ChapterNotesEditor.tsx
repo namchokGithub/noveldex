@@ -9,6 +9,7 @@ import {
   genericEntityHref,
   resolveGenericReference,
 } from "@/libs/richNotes/preview";
+import { entityReferenceClassName } from "@/libs/richNotes/tagColors";
 import {
   CHAPTER_SEARCH_SOURCE_EVENT,
   type ChapterSearchSource,
@@ -477,7 +478,7 @@ function CollapsibleNoteContent({
         <Link
           key={index}
           href={href}
-          className="font-medium text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-900">
+          className={entityReferenceClassName(entityType)}>
           {label}
         </Link>
       ) : (

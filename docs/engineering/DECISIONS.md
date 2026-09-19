@@ -104,6 +104,8 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 **Resolution:** Names and aliases resolve only within the owning novel and requested type. Untyped `[[Name]]` resolves as `character` only; it never infers another entity type. Unknown, malformed, or ambiguous tokens remain searchable text and are not silently linked.
 
+**Visual treatment:** Resolved internal references use a type-specific text and underline color: character `#0369A1`, location `#047857`, skill `#7C3AED`, organization `#B45309`, item `#BE123C`, and concept `#C49F0E`. Manual external links retain their separate teal italic treatment.
+
 ---
 
 ## ADR-012: Authenticated writer + guest authentication (Firebase Auth)

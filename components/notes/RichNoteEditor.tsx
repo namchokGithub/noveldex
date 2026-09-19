@@ -34,6 +34,7 @@ import {
 } from "@/app/novels/ui";
 import type { Entity, EntityType } from "@/libs/entities/types";
 import { genericEntityHref, resolveGenericReference } from "@/libs/richNotes/preview";
+import { entityReferenceClassName } from "@/libs/richNotes/tagColors";
 import {
   createRichNoteDocument,
   richNoteDocumentToText,
@@ -306,7 +307,7 @@ function entityReferenceExtension(entities: Entity[]) {
           class: linkedKeyword
             ? "font-medium !italic !text-[#1D7A75] underline decoration-[#1D7A75]/50 underline-offset-4 hover:!text-[#36E3DA] hover:decoration-[#36E3DA]/50"
             : href
-              ? "font-medium text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-900"
+              ? entityReferenceClassName(type)
               : "text-stone-400",
         },
         label,
