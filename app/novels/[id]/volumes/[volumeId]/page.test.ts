@@ -8,6 +8,8 @@ it("loads adjacent volumes and renders volume navigation", () => {
   expect(source).toContain("getAdjacentVolumeMetadata");
   expect(source).toContain('className="flex flex-wrap items-center justify-between gap-3"');
   expect(source).toContain("<VolumeNavigation novelId={id} {...adjacentVolumes} />");
+  expect(source).toContain("<RecentNovelPageTracker");
+  expect(source).toContain("label={volumeRecentPageLabel(volume.number, volume.title_en || volume.title)}");
 });
 
 it("places adaptations above the chapter tag filter sidebar", () => {

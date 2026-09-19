@@ -9,6 +9,10 @@ export type RecentNovelPage = {
 
 type RecentNovelPageInput = Pick<RecentNovelPage, "href" | "label">;
 
+function isGenericDetailLabel(label: string) {
+  return label.endsWith(" detail");
+}
+
 function isFresh(page: RecentNovelPage, now: number) {
   return Number.isFinite(page.visitedAt) && now - page.visitedAt <= RECENT_NOVEL_PAGE_TTL_MS;
 }
@@ -20,7 +24,7 @@ export function recordRecentNovelPage(
 ) {
   const existing = pages.find((page) => page.href === next.href);
   const label =
-    next.label.endsWith(" detail") && existing && !existing.label.endsWith(" detail")
+    isGenericDetailLabel(next.label) && existing && !isGenericDetailLabel(existing.label)
       ? existing.label
       : next.label;
   return [
@@ -68,6 +72,7 @@ export function readRecentNovelPages(value: string | null): RecentNovelPage[] {
 export function novelPageLabel(href: string, novelId: string) {
   const base = `/novels/${encodeURIComponent(novelId)}`;
   if (href === base) return "Volume list";
+  if (new RegExp(`^${base}/volumes/[^/]+$`).test(href)) return "Volume detail";
   if (href.includes("/chapters/")) return "Chapter detail";
   if (href.includes("/adaptations/")) return "Adaptation detail";
   if (href.startsWith(`${base}/characters/`)) return "Character detail";
@@ -77,4 +82,8 @@ export function novelPageLabel(href: string, novelId: string) {
   if (href === `${base}/adaptations`) return "Adaptations";
   if (href === `${base}/timeline`) return "Timeline";
   return "Novel page";
+}
+
+export function volumeRecentPageLabel(number: number, title: string) {
+  return title ? `Volume ${number} · ${title}` : `Volume ${number}`;
 }

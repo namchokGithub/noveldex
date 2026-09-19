@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RECENT_NOVEL_PAGE_TTL_MS,
   recordRecentNovelPage,
+  volumeRecentPageLabel,
   visibleRecentNovelPages,
 } from "./recentNovelPages";
 
@@ -46,5 +47,25 @@ describe("recent novel pages", () => {
         now + 1,
       )[0],
     ).toMatchObject({ label: "Ch. 7" });
+  });
+
+  it("keeps a specific volume label when the generic route tracker runs later", () => {
+    const pages = [
+      { href: "/novels/n/volumes/v", label: "Volume 2 · Disturbance", visitedAt: now },
+    ];
+
+    expect(
+      recordRecentNovelPage(
+        pages,
+        { href: "/novels/n/volumes/v", label: "Volume detail" },
+        now + 1,
+      )[0],
+    ).toMatchObject({ label: "Volume 2 · Disturbance" });
+  });
+
+  it("formats the volume number and title for recent pages", () => {
+    expect(volumeRecentPageLabel(2, "A Disturbance in the Forest")).toBe(
+      "Volume 2 · A Disturbance in the Forest",
+    );
   });
 });

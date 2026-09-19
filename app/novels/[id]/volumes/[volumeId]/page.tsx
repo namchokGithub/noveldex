@@ -10,6 +10,7 @@ import VolumeOverview from "./VolumeOverview";
 import VolumeSourceImageModal from "./VolumeSourceImageModal";
 import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
 import { T } from "@/components/i18n/I18nProvider";
+import RecentNovelPageTracker from "@/components/navigation/RecentNovelPageTracker";
 import {
   backLinkClassName,
   DashboardPage,
@@ -26,6 +27,7 @@ import {
   getVolumeMetadata,
 } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
+import { volumeRecentPageLabel } from "@/libs/recentNovelPages";
 
 export default async function VolumePage({
   params,
@@ -72,6 +74,7 @@ export default async function VolumePage({
   return (
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
+        <RecentNovelPageTracker novelId={id} label={volumeRecentPageLabel(volume.number, volume.title_en || volume.title)} />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             id="volume-back-link"
