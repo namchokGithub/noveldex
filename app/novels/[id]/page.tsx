@@ -14,7 +14,7 @@ import {
   mutedCardClassName,
   statusColorClassNames,
 } from "../ui";
-import { getAllCharacters, getEntities, getNovel, getVolumes } from "@/libs/api";
+import { getNovel, getVolumes } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
@@ -35,15 +35,11 @@ export default async function NovelPage({
     : 5;
   let novel;
   let volumes;
-  let characters;
-  let entities;
 
   try {
-    [novel, volumes, characters, entities] = await Promise.all([
+    [novel, volumes] = await Promise.all([
       getNovel(id),
       getVolumes(id, { page, perPage }),
-      getAllCharacters(id),
-      getEntities(id),
     ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
@@ -153,11 +149,8 @@ export default async function NovelPage({
                     <p className="text-sm font-semibold text-stone-900">
                       <T k="novel.characters" />
                     </p>
-                    <p className="mt-1 hidden text-sm text-stone-500 sm:block">
-                      <T
-                        k="novel.trackedCast"
-                        values={{ count: characters.length }}
-                      />
+                    <p className="mt-1 text-sm text-stone-500">
+                      <T k="novel.charactersHelp" />
                     </p>
                   </Link>
                   <Link
@@ -166,11 +159,8 @@ export default async function NovelPage({
                     <p className="text-sm font-semibold text-stone-900">
                       <T k="novel.entities" />
                     </p>
-                    <p className="mt-1 hidden text-sm text-stone-500 sm:block">
-                      <T
-                        k="novel.trackedEntities"
-                        values={{ count: entities.length }}
-                      />
+                    <p className="mt-1 text-sm text-stone-500">
+                      <T k="novel.entitiesHelp" />
                     </p>
                   </Link>
                   <Link
@@ -179,7 +169,7 @@ export default async function NovelPage({
                     <p className="text-sm font-semibold text-stone-900">
                       <T k="novel.timeline" />
                     </p>
-                    <p className="mt-1 hidden text-sm text-stone-500 sm:block">
+                    <p className="mt-1 text-sm text-stone-500">
                       <T k="novel.timelineHelp" />
                     </p>
                   </Link>
@@ -189,7 +179,7 @@ export default async function NovelPage({
                     <p className="text-sm font-semibold text-stone-900">
                       <T k="novel.adaptations" />
                     </p>
-                    <p className="mt-1 hidden text-sm text-stone-500 sm:block">
+                    <p className="mt-1 text-sm text-stone-500">
                       <T k="novel.adaptationsHelp" />
                     </p>
                   </Link>
