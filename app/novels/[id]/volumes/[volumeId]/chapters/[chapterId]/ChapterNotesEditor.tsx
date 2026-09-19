@@ -7,6 +7,7 @@ import type { ChapterNote, Character, Tag } from "@/app/types";
 import type { Entity } from "@/libs/entities/types";
 import {
   genericEntityHref,
+  resolveCharacterReference,
   resolveGenericReference,
 } from "@/libs/richNotes/preview";
 import { entityReferenceClassName } from "@/libs/richNotes/tagColors";
@@ -468,7 +469,7 @@ function CollapsibleNoteContent({
         : "character";
       const label = entityType === "character" ? part : rest.join(":");
       const character = entityType === "character"
-        ? characters.find((item) => item.name === label)
+        ? resolveCharacterReference(characters, label)
         : undefined;
       const generic = entityType === "character"
         ? null

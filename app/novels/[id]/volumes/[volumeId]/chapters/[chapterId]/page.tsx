@@ -66,6 +66,7 @@ export default async function ChapterPage({
   let events;
   let adaptations;
   let noteEntities;
+  let noteCharacters;
 
   try {
     const [loadedChapter, loadedEvents, loadedAdaptations, characters, genericEntities] = await Promise.all([
@@ -78,6 +79,7 @@ export default async function ChapterPage({
     chapter = loadedChapter;
     events = loadedEvents;
     adaptations = loadedAdaptations;
+    noteCharacters = characters;
     noteEntities = [
       ...characters.map((character) => ({ id: buildEntityId(id, "character", character.id), novelId: id, type: "character" as const, name: character.name, aliases: character.aliases, description: character.description })),
       ...genericEntities,
@@ -123,7 +125,7 @@ export default async function ChapterPage({
           notesEditor={
             <ChapterNotesEditor
               notes={chapter.notes}
-              characters={chapter.characters}
+              characters={noteCharacters}
               entities={noteEntities}
               tags={chapter.tags}
               novelId={id}

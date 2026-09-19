@@ -38,6 +38,7 @@ import {
 import type { Entity, EntityType } from "@/libs/entities/types";
 import {
   genericEntityHref,
+  resolveCharacterReference,
   resolveGenericReference,
 } from "@/libs/richNotes/preview";
 import {
@@ -98,7 +99,7 @@ function previewNode(
   if (node.type === "entityReference") {
     const character =
       node.attrs?.entityType === "character"
-        ? characters.find((item) => item.name === node.attrs?.label)
+        ? resolveCharacterReference(characters, node.attrs?.label ?? "")
         : undefined;
     const linkedHref = node.marks?.find((mark) => mark.type === "link")?.attrs
       ?.href;
@@ -156,7 +157,7 @@ function previewNode(
     const label = entityType === "character" ? match[1] : rest.join(":");
     const character =
       entityType === "character"
-        ? characters.find((item) => item.name === label)
+        ? resolveCharacterReference(characters, label)
         : undefined;
     const generic =
       entityType === "character"
