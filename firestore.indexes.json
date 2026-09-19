@@ -57,6 +57,14 @@
         { "fieldPath": "novel_id", "order": "ASCENDING" },
         { "fieldPath": "number", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "entities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

@@ -417,6 +417,8 @@ const en = {
   "entities.add": "Add entity",
   "entities.addSuccess": "Entity added successfully.",
   "entities.empty": "No entities yet.",
+  "entities.allTypes": "All types",
+  "entities.viewAll": "View all",
   "entities.name": "Name *",
   "entities.aliases": "Aliases (comma-separated)",
   "entities.descriptionField": "Description",
