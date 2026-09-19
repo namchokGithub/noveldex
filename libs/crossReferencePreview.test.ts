@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { crossReferencePreview } from "./crossReferencePreview";
 
 describe("crossReferencePreview", () => {
-  it("shows three items and reports the remaining count", () => {
-    expect(crossReferencePreview([1, 2, 3, 4, 5])).toEqual({
-      items: [1, 2, 3],
+  it("shows five items and reports the remaining count", () => {
+    expect(crossReferencePreview([1, 2, 3, 4, 5, 6, 7])).toEqual({
+      items: [1, 2, 3, 4, 5],
       remaining: 2,
     });
   });

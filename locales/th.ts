@@ -416,6 +416,8 @@ const th = {
   "entities.add": "เพิ่มเอนทิตี",
   "entities.addSuccess": "เพิ่มเอนทิตีสำเร็จ",
   "entities.empty": "ยังไม่มีเอนทิตี",
+  "entities.allTypes": "ทุกประเภท",
+  "entities.viewAll": "ดูทั้งหมด",
   "entities.name": "ชื่อ *",
   "entities.aliases": "ชื่อเรียกอื่น (คั่นด้วยจุลภาค)",
   "entities.descriptionField": "คำอธิบาย",

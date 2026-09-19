@@ -2,11 +2,14 @@ import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import {
+  chapterIdsForVolume,
   createAdaptation,
   getAdaptationsByChapter,
   getAdaptationsForNovel,
   reorderAdaptations,
+  updateAdaptation,
 } from "./adaptations";
+import { createChapter } from "./chapters";
 import {
   clearFirestoreEmulator,
   connectFirestoreTestEmulator,
@@ -30,6 +33,43 @@ const payload = {
 };
 
 describe("adaptations", () => {
+  it("reads only chapter ids from the selected volume when validating adapted chapters", async () => {
+    const matching = await createChapter("novel-1", "volume-1", {
+      number: 1,
+      title_en: "Matching chapter",
+    });
+    const otherVolume = await createChapter("novel-1", "volume-2", {
+      number: 1,
+      title_en: "Other volume chapter",
+    });
+
+    const adaptation = await createAdaptation("novel-1", "volume-1", {
+      ...payload,
+      adapted_chapter_ids: [matching.id],
+    });
+    await expect(
+      updateAdaptation("novel-1", "volume-1", adaptation.id, {
+        adapted_chapter_ids: [matching.id],
+      }),
+    ).resolves.toMatchObject({ adapted_chapter_ids: [matching.id] });
+    await expect(
+      createAdaptation("novel-1", "volume-1", {
+        ...payload,
+        entry_number: 2,
+        adapted_chapter_ids: [otherVolume.id],
+      }),
+    ).rejects.toThrow("adapted chapters must belong to this volume");
+    await expect(
+      updateAdaptation("novel-1", "volume-1", adaptation.id, {
+        adapted_chapter_ids: [otherVolume.id],
+      }),
+    ).rejects.toThrow("adapted chapters must belong to this volume");
+
+    await expect(chapterIdsForVolume("novel-1", "volume-1")).resolves.toEqual(
+      new Set([matching.id]),
+    );
+  });
+
   it("persists parent context and assigns the next position in its group", async () => {
     const first = await createAdaptation("novel-1", "volume-1", payload);
     const second = await createAdaptation("novel-1", "volume-1", {

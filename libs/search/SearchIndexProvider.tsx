@@ -1,7 +1,7 @@
 "use client";
 
 import type MiniSearch from "minisearch";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import type { Entity, EntityId } from "@/libs/entities/types";
 import { buildIndexAsync } from "./buildIndex";
@@ -41,12 +41,22 @@ export interface SearchIndexContextValue extends SearchMutations {
   documents: Map<string, SearchDocument>;
   dependents: Map<EntityId, Set<string>>;
   entityMap: EntityMap;
+  start: () => void;
   reload: () => void;
   rawSearch: (query: string) => SearchDocument[];
 }
 
 const SearchIndexContext = createContext<SearchIndexContextValue | null>(null);
 type Operation = (index: MiniSearch<SearchDocument>, documents: Map<string, SearchDocument>, entityMap: EntityMap) => void;
+
+export function startSearchIndexOnce(
+  started: { current: boolean },
+  load: () => void,
+): void {
+  if (started.current) return;
+  started.current = true;
+  load();
+}
 
 export function SearchIndexProvider({ children }: { children: ReactNode }) {
   const labels = useChapterKindLabels();
@@ -105,12 +115,14 @@ export function SearchIndexProvider({ children }: { children: ReactNode }) {
       publish(nextIndex, nextDocuments, nextEntities); reloadInFlightRef.current = false; setStatus("ready");
     }).catch((cause: unknown) => { if (buildId.current === nextBuildId) { reloadInFlightRef.current = false; setError(cause instanceof Error ? cause.message : "Failed to build the search index."); setStatus("error"); } });
   }, [labels, publish]);
-  useEffect(() => { if (hasStartedInitialBuild.current) return; hasStartedInitialBuild.current = true; const frame = window.requestAnimationFrame(reload); return () => window.cancelAnimationFrame(frame); }, [reload]);
+  const start = useCallback(() => {
+    startSearchIndexOnce(hasStartedInitialBuild, reload);
+  }, [reload]);
   const rawSearch = useCallback((query: string) => {
     const target = indexRef.current; if (!target || !query.trim()) return [];
     return target.search(query).flatMap((result) => documentsRef.current.get(String(result.id)) ?? []);
   }, []);
-  const value = useMemo<SearchIndexContextValue>(() => ({ status, error, index, documents, dependents, entityMap, reload, upsert, discard, upsertMany, discardMany, rawSearch }), [status, error, index, documents, dependents, entityMap, reload, upsert, discard, upsertMany, discardMany, rawSearch]);
+  const value = useMemo<SearchIndexContextValue>(() => ({ status, error, index, documents, dependents, entityMap, start, reload, upsert, discard, upsertMany, discardMany, rawSearch }), [status, error, index, documents, dependents, entityMap, start, reload, upsert, discard, upsertMany, discardMany, rawSearch]);
   return <SearchIndexContext.Provider value={value}>{children}</SearchIndexContext.Provider>;
 }
 

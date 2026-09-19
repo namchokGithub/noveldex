@@ -29,7 +29,7 @@ import { getCharactersByIds } from "./characters";
 import { firestoreEntityLookup } from "@/libs/entities/firestoreLookup";
 import { parseEntityId } from "@/libs/entities/keys";
 import { reconcileReferenceOccurrences } from "@/libs/entities/reconcile";
-import type { ReferenceOccurrence } from "@/libs/entities/references";
+import type { EntityLookup, ReferenceOccurrence } from "@/libs/entities/references";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getTags } from "./tags";
 import { notesForEntity } from "@/libs/entityCrossReferences";
@@ -210,8 +210,8 @@ async function tagsForChapter(
 async function hydrateNoteReferences(
   novelId: string,
   notes: ChapterNoteDoc[],
+  lookup: EntityLookup = firestoreEntityLookup(),
 ): Promise<ChapterNoteDoc[]> {
-  const lookup = firestoreEntityLookup();
   return Promise.all(
     notes.map(async (note) =>
       note.references !== undefined
@@ -311,11 +311,16 @@ export async function getChaptersByVolume(
   // their tags promise so both reads share a single tags collection fetch.
   const allTags = await (tags ?? getTags(novelId));
   const byId = new Map(allTags.map((t) => [t.id, t]));
+  const lookup = firestoreEntityLookup();
   return (
     await Promise.all(
       snapshot.docs.map(async (d) => {
         const data = d.data() as ChapterDoc;
-        const notes = await hydrateNoteReferences(novelId, data.notes ?? []);
+        const notes = await hydrateNoteReferences(
+          novelId,
+          data.notes ?? [],
+          lookup,
+        );
         return toChapter(
           d.id,
           { ...data, notes },
@@ -384,10 +389,15 @@ export async function getChaptersFlatDetailed(
   );
   const allTags = await getTags(novelId);
   const tagsById = new Map(allTags.map((tag) => [tag.id, tag]));
+  const lookup = firestoreEntityLookup();
   const chapters = await Promise.all(
     snapshot.docs.map(async (snapshot) => {
       const data = snapshot.data() as ChapterDoc;
-      const notes = await hydrateNoteReferences(novelId, data.notes ?? []);
+      const notes = await hydrateNoteReferences(
+        novelId,
+        data.notes ?? [],
+        lookup,
+      );
       return toChapter(
         snapshot.id,
         { ...data, notes },

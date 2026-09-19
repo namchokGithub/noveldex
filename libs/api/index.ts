@@ -99,12 +99,17 @@ export type {
 export {
   createEntity,
   deleteEntity,
+  decodeEntityCursor,
+  encodeEntityCursor,
   getEntities,
+  getEntitiesPage,
   getEntity,
   updateEntity,
 } from "@/libs/firebase/entities";
 export type {
   EntityCreatePayload,
+  EntityCursor,
+  EntityPage,
   EntityUpdatePayload,
 } from "@/libs/firebase/entities";
 export type {

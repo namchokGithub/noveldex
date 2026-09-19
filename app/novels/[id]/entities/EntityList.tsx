@@ -11,10 +11,12 @@ import {
   FormError,
   inputClassName,
   primaryButtonClassName,
+  secondaryButtonClassName,
   Snackbar,
 } from "../../ui";
 import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
 import { normalizeEntity } from "@/libs/search/normalize";
+import { entityTypeBadgeStyle } from "@/libs/richNotes/tagColors";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 
 const TYPES: GenericEntityType[] = [
@@ -28,9 +30,15 @@ const TYPES: GenericEntityType[] = [
 export default function EntityList({
   novelId,
   entities: initial,
+  selectedType,
+  cursorHistory,
+  nextCursorByType,
 }: {
   novelId: string;
   entities: Entity[];
+  selectedType: GenericEntityType | null;
+  cursorHistory: string[];
+  nextCursorByType: Partial<Record<GenericEntityType, string>>;
 }) {
   const { t } = useI18n();
   const { upsert } = useSearchMutations();
@@ -63,9 +71,10 @@ export default function EntityList({
         description: "",
       });
       upsert(normalizeEntity(entity));
-      setEntities((all) =>
-        [...all, entity].sort((a, b) => a.name.localeCompare(b.name)),
-      );
+      if (!selectedType || selectedType === entity.type)
+        setEntities((all) =>
+          [...all, entity].sort((a, b) => a.name.localeCompare(b.name)),
+        );
       setName("");
       setSnackbar({ tone: "success", message: t("entities.addSuccess") });
     } catch (cause) {
@@ -76,6 +85,14 @@ export default function EntityList({
       setSaving(false);
     }
   }
+  function typeHref(entityType: GenericEntityType, cursors: string[] = []) {
+    const params = new URLSearchParams({ type: entityType });
+    if (cursors.length) params.set("after", cursors.join(","));
+    return `/novels/${novelId}/entities?${params.toString()}`;
+  }
+  const allTypesHref = `/novels/${novelId}/entities`;
+  const visibleTypes = selectedType ? [selectedType] : TYPES;
+
   return (
     <div className="space-y-5">
       {isAdmin && (
@@ -110,32 +127,77 @@ export default function EntityList({
       {entities.length === 0 ? (
         <div className={emptyStateClassName}>{t("entities.empty")}</div>
       ) : (
-        TYPES.map((entityType) => {
+        visibleTypes.map((entityType) => {
           const group = entities.filter((entity) => entity.type === entityType);
+          const nextCursor = nextCursorByType[entityType];
           return (
             <section
               key={entityType}
               className="rounded-2xl border border-stone-200 bg-white">
-              <h2 className="border-b border-stone-200 px-4 py-3 text-sm font-semibold capitalize">
-                {entityType}
+              <h2 className="border-b border-stone-200 px-4 py-3">
+                <span
+                  className="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize tracking-wide"
+                  style={entityTypeBadgeStyle(entityType)}>
+                  {entityType}
+                </span>
               </h2>
               {group.length ? (
-                <ul className="divide-y divide-stone-100">
-                  {group.map((entity) => (
-                    <li key={entity.id}>
+                <>
+                  <ul className="divide-y divide-stone-100">
+                    {group.map((entity) => (
+                      <li key={entity.id}>
+                        <Link
+                          className="block px-4 py-3 hover:bg-stone-50"
+                          href={`/novels/${novelId}/entities/${entity.id}`}>
+                          <span className="font-medium">{entity.name}</span>
+                          {entity.aliases.length ? (
+                            <span className="ml-2 text-sm text-stone-500">
+                              {entity.aliases.join(", ")}
+                            </span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {selectedType ? (
+                    <div className="flex items-center justify-between gap-2 border-t border-stone-100 px-4 py-3">
+                      {cursorHistory.length ? (
+                        <Link
+                          href={typeHref(
+                            entityType,
+                            cursorHistory.slice(0, -1),
+                          )}
+                          className={secondaryButtonClassName}>
+                          {t("common.previous")}
+                        </Link>
+                      ) : (
+                        <Link
+                          href={allTypesHref}
+                          className={secondaryButtonClassName}>
+                          {t("entities.allTypes")}
+                        </Link>
+                      )}
+                      {nextCursor ? (
+                        <Link
+                          href={typeHref(entityType, [
+                            ...cursorHistory,
+                            nextCursor,
+                          ])}
+                          className={secondaryButtonClassName}>
+                          {t("common.next")}
+                        </Link>
+                      ) : null}
+                    </div>
+                  ) : nextCursor ? (
+                    <div className="border-t border-stone-100 px-4 py-3">
                       <Link
-                        className="block px-4 py-3 hover:bg-stone-50"
-                        href={`/novels/${novelId}/entities/${entity.id}`}>
-                        <span className="font-medium">{entity.name}</span>
-                        {entity.aliases.length ? (
-                          <span className="ml-2 text-sm text-stone-500">
-                            {entity.aliases.join(", ")}
-                          </span>
-                        ) : null}
+                        href={typeHref(entityType)}
+                        className="text-sm font-medium text-stone-600 underline decoration-stone-300 underline-offset-4 transition hover:text-stone-950">
+                        {t("entities.viewAll")}
                       </Link>
-                    </li>
-                  ))}
-                </ul>
+                    </div>
+                  ) : null}
+                </>
               ) : (
                 <p className="px-4 py-3 text-sm text-stone-500">
                   {t("entities.empty")}

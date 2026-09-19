@@ -1,4 +1,4 @@
-export const CROSS_REFERENCE_PREVIEW_LIMIT = 3;
+export const CROSS_REFERENCE_PREVIEW_LIMIT = 5;
 
 export function crossReferencePreview<T>(items: T[]) {
   return {

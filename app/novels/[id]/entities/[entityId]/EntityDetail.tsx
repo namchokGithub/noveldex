@@ -117,24 +117,7 @@ export default function EntityDetail({
           <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
             {entity.type}
           </p>
-          {editing ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className={secondaryButtonClassName}
-                onClick={cancel}
-                disabled={busy}>
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                className={primaryButtonClassName}
-                onClick={() => void save()}
-                disabled={busy || !name.trim()}>
-                {busy ? t("common.saving") : t("common.save")}
-              </button>
-            </div>
-          ) : isAdmin ? (
+          {!editing && isAdmin ? (
             <button
               type="button"
               className={secondaryButtonClassName}
@@ -173,13 +156,31 @@ export default function EntityDetail({
                 disabled={busy}
               />
             </label>
-            <button
-              type="button"
-              className={secondaryButtonClassName}
-              onClick={() => setConfirming(true)}
-              disabled={busy}>
-              {t("common.delete")}
-            </button>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-5">
+              <button
+                type="button"
+                className={`${secondaryButtonClassName} border-rose-200 text-rose-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus-visible:ring-rose-200`}
+                onClick={() => setConfirming(true)}
+                disabled={busy}>
+                {t("common.delete")}
+              </button>
+              <div className="ml-auto flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className={secondaryButtonClassName}
+                  onClick={cancel}
+                  disabled={busy}>
+                  {t("common.cancel")}
+                </button>
+                <button
+                  type="button"
+                  className={primaryButtonClassName}
+                  onClick={() => void save()}
+                  disabled={busy || !name.trim()}>
+                  {busy ? t("common.saving") : t("common.save")}
+                </button>
+              </div>
+            </div>
           </>
         ) : (
           <dl className="space-y-4 text-sm">
