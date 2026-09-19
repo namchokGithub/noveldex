@@ -126,7 +126,7 @@ export default function CommandPalette() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
-  const { index, documents, status } = useSearchIndex();
+  const { index, documents, status, start } = useSearchIndex();
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(""),
     [draft, setDraft] = useState<ChapterSearchSource | null>(null),
@@ -201,8 +201,9 @@ export default function CommandPalette() {
     setScopeOverride(null);
     setActiveIndex(0);
     setDraft(chapterPage ? currentDraft() : null);
+    start();
     setOpen(true);
-  }, [chapterPage]);
+  }, [chapterPage, start]);
   useEffect(() => {
     const listener = () => openPalette();
     const key = (event: KeyboardEvent) => {

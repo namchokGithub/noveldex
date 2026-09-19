@@ -23,7 +23,6 @@ import {
   type ChapterNote,
 } from "@/app/types";
 import { compareAdaptations } from "@/libs/adaptations/order";
-import { getChaptersByVolume } from "@/libs/firebase/chapters";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { firestoreEntityLookup } from "@/libs/entities/firestoreLookup";
 import { parseEntityId } from "@/libs/entities/keys";
@@ -288,13 +287,21 @@ async function validateChapterIds(
   }
   const ids = [...new Set(chapterIds)];
   if (!ids.length) return [];
-  const available = new Set(
-    (await getChaptersByVolume(novelId, volumeId)).map((chapter) => chapter.id),
-  );
+  const available = await chapterIdsForVolume(novelId, volumeId);
   if (ids.some((id) => !available.has(id))) {
     throw new Error("adapted chapters must belong to this volume");
   }
   return ids;
+}
+
+export async function chapterIdsForVolume(
+  novelId: string,
+  volumeId: string,
+): Promise<Set<string>> {
+  const snapshot = await getDocs(
+    collection(db, "novels", novelId, "volumes", volumeId, "chapters"),
+  );
+  return new Set(snapshot.docs.map((chapter) => chapter.id));
 }
 
 export async function getAdaptationsByVolume(
