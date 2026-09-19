@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { CharacterRole } from "@/app/types";
 import {
   ghostButtonClassName,
   inputClassName,
-  modalBackdropClassName,
+  fullScreenModalBackdropClassName,
   modalPanelClassName,
   primaryButtonClassName,
   Snackbar,
@@ -95,8 +96,9 @@ export default function AddCharacterForm({
           className={primaryButtonClassName}>
           {t("addCharacter.button")}
         </button>
-      ) : (
-        <div className={modalBackdropClassName}>
+      ) : typeof document !== "undefined" ? (
+        createPortal(
+        <div className={fullScreenModalBackdropClassName}>
           <div className={modalPanelClassName}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -181,8 +183,10 @@ export default function AddCharacterForm({
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body,
+        )
+      ) : null}
 
       <Snackbar
         open={Boolean(snackbar)}

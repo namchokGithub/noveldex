@@ -98,7 +98,7 @@ export default function LanguageToggle() {
           aria-haspopup="menu"
           aria-expanded={open}
           className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400">
-          <svg
+          {/* <svg
             aria-hidden="true"
             width="17"
             height="17"
@@ -108,14 +108,14 @@ export default function LanguageToggle() {
             strokeWidth="1.7">
             <circle cx="12" cy="12" r="8.5" />
             <path d="M3.5 12h17M12 3.5c2.1 2.3 3.2 5.1 3.2 8.5S14.1 18.2 12 20.5C9.9 18.2 8.8 15.4 8.8 12S9.9 5.8 12 3.5Z" />
-          </svg>
+          </svg> */}
           <span>
             {
               languageOptions.find((option) => option.code === language)
                 ?.shortLabel
             }
           </span>
-          <svg
+          {/* <svg
             aria-hidden="true"
             className="hidden sm:block"
             width="14"
@@ -125,7 +125,7 @@ export default function LanguageToggle() {
             stroke="currentColor"
             strokeWidth="2">
             <path d="m7 10 5 5 5-5" />
-          </svg>
+          </svg> */}
         </button>
         {open ? (
           <div
