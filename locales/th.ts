@@ -397,6 +397,8 @@ const th = {
   "addCharacter.success": "เพิ่มตัวละครสำเร็จ",
 
   "character.profile": "โปรไฟล์ตัวละคร",
+  "character.viewProfileImage": "ดูรูปโปรไฟล์ของ {name}",
+  "character.imageLoadFailed": "ไม่สามารถโหลดรูปโปรไฟล์ได้",
   "character.role": "บทบาท",
   "character.chapterAppearances": "ปรากฏในตอน",
   "character.aliases": "ชื่อเรียกอื่น",

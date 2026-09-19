@@ -397,6 +397,8 @@ const en = {
   "addCharacter.success": "Character created successfully.",
 
   "character.profile": "Character profile",
+  "character.viewProfileImage": "View profile image for {name}",
+  "character.imageLoadFailed": "The profile image could not be loaded.",
   "character.role": "Role",
   "character.chapterAppearances": "Chapter appearances",
   "character.aliases": "Aliases",

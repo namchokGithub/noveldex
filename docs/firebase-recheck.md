@@ -132,17 +132,17 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 
 | #   | Item                                                                            | Priority | Status                                           |
 | --- | ------------------------------------------------------------------------------- | -------- | ------------------------------------------------ |
-| H1  | Adaptation detail: `getVolume` → `getVolumeMetadata`                            | High     | ✅ Done                                          |
-| H2  | Chapter detail: dedupe `getChapter` via request-scoped `cache()`                | High     | ✅ Done                                          |
-| H3  | Volume detail: share one `getTags()` read with `getChaptersByVolume`            | High     | ✅ Done                                          |
-| H4  | Memoize entity/character lookups inside `firestoreEntityLookup()`               | High     | ✅ Done                                          |
+| H1  | Adaptation detail:`getVolume` → `getVolumeMetadata`                             | High     | ✅ Done                                          |
+| H2  | Chapter detail: dedupe`getChapter` via request-scoped `cache()`                 | High     | ✅ Done                                          |
+| H3  | Volume detail: share one`getTags()` read with `getChaptersByVolume`             | High     | ✅ Done                                          |
+| H4  | Memoize entity/character lookups inside`firestoreEntityLookup()`                | High     | ✅ Done                                          |
 | H5  | Volume list: choose Lite-compatible count strategy before reducing chapter scan | High     | ⚠️ Decision required                             |
 | H6  | Character list: apply the H5 count strategy                                     | High     | ⚠️ Blocked by H5                                 |
 | H7  | Search index: lazy-start instead of eager root-layout load                      | High     | ✅ Done                                          |
 | M1  | Novel page: drop cast count or await H5 count strategy                          | Medium   | ⚠️ Decision required                             |
 | M2  | `getEventsForCharacter`/`getEventsForEntity` full-collection reads              | Medium   | ⬜ Open (fix requires schema change — see notes) |
-| M3  | Cache `getCharacterRoles()` (tiny, global, rarely changes)                      | Medium   | ⬜ Open                                          |
-| M4  | Time-based cache for `getNovels()` and similar reference reads                  | Medium   | ⬜ Open                                          |
+| M3  | Cache`getCharacterRoles()` (tiny, global, rarely changes)                       | Medium   | ⬜ Open                                          |
+| M4  | Time-based cache for`getNovels()` and similar reference reads                   | Medium   | ⬜ Open                                          |
 | M5  | `getAdaptationsForNovel` on character/entity detail pages                       | Medium   | ⬜ Open                                          |
 | M6  | Hoist entity lookup across chapters (follow-up to H4)                           | Medium   | ✅ Done                                          |
 | M7  | `validateChapterIds` avoids chapter hydration for membership checks             | Medium   | ✅ Done                                          |
