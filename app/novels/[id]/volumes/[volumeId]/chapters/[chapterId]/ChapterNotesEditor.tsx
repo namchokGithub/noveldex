@@ -322,6 +322,7 @@ export default function ChapterNotesEditor({
                     highlight?.noteId === note.id ? highlight.query : ""
                   }
                   characters={characters}
+                  entities={entities}
                   novelId={novelId}
                   readMoreLabel={t("common.readFull")}
                   showLessLabel={t("common.showLess")}
@@ -416,6 +417,7 @@ function CollapsibleNoteContent({
   contentJson,
   highlight,
   characters,
+  entities,
   novelId,
   readMoreLabel,
   showLessLabel,
@@ -424,6 +426,7 @@ function CollapsibleNoteContent({
   contentJson?: RichNoteDocument;
   highlight: string;
   characters: Character[];
+  entities: Entity[];
   novelId: string;
   readMoreLabel: string;
   showLessLabel: string;
@@ -435,6 +438,7 @@ function CollapsibleNoteContent({
       content={content}
       contentJson={contentJson}
       characters={characters}
+      entities={entities}
       novelId={novelId}
     />
   ) : (

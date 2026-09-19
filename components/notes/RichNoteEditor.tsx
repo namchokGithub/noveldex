@@ -33,6 +33,7 @@ import {
   secondaryButtonClassName,
 } from "@/app/novels/ui";
 import type { Entity, EntityType } from "@/libs/entities/types";
+import { genericEntityHref, resolveGenericReference } from "@/libs/richNotes/preview";
 import {
   createRichNoteDocument,
   richNoteDocumentToText,
@@ -74,6 +75,7 @@ function entitySyntax(type: EntityType, label: string) {
 function previewNode(
   node: RichNoteNode,
   characters: Character[],
+  entities: Entity[],
   novelId?: string,
 ): RichNoteNode[] {
   if (node.type === "entityReference") {
@@ -83,6 +85,10 @@ function previewNode(
         : undefined;
     const linkedHref = node.marks?.find((mark) => mark.type === "link")?.attrs
       ?.href;
+    const generic =
+      node.attrs?.entityType && node.attrs.entityType !== "character"
+        ? resolveGenericReference(entities, node.attrs.entityType, node.attrs.label ?? "")
+        : null;
     return [
       {
         ...node,
@@ -91,8 +97,10 @@ function previewNode(
           href:
             character && novelId
               ? `/novels/${novelId}/characters/${character.id}`
-              : (linkedHref ?? null),
-          linkedKeyword: !character && Boolean(linkedHref),
+              : generic && novelId
+                ? genericEntityHref(novelId, generic)
+                : (linkedHref ?? null),
+          linkedKeyword: !character && !generic && Boolean(linkedHref),
         },
       },
     ];
@@ -102,7 +110,7 @@ function previewNode(
       {
         ...node,
         content: node.content?.flatMap((child) =>
-          previewNode(child, characters, novelId),
+          previewNode(child, characters, entities, novelId),
         ),
       },
     ];
@@ -129,6 +137,10 @@ function previewNode(
       entityType === "character"
         ? characters.find((item) => item.name === label)
         : undefined;
+    const generic =
+      entityType === "character"
+        ? null
+        : resolveGenericReference(entities, entityType, label);
     return {
       type: "entityReference",
       attrs: {
@@ -137,8 +149,10 @@ function previewNode(
         href:
           character && novelId
             ? `/novels/${novelId}/characters/${character.id}`
-            : (linkedHref ?? null),
-        linkedKeyword: !character && Boolean(linkedHref),
+            : generic && novelId
+              ? genericEntityHref(novelId, generic)
+              : (linkedHref ?? null),
+        linkedKeyword: !character && !generic && Boolean(linkedHref),
       },
     };
   });
@@ -148,13 +162,14 @@ function previewDocument(
   content: string,
   contentJson: RichNoteDocument | undefined,
   characters: Character[],
+  entities: Entity[],
   novelId?: string,
 ): RichNoteDocument {
   const document = contentJson ?? createRichNoteDocument(content);
   return {
     ...document,
     content: document.content.flatMap((node) =>
-      previewNode(node, characters, novelId),
+      previewNode(node, characters, entities, novelId),
     ),
   };
 }
@@ -342,16 +357,18 @@ export function RichNoteContent({
   content,
   contentJson,
   characters = [],
+  entities = [],
   novelId,
 }: {
   content: string;
   contentJson?: RichNoteDocument;
   characters?: Character[];
+  entities?: Entity[];
   novelId?: string;
 }) {
   const renderedDocument = useMemo(
-    () => previewDocument(content, contentJson, characters, novelId),
-    [content, contentJson, characters, novelId],
+    () => previewDocument(content, contentJson, characters, entities, novelId),
+    [content, contentJson, characters, entities, novelId],
   );
   const [linkPreview, setLinkPreview] = useState<
     (ExternalLinkPreview & { left: number; top: number }) | null

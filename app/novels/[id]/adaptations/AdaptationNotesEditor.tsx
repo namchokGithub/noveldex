@@ -195,6 +195,7 @@ export default function AdaptationNotesEditor({
                   content={note.content}
                   contentJson={note.content_json}
                   characters={characters}
+                  entities={entities}
                   novelId={adaptation.novel_id}
                 />
                 {isAdmin ? (
