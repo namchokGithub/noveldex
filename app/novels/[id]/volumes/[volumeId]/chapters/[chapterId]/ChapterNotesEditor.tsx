@@ -38,6 +38,7 @@ import {
 } from "@/components/notes/RichNoteEditor";
 import type { RichNoteDocument } from "@/libs/richNotes/document";
 import ConfirmDialog from "@/app/novels/ConfirmDialog";
+import ChapterReferenceGuide from "@/components/notes/ChapterReferenceGuide";
 
 function nextId() {
   return crypto.randomUUID();
@@ -280,14 +281,17 @@ export default function ChapterNotesEditor({
         <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-stone-500">
           {t("chapter.notes")}
         </h2>
-        {editingId === null && isAdmin && (
-          <button
-            type="button"
-            onClick={() => begin()}
-            className={secondaryButtonClassName}>
-            {t("chapter.addNote")}
-          </button>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <ChapterReferenceGuide />
+          {editingId === null && isAdmin && (
+            <button
+              type="button"
+              onClick={() => begin()}
+              className={secondaryButtonClassName}>
+              {t("chapter.addNote")}
+            </button>
+          )}
+        </div>
       </div>
       <div className="space-y-3">
         {visibleNotes.map((note, index) => (
