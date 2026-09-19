@@ -27,6 +27,7 @@ import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { descendantsOf } from "@/libs/search/cascadeDelete";
 import { canNavigatePage } from "@/libs/pagination";
 import { localizedVolumeTitle } from "@/libs/volumeTitle";
+import { Select } from "@/components/ui/Select";
 
 interface VolumeItem extends Volume {
   chapterCount: number;
@@ -252,18 +253,13 @@ export default function VolumeManager({
         </p>
         <label className="flex items-center gap-2 text-sm text-stone-500">
           {t("common.perPage")}
-          <select
-            value={pagination.per_page}
-            onChange={(event) =>
-              handlePerPageChange(Number(event.target.value))
-            }
-            className={`${inputClassName} min-w-20 py-2`}>
-            {[5, 10, 20, 50].map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={String(pagination.per_page)}
+            onValueChange={(value) => handlePerPageChange(Number(value))}
+            wrapperClassName="min-w-20"
+            className="py-2"
+            options={[5, 10, 20, 50].map((size) => ({ value: String(size), label: String(size) }))}
+          />
         </label>
       </div>
 

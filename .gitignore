@@ -54,4 +54,5 @@ yarn-debug.log*
 cloudflare-env.d.ts
 *.pem
 _todo.md
+.todo
 .vinext/

@@ -6,7 +6,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { Character, PaginationMeta } from "@/app/types";
 import {
-  inputClassName,
   emptyStateClassName,
   listClassName,
   listRowClassName,
@@ -16,6 +15,7 @@ import {
 import { T } from "@/components/i18n/I18nProvider";
 import { useRouter } from "next/navigation";
 import { canNavigatePage } from "@/libs/pagination";
+import { Select } from "@/components/ui/Select";
 
 export default function CharacterList({
   novelId,
@@ -83,16 +83,13 @@ export default function CharacterList({
         </p>
         <label className="flex items-center gap-2 text-sm text-stone-500">
           <T k="common.perPage" />
-          <select
-            value={pagination.per_page}
-            onChange={(e) => handlePerPageChange(Number(e.target.value))}
-            className={`${inputClassName} min-w-20 py-2`}>
-            {[5, 10, 20, 50].map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={String(pagination.per_page)}
+            onValueChange={(value) => handlePerPageChange(Number(value))}
+            wrapperClassName="min-w-20"
+            className="py-2"
+            options={[5, 10, 20, 50].map((size) => ({ value: String(size), label: String(size) }))}
+          />
         </label>
       </div>
 

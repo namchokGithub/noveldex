@@ -33,6 +33,7 @@ import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { descendantsOf } from "@/libs/search/cascadeDelete";
 import { moveListItem } from "@/libs/reorder";
+import { Select } from "@/components/ui/Select";
 
 function ChapterTagRow({ tags }: { tags: Tag[] }) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -524,25 +525,22 @@ export default function ChapterListWithFilters({
                             htmlFor={`chapter-kind-${chapter.id}`}>
                             {t("addChapter.entryType")}
                           </label>
-                          <select
+                          <Select
                             id={`chapter-kind-${chapter.id}`}
                             value={chapter.kind}
                             disabled={reorderSaving}
                             draggable={false}
                             onDragStart={(event) => event.stopPropagation()}
-                            onChange={(event) =>
+                            onValueChange={(value) =>
                               changeReorderEntryKind(
                                 chapter.id,
-                                event.target.value as ChapterKind,
+                                value as ChapterKind,
                               )
                             }
-                            className={`${inputClassName} w-auto py-1.5 text-xs`}>
-                            {CHAPTER_KINDS.map((kind) => (
-                              <option key={kind} value={kind}>
-                                {kindLabels[kind]}
-                              </option>
-                            ))}
-                          </select>
+                            wrapperClassName="w-auto"
+                            className="w-auto py-1.5 text-xs"
+                            options={CHAPTER_KINDS.map((kind) => ({ value: kind, label: kindLabels[kind] }))}
+                          />
                           {chapter.kind === "chapter" &&
                           visibleChapters.find(({ id }) => id === chapter.id)
                             ?.number === null ? (

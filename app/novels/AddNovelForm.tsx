@@ -13,6 +13,7 @@ import {
 } from "./ui";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Select } from "@/components/ui/Select";
 import { createNovel } from "@/libs/api";
 import type { Novel } from "@/app/types";
 
@@ -119,15 +120,16 @@ export default function AddNovelForm() {
                 <label className={smallLabelClassName}>
                   {t("addNovel.status")}
                 </label>
-                <select
+                <Select
                   name="status"
                   defaultValue="reading"
-                  className={inputClassName}>
-                  <option value="reading">{t("status.reading")}</option>
-                  <option value="completed">{t("status.completed")}</option>
-                  <option value="dropped">{t("status.dropped")}</option>
-                  <option value="on_hold">{t("status.on_hold")}</option>
-                </select>
+                  options={[
+                    { value: "reading", label: t("status.reading") },
+                    { value: "completed", label: t("status.completed") },
+                    { value: "dropped", label: t("status.dropped") },
+                    { value: "on_hold", label: t("status.on_hold") },
+                  ]}
+                />
               </div>
               <div>
                 <label className={smallLabelClassName}>

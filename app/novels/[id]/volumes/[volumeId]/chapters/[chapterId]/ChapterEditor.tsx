@@ -36,6 +36,7 @@ import {
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
+import { Select } from "@/components/ui/Select";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { chapterEditorInitialMode } from "@/libs/chapterEditor";
 import {
@@ -744,22 +745,20 @@ export default function ChapterEditor({
           </div>
           {entryEditing ? (
             <>
-              <select
+              <Select
                 value={kind}
-                onChange={(event) => setKind(event.target.value as ChapterKind)}
+                onValueChange={(value) => setKind(value as ChapterKind)}
                 onKeyDown={(event) => {
                   if (shouldCancelInlineEdit(event.key, entrySaving)) {
                     event.preventDefault();
                     cancelEntry();
                   }
                 }}
-                className={inputClassName}>
-                {CHAPTER_KINDS.map((entryKind) => (
-                  <option key={entryKind} value={entryKind}>
-                    {kindLabels[entryKind]}
-                  </option>
-                ))}
-              </select>
+                options={CHAPTER_KINDS.map((entryKind) => ({
+                  value: entryKind,
+                  label: kindLabels[entryKind],
+                }))}
+              />
               {kind === "chapter" && (
                 <div className="mt-3">
                   <label className={smallLabelClassName}>

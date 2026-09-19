@@ -33,6 +33,7 @@ import { dependentRefreshes } from "@/libs/search/refresh";
 import { buildEntityId } from "@/libs/entities/keys";
 import { relatedNotesForCharacter } from "@/libs/characterRelatedNotes";
 import { crossReferencePreview } from "@/libs/crossReferencePreview";
+import { Select } from "@/components/ui/Select";
 
 export default function CharacterDetail({
   character,
@@ -193,16 +194,11 @@ export default function CharacterDetail({
         <div className={cardClassName}>
           <p className={smallLabelClassName}>{t("character.role")}</p>
           {editing ? (
-            <select
+            <Select
               value={roleId}
-              onChange={(e) => setRoleId(e.target.value)}
-              className={inputClassName}>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              onValueChange={setRoleId}
+              options={roles.map((role) => ({ value: role.id, label: role.name }))}
+            />
           ) : (
             <span
               className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleColorClassNames[character.role] ?? roleColorClassNames.minor}`}>
