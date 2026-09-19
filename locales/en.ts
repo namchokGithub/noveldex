@@ -297,6 +297,11 @@ const en = {
   "volumeManager.notFound": "Volume not found.",
 
   "volume.descriptionPlaceholder": "Short volume description",
+  "volume.editTitle": "Edit volume title",
+  "volume.titleRequired": "Enter an English volume title.",
+  "volume.titleEnglishRequired": "English title *",
+  "volume.titleThaiOptional": "Thai title (optional)",
+  "volume.saveTitle": "Save",
   "volume.saveDescription": "Save description",
   "volume.descriptionSaved": "Description saved successfully.",
   "volume.imageLoadFailed": "The source image could not be loaded.",

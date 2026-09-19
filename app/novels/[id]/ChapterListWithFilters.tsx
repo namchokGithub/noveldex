@@ -371,6 +371,17 @@ export default function ChapterListWithFilters({
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="space-y-4">
           {sidebar}
+          {isAdmin && !reorderMode ? (
+            <div className={cardClassName}>
+              <button
+                type="button"
+                onClick={enterReorderMode}
+                className={`${ghostButtonClassName} w-full justify-between`}>
+                {t("chapter.reorder")}
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          ) : null}
           {reorderMode ? (
             <div className={cardClassName}>
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -469,14 +480,6 @@ export default function ChapterListWithFilters({
                     </div>
                   )}
                 </div>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={enterReorderMode}
-                    className={ghostButtonClassName}>
-                    {t("chapter.reorder")}
-                  </button>
-                )}
               </div>
             </div>
           )}

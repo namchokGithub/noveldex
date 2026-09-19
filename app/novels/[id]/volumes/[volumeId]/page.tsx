@@ -4,15 +4,14 @@ import AddChapterForm from "../../AddChapterForm";
 import BackToTopButton from "../../../BackToTopButton";
 import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
+import VolumeTitleEditor from "./VolumeTitleEditor";
 import AdaptationSection from "./AdaptationSection";
 import VolumeOverview from "./VolumeOverview";
 import VolumeSourceImageModal from "./VolumeSourceImageModal";
-import LocalizedVolumeTitle from "@/components/volumes/LocalizedVolumeTitle";
 import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
 import { T } from "@/components/i18n/I18nProvider";
 import {
   backLinkClassName,
-  cardClassName,
   DashboardPage,
   SectionHeading,
   secondaryButtonClassName,
@@ -60,10 +59,6 @@ export default async function VolumePage({
     throw error;
   }
 
-  const chapterCount = chapters.filter(
-    (chapter) => chapter.kind === "chapter",
-  ).length;
-
   const availableTags =
     tags.length > 0
       ? tags
@@ -99,7 +94,7 @@ export default async function VolumePage({
               eyebrow={
                 <T k="volume.pageEyebrow" values={{ number: volume.number }} />
               }
-              title={<LocalizedVolumeTitle volume={volume} />}
+              title={<VolumeTitleEditor volume={volume} novelId={id} />}
               description={
                 <LocalizedVolumePageDescription updatedAt={volume.updated_at} />
               }
@@ -119,12 +114,6 @@ export default async function VolumePage({
           events={events}
           adaptations={adaptations}
         />
-        <AdaptationSection
-          novelId={id}
-          volumeId={volumeId}
-          adaptations={adaptations}
-        />
-
         <ChapterListWithFilters
           novelId={id}
           volumeId={volumeId}
@@ -132,21 +121,11 @@ export default async function VolumePage({
           availableTags={availableTags}
           sidebar={
             <>
-              <div className={cardClassName}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                  <T k="volume.chapters" />
-                </p>
-                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                  <T
-                    k={
-                      chapterCount === 1
-                        ? "volumeManager.chapter.one"
-                        : "volumeManager.chapter.other"
-                    }
-                    values={{ count: chapterCount }}
-                  />
-                </h2>
-              </div>
+              <AdaptationSection
+                novelId={id}
+                volumeId={volumeId}
+                adaptations={adaptations}
+              />
             </>
           }
         />

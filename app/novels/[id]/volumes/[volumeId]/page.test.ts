@@ -9,3 +9,16 @@ it("loads adjacent volumes and renders volume navigation", () => {
   expect(source).toContain('className="flex flex-wrap items-center justify-between gap-3"');
   expect(source).toContain("<VolumeNavigation novelId={id} {...adjacentVolumes} />");
 });
+
+it("places adaptations above the chapter tag filter sidebar", () => {
+  expect(source).toContain("sidebar={");
+  expect(source).toContain("<AdaptationSection");
+  expect(source.indexOf("sidebar={")).toBeLessThan(
+    source.indexOf("<AdaptationSection"),
+  );
+});
+
+it("does not render a separate chapters summary below adaptations", () => {
+  expect(source).not.toContain('k="volume.chapters"');
+  expect(source).not.toContain("chapterCount === 1");
+});

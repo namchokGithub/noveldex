@@ -300,6 +300,11 @@ const th = {
   "volumeManager.notFound": "ไม่พบเล่มนี้",
 
   "volume.descriptionPlaceholder": "คำอธิบายสั้น ๆ ของเล่มนี้",
+  "volume.editTitle": "แก้ไขชื่อเล่ม",
+  "volume.titleRequired": "กรุณาระบุชื่อเล่มภาษาอังกฤษ",
+  "volume.titleEnglishRequired": "ชื่อภาษาอังกฤษ *",
+  "volume.titleThaiOptional": "ชื่อภาษาไทย (ไม่บังคับ)",
+  "volume.saveTitle": "บันทึก",
   "volume.saveDescription": "บันทึกคำอธิบาย",
   "volume.descriptionSaved": "บันทึกคำอธิบายสำเร็จ",
   "volume.imageLoadFailed": "ไม่สามารถโหลดรูปต้นฉบับได้",
