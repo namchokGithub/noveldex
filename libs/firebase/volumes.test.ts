@@ -4,6 +4,7 @@ import { db } from "./app";
 import {
   createVolume,
   deleteVolume,
+  getAdjacentVolumeMetadata,
   getVolume,
   getVolumes,
   updateVolume,
@@ -134,6 +135,21 @@ describe("volumes", () => {
       total_volumes: 7,
       total_chapters: 7,
       read_count: 3,
+    });
+  });
+
+  it("finds only the immediately adjacent volumes by number", async () => {
+    const first = await createVolume("novel-1", { number: 1, title: "One" });
+    const third = await createVolume("novel-1", { number: 3, title: "Three" });
+    const fifth = await createVolume("novel-1", { number: 5, title: "Five" });
+
+    await expect(getAdjacentVolumeMetadata("novel-1", 3)).resolves.toMatchObject({
+      previous: expect.objectContaining({ id: first.id, number: 1 }),
+      next: expect.objectContaining({ id: fifth.id, number: 5 }),
+    });
+    await expect(getAdjacentVolumeMetadata("novel-1", 1)).resolves.toMatchObject({
+      previous: null,
+      next: expect.objectContaining({ id: third.id, number: 3 }),
     });
   });
 

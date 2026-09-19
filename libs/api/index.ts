@@ -17,6 +17,7 @@ export {
   getVolumesFlat,
   getVolume,
   getVolumeMetadata,
+  getAdjacentVolumeMetadata,
   createVolume,
   updateVolume,
   deleteVolume,

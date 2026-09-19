@@ -6,6 +6,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
   orderBy,
   query,
   Timestamp,
@@ -277,6 +278,44 @@ export async function getVolumeMetadata(
     throw new ResourceNotFoundError("volume");
   }
   return toVolumeMetadata(novelId, snapshot.id, snapshot.data() as VolumeDoc);
+}
+
+export async function getAdjacentVolumeMetadata(
+  novelId: string,
+  volumeNumber: number,
+): Promise<{
+  previous: VolumeMetadata | null;
+  next: VolumeMetadata | null;
+}> {
+  const [previousSnapshot, nextSnapshot] = await Promise.all([
+    getDocs(
+      query(
+        volumesCol(novelId),
+        where("number", "<", volumeNumber),
+        orderBy("number", "desc"),
+        limit(1),
+      ),
+    ),
+    getDocs(
+      query(
+        volumesCol(novelId),
+        where("number", ">", volumeNumber),
+        orderBy("number", "asc"),
+        limit(1),
+      ),
+    ),
+  ]);
+
+  const previous = previousSnapshot.docs[0];
+  const next = nextSnapshot.docs[0];
+  return {
+    previous: previous
+      ? toVolumeMetadata(novelId, previous.id, previous.data() as VolumeDoc)
+      : null,
+    next: next
+      ? toVolumeMetadata(novelId, next.id, next.data() as VolumeDoc)
+      : null,
+  };
 }
 
 export async function createVolume(
