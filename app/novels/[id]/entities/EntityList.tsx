@@ -15,6 +15,7 @@ import {
 } from "../../ui";
 import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
 import { normalizeEntity } from "@/libs/search/normalize";
+import { entityTypeBadgeStyle } from "@/libs/richNotes/tagColors";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 
 const TYPES: GenericEntityType[] = [
@@ -116,8 +117,12 @@ export default function EntityList({
             <section
               key={entityType}
               className="rounded-2xl border border-stone-200 bg-white">
-              <h2 className="border-b border-stone-200 px-4 py-3 text-sm font-semibold capitalize">
-                {entityType}
+              <h2 className="border-b border-stone-200 px-4 py-3">
+                <span
+                  className="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize tracking-wide"
+                  style={entityTypeBadgeStyle(entityType)}>
+                  {entityType}
+                </span>
               </h2>
               {group.length ? (
                 <ul className="divide-y divide-stone-100">

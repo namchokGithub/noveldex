@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { TAG_COLORS, entityReferenceClassName } from "./tagColors";
+import {
+  TAG_COLORS,
+  entityReferenceClassName,
+  entityTypeBadgeStyle,
+} from "./tagColors";
 
 describe("rich note entity tag colors", () => {
   it("keeps a distinct palette for every entity type", () => {
@@ -14,5 +18,13 @@ describe("rich note entity tag colors", () => {
 
   it("returns the matching static Tailwind class for a reference", () => {
     expect(entityReferenceClassName("skill")).toContain("text-[#7C3AED]");
+  });
+
+  it("uses the shared type palette for entity list badges", () => {
+    expect(entityTypeBadgeStyle("item")).toEqual({
+      color: "#BE123C",
+      backgroundColor: "#FECDD3",
+      borderColor: "#BE123C",
+    });
   });
 });
