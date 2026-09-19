@@ -380,7 +380,7 @@ export function RichNoteContent({
     const rect = container.getBoundingClientRect();
     const position = {
       left: clientX - rect.left,
-      top: clientY - rect.bottom - 12,
+      top: clientY - rect.top + 24,
     };
     const cached = linkPreviewCache.get(url.href);
     if (cached) {
