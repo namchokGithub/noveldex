@@ -13,6 +13,7 @@ import {
   SectionHeading,
 } from "@/app/novels/ui";
 import { T } from "@/components/i18n/I18nProvider";
+import RecentNovelPageTracker from "@/components/navigation/RecentNovelPageTracker";
 import {
   getAdaptationsByChapter,
   getAllCharacters,
@@ -89,9 +90,19 @@ export default async function ChapterPage({
     throw error;
   }
 
+  const chapterPrefix = formatChapterPrefix(chapter, {
+    chapter: "Ch.",
+    prologue: "Prologue",
+    epilogue: "Epilogue",
+    afterword: "Afterword",
+    side_story: "Side Story",
+    other: "Other",
+  });
+
   return (
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
+        <RecentNovelPageTracker novelId={id} label={chapterPrefix} />
         <Link
           id="chapter-back-link"
           href={`/novels/${id}/volumes/${volumeId}`}
@@ -100,14 +111,7 @@ export default async function ChapterPage({
         </Link>
 
         <SectionHeading
-          eyebrow={formatChapterPrefix(chapter, {
-            chapter: "Ch.",
-            prologue: "Prologue",
-            epilogue: "Epilogue",
-            afterword: "Afterword",
-            side_story: "Side Story",
-            other: "Other",
-          })}
+          eyebrow={chapterPrefix}
           title={
             <ChapterTitleEditor
               chapter={chapter}

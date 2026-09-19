@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Boxes, Clapperboard, Clock3, House, Library, Menu, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, Boxes, Clapperboard, Clock3, History, House, Library, Menu, Users, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  novelPageLabel,
+  readRecentNovelPages,
+  recentNovelPageStorageKey,
+  recordRecentNovelPage,
+  visibleRecentNovelPages,
+  type RecentNovelPage,
+} from "@/libs/recentNovelPages";
 
 export function novelNavigationItems(novelId: string) {
   const encodedId = encodeURIComponent(novelId);
@@ -21,10 +29,12 @@ const navigationIcons: Record<string, LucideIcon> = { Home: House, "Volume list"
 
 export function NovelFlyoutPanel({
   items,
+  recentItems = [],
   onKeyDown,
   onNavigate,
 }: {
   items: ReturnType<typeof novelNavigationItems>;
+  recentItems?: RecentNovelPage[];
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
   onNavigate?: () => void;
 }) {
@@ -34,7 +44,25 @@ export function NovelFlyoutPanel({
       aria-label="Novel navigation"
       onKeyDown={onKeyDown}
       className="absolute left-3 right-3 top-[calc(100%+0.5rem)] z-50 w-auto rounded-2xl border border-stone-200 bg-white p-2 shadow-[0_12px_28px_rgba(28,25,23,0.14)] sm:left-auto sm:right-0 sm:w-88">
-      <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">Novel</p>
+      {recentItems.length ? (
+        <>
+          <p className="mt-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">Recent</p>
+          <div className="space-y-1">
+            {recentItems.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                role="menuitem"
+                onClick={onNavigate}
+                className="flex min-w-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400">
+                <History aria-hidden="true" size={15} className="shrink-0 text-stone-400" />
+                <span className="truncate">{label}</span>
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : null}
+      <p className="mt-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">Novel</p>
       <div className="mt-1 grid grid-cols-2 gap-1">
         {items.map(({ label, href }) => {
           const Icon = navigationIcons[label];
@@ -62,6 +90,10 @@ export default function NovelFlyoutMenu() {
   const pathname = usePathname();
   const novelId = pathname.match(/^\/novels\/([^/]+)/)?.[1];
   const [open, setOpen] = useState(false);
+  const [recentSnapshot, setRecentSnapshot] = useState<{
+    pages: RecentNovelPage[];
+    now: number;
+  }>({ pages: [], now: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -76,8 +108,30 @@ export default function NovelFlyoutMenu() {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
+  useEffect(() => {
+    if (!novelId) return;
+    const now = Date.now();
+    const key = recentNovelPageStorageKey(novelId);
+    const next = recordRecentNovelPage(
+      readRecentNovelPages(window.localStorage.getItem(key)),
+      { href: pathname, label: novelPageLabel(pathname, novelId) },
+      now,
+    );
+    window.localStorage.setItem(key, JSON.stringify(next));
+    const frame = window.requestAnimationFrame(() =>
+      setRecentSnapshot({ pages: next, now }),
+    );
+    return () => window.cancelAnimationFrame(frame);
+  }, [novelId, pathname]);
+
   if (!novelId) return null;
   const items = novelNavigationItems(novelId);
+  const recentItems = visibleRecentNovelPages(
+    recentSnapshot.pages,
+    recentSnapshot.now,
+    pathname,
+    items.map(({ href }) => href),
+  );
 
   function focusItem(direction: "first" | "last" | "next" | "previous") {
     const menuItems = Array.from(menuRef.current?.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]') ?? []);
@@ -85,6 +139,15 @@ export default function NovelFlyoutMenu() {
     const current = menuItems.indexOf(document.activeElement as HTMLAnchorElement);
     const index = direction === "first" ? 0 : direction === "last" ? menuItems.length - 1 : direction === "next" ? (current + 1 + menuItems.length) % menuItems.length : (current - 1 + menuItems.length) % menuItems.length;
     menuItems[index]?.focus();
+  }
+
+  function refreshRecentPages() {
+    const now = Date.now();
+    const key = recentNovelPageStorageKey(novelId!);
+    setRecentSnapshot({
+      pages: readRecentNovelPages(window.localStorage.getItem(key)),
+      now,
+    });
   }
 
   function onMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -103,10 +166,14 @@ export default function NovelFlyoutMenu() {
         aria-label="Novel navigation"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          if (!open) refreshRecentPages();
+          setOpen((current) => !current);
+        }}
         onKeyDown={(event) => {
           if (event.key === "ArrowDown") {
             event.preventDefault();
+            refreshRecentPages();
             setOpen(true);
             window.requestAnimationFrame(() => focusItem("first"));
           }
@@ -118,6 +185,7 @@ export default function NovelFlyoutMenu() {
         <div ref={menuRef}>
           <NovelFlyoutPanel
             items={items}
+            recentItems={recentItems}
             onKeyDown={onMenuKeyDown}
             onNavigate={() => setOpen(false)}
           />
