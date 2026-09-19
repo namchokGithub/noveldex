@@ -226,6 +226,8 @@ const en = {
   "novel.explore": "Explore",
   "novel.characters": "Characters",
   "novel.trackedCast": "{count} tracked cast members",
+  "novel.entities": "Story entities",
+  "novel.trackedEntities": "{count} tracked places, skills, and more",
   "novel.timeline": "Timeline",
   "novel.timelineHelp": "Plot sequence and in-world date rail",
   "novel.adaptations": "Adaptations",

@@ -230,6 +230,8 @@ const th = {
   "novel.explore": "สำรวจ",
   "novel.characters": "ตัวละคร",
   "novel.trackedCast": "ติดตามตัวละครแล้ว {count} คน",
+  "novel.entities": "เอนทิตีในเรื่อง",
+  "novel.trackedEntities": "ติดตามสถานที่ สกิล และอื่น ๆ {count} รายการ",
   "novel.timeline": "ไทม์ไลน์",
   "novel.timelineHelp": "ลำดับเหตุการณ์และเส้นเวลาในเรื่อง",
   "novel.adaptations": "สื่อดัดแปลง",

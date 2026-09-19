@@ -3,7 +3,7 @@ import type { Entity } from "@/libs/entities/types";
 import { genericEntityHref, resolveGenericReference } from "./preview";
 
 const entities: Entity[] = [
-  { id: "novel-1:location:tempest", novelId: "novel-1", type: "location", name: "Tempest", aliases: ["Jura Tempest"], description: "" },
+  { id: "novel-1:location:tempest", novelId: "novel-1", type: "location", name: "Jura-Tempest Federation", aliases: ["Tempest"], description: "" },
   { id: "novel-1:skill:tempest", novelId: "novel-1", type: "skill", name: "Tempest", aliases: [], description: "" },
   { id: "novel-1:item:mask-a", novelId: "novel-1", type: "item", name: "Mask A", aliases: ["Mask"], description: "" },
   { id: "novel-1:item:mask-b", novelId: "novel-1", type: "item", name: "Mask B", aliases: ["Mask"], description: "" },
@@ -11,8 +11,8 @@ const entities: Entity[] = [
 
 describe("generic rich-note references", () => {
   it("resolves a typed generic entity by name or alias", () => {
+    expect(resolveGenericReference(entities, "location", "Jura-Tempest Federation")?.id).toBe("novel-1:location:tempest");
     expect(resolveGenericReference(entities, "location", "Tempest")?.id).toBe("novel-1:location:tempest");
-    expect(resolveGenericReference(entities, "location", "Jura Tempest")?.id).toBe("novel-1:location:tempest");
   });
 
   it("does not resolve a type mismatch or ambiguous alias", () => {

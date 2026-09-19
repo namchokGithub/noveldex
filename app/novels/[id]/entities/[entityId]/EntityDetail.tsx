@@ -15,6 +15,7 @@ import {
 } from "../../../ui";
 import ConfirmDialog from "../../../ConfirmDialog";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
+import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { normalizeEntity } from "@/libs/search/normalize";
 import { dependentRefreshes } from "@/libs/search/refresh";
 import { userErrorMessage } from "@/libs/userErrorMessage";
@@ -35,6 +36,7 @@ export default function EntityDetail({
   const [aliases, setAliases] = useState(entity.aliases.join(", "));
   const [description, setDescription] = useState(entity.description);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -47,6 +49,16 @@ export default function EntityDetail({
     const timeoutId = window.setTimeout(() => setSnackbar(null), 3000);
     return () => window.clearTimeout(timeoutId);
   }, [snackbar]);
+
+  function cancel() {
+    setName(entity.name);
+    setAliases(entity.aliases.join(", "));
+    setDescription(entity.description);
+    setEditing(false);
+    setError(null);
+  }
+
+  useResetOnSignOut(isAdmin, cancel);
 
   async function save() {
     setBusy(true);
@@ -66,6 +78,7 @@ export default function EntityDetail({
         normalizeEntity(updated),
         ...dependentRefreshes(updated.id, dependents, documents, nextEntities),
       ]);
+      setEditing(false);
       setSnackbar({ tone: "success", message: t("entities.saveSuccess") });
       router.refresh();
     } catch (cause) {
@@ -97,79 +110,94 @@ export default function EntityDetail({
     }
   }
   if (loading) return null;
-  if (!isAdmin) {
-    return (
-      <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-          {entity.type}
-        </p>
-        <p className="text-sm text-stone-500">{t("entities.readOnly")}</p>
-        <dl className="space-y-4 text-sm">
-          <div>
-            <dt className="font-medium text-stone-500">{t("entities.name")}</dt>
-            <dd className="mt-1 text-stone-900">{entity.name}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-stone-500">{t("entities.aliases")}</dt>
-            <dd className="mt-1 text-stone-900">{entity.aliases.join(", ") || "—"}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-stone-500">{t("entities.descriptionField")}</dt>
-            <dd className="mt-1 whitespace-pre-wrap text-stone-900">{entity.description || "—"}</dd>
-          </div>
-        </dl>
-      </section>
-    );
-  }
   return (
     <>
       <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-          {entity.type}
-        </p>
-        <label className="block text-sm">
-          {t("entities.name")}
-          <input
-            className={inputClassName}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            disabled={busy}
-          />
-        </label>
-        {error ? <FormError>{error}</FormError> : null}
-        <label className="block text-sm">
-          {t("entities.aliases")}
-          <input
-            className={inputClassName}
-            value={aliases}
-            onChange={(event) => setAliases(event.target.value)}
-            disabled={busy}
-          />
-        </label>
-        <label className="block text-sm">
-          {t("entities.descriptionField")}
-          <textarea
-            className={inputClassName}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            rows={5}
-            disabled={busy}
-          />
-        </label>
-        <div className="flex gap-2">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+            {entity.type}
+          </p>
+          {editing ? (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={secondaryButtonClassName}
+                onClick={cancel}
+                disabled={busy}>
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                className={primaryButtonClassName}
+                onClick={() => void save()}
+                disabled={busy || !name.trim()}>
+                {busy ? t("common.saving") : t("common.save")}
+              </button>
+            </div>
+          ) : isAdmin ? (
             <button
-              className={primaryButtonClassName}
-              onClick={() => void save()}
-              disabled={busy || !name.trim()}>
-              {busy ? t("common.saving") : t("common.save")}
+              type="button"
+              className={secondaryButtonClassName}
+              onClick={() => setEditing(true)}>
+              {t("common.edit")}
             </button>
+          ) : null}
+        </div>
+        {editing ? (
+          <>
+            <label className="block text-sm">
+              {t("entities.name")}
+              <input
+                className={inputClassName}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                disabled={busy}
+              />
+            </label>
+            <label className="block text-sm">
+              {t("entities.aliases")}
+              <input
+                className={inputClassName}
+                value={aliases}
+                onChange={(event) => setAliases(event.target.value)}
+                disabled={busy}
+              />
+            </label>
+            <label className="block text-sm">
+              {t("entities.descriptionField")}
+              <textarea
+                className={inputClassName}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                rows={5}
+                disabled={busy}
+              />
+            </label>
             <button
+              type="button"
               className={secondaryButtonClassName}
               onClick={() => setConfirming(true)}
               disabled={busy}>
               {t("common.delete")}
             </button>
-          </div>
+          </>
+        ) : (
+          <dl className="space-y-4 text-sm">
+            <div>
+              <dt className="font-medium text-stone-500">{t("entities.name")}</dt>
+              <dd className="mt-1 text-stone-900">{entity.name}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-stone-500">{t("entities.aliases")}</dt>
+              <dd className="mt-1 text-stone-900">{entity.aliases.join(", ") || "—"}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-stone-500">{t("entities.descriptionField")}</dt>
+              <dd className="mt-1 whitespace-pre-wrap text-stone-900">{entity.description || "—"}</dd>
+            </div>
+          </dl>
+        )}
+        {error ? <FormError>{error}</FormError> : null}
       </section>
       <ConfirmDialog
         open={confirming}

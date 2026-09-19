@@ -14,7 +14,7 @@ import {
   mutedCardClassName,
   statusColorClassNames,
 } from "../ui";
-import { getAllCharacters, getNovel, getVolumes } from "@/libs/api";
+import { getAllCharacters, getEntities, getNovel, getVolumes } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
@@ -36,12 +36,14 @@ export default async function NovelPage({
   let novel;
   let volumes;
   let characters;
+  let entities;
 
   try {
-    [novel, volumes, characters] = await Promise.all([
+    [novel, volumes, characters, entities] = await Promise.all([
       getNovel(id),
       getVolumes(id, { page, perPage }),
       getAllCharacters(id),
+      getEntities(id),
     ]);
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
@@ -144,7 +146,7 @@ export default async function NovelPage({
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
                   <T k="novel.explore" />
                 </p>
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-1">
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
                   <Link
                     href={`/novels/${id}/characters`}
                     className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
@@ -155,6 +157,19 @@ export default async function NovelPage({
                       <T
                         k="novel.trackedCast"
                         values={{ count: characters.length }}
+                      />
+                    </p>
+                  </Link>
+                  <Link
+                    href={`/novels/${id}/entities`}
+                    className={`${cardClassName} p-3 transition hover:border-stone-300 hover:bg-white sm:p-4`}>
+                    <p className="text-sm font-semibold text-stone-900">
+                      <T k="novel.entities" />
+                    </p>
+                    <p className="mt-1 hidden text-sm text-stone-500 sm:block">
+                      <T
+                        k="novel.trackedEntities"
+                        values={{ count: entities.length }}
                       />
                     </p>
                   </Link>

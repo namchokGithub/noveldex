@@ -5,7 +5,14 @@ export function buildEntityId(novelId: string, type: EntityType, sourceRecordId:
 }
 
 export function parseEntityId(id: EntityId) {
-  const [novelId, type, ...sourceParts] = id.split(":");
+  let decodedId = id;
+  try {
+    decodedId = decodeURIComponent(id);
+  } catch {
+    // Keep the original value so malformed IDs are rejected by the validation below.
+  }
+
+  const [novelId, type, ...sourceParts] = decodedId.split(":");
   const sourceRecordId = sourceParts.join(":");
   if (!novelId || !sourceRecordId || !ENTITY_TYPES.includes(type as EntityType)) return null;
   return { novelId, type: type as EntityType, sourceRecordId };

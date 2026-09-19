@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import type { ChapterNote, Character, Tag } from "@/app/types";
 import type { Entity } from "@/libs/entities/types";
 import {
+  genericEntityHref,
+  resolveGenericReference,
+} from "@/libs/richNotes/preview";
+import {
   CHAPTER_SEARCH_SOURCE_EVENT,
   type ChapterSearchSource,
 } from "@/components/commands/CommandPalette";
@@ -445,17 +449,40 @@ function CollapsibleNoteContent({
     content.split(/\[\[([^\]]+)\]\]/).map((part, index) => {
       if (index % 2 === 0)
         return <span key={index}>{highlightText(part, highlight)}</span>;
-      const character = characters.find((item) => item.name === part);
-      return character ? (
+      const [prefix, ...rest] = part.split(":");
+      const entityTypes = [
+        "character",
+        "location",
+        "skill",
+        "organization",
+        "item",
+        "concept",
+      ] as const;
+      const entityType = entityTypes.includes(prefix as (typeof entityTypes)[number])
+        ? prefix as (typeof entityTypes)[number]
+        : "character";
+      const label = entityType === "character" ? part : rest.join(":");
+      const character = entityType === "character"
+        ? characters.find((item) => item.name === label)
+        : undefined;
+      const generic = entityType === "character"
+        ? null
+        : resolveGenericReference(entities, entityType, label);
+      const href = character
+        ? `/novels/${novelId}/characters/${character.id}`
+        : generic
+          ? genericEntityHref(novelId, generic)
+          : null;
+      return href ? (
         <Link
           key={index}
-          href={`/novels/${novelId}/characters/${character.id}`}
+          href={href}
           className="font-medium text-sky-700 underline decoration-sky-200 underline-offset-4 hover:text-sky-900">
-          {part}
+          {label}
         </Link>
       ) : (
         <span key={index} className="text-stone-400">
-          {part}
+          {label}
         </span>
       );
     })
