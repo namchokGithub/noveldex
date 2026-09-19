@@ -8,6 +8,8 @@ import Suggestion, { type SuggestionProps } from "@tiptap/suggestion";
 import { EditorContent, useEditor } from "@tiptap/react";
 import {
   Bold,
+  ChevronLeft,
+  ChevronRight,
   Eraser,
   Heading3,
   Highlighter,
@@ -19,6 +21,7 @@ import {
   Pilcrow,
   Quote,
   Redo2,
+  Search,
   Strikethrough,
   Undo2,
 } from "lucide-react";
@@ -34,7 +37,13 @@ import {
 } from "@/app/novels/ui";
 import type { Entity, EntityType } from "@/libs/entities/types";
 import { genericEntityHref, resolveGenericReference } from "@/libs/richNotes/preview";
-import { entityReferenceClassName } from "@/libs/richNotes/tagColors";
+import { TAG_COLORS, entityReferenceClassName } from "@/libs/richNotes/tagColors";
+import {
+  ENTITY_REFERENCE_TYPES,
+  filterEntityReferences,
+  paginateEntityReferences,
+  type EntityReferenceFilter,
+} from "@/libs/richNotes/entityPicker";
 import {
   createRichNoteDocument,
   richNoteDocumentToText,
@@ -177,28 +186,11 @@ function previewDocument(
 
 function matchingEntities(entities: Entity[], query: string) {
   const [prefix, ...rest] = query.split(":");
-  const entityTypes: EntityType[] = [
-    "character",
-    "location",
-    "skill",
-    "organization",
-    "item",
-    "concept",
-  ];
-  const type = entityTypes.includes(prefix as EntityType)
+  const type = ENTITY_REFERENCE_TYPES.includes(prefix as EntityType)
     ? (prefix as EntityType)
     : undefined;
   const search = (type ? rest.join(":") : query).trim().toLocaleLowerCase();
-  return entities
-    .filter(
-      (entity) =>
-        (!type || entity.type === type) &&
-        (!search ||
-          [entity.name, ...entity.aliases].some((value) =>
-            value.toLocaleLowerCase().includes(search),
-          )),
-    )
-    .slice(0, 8);
+  return filterEntityReferences(entities, type ?? "all", search).slice(0, 10);
 }
 
 function renderEntityMenu() {
@@ -512,7 +504,16 @@ export function RichNoteEditor({
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkHref, setLinkHref] = useState("");
   const [linkError, setLinkError] = useState("");
+  const [entityPickerOpen, setEntityPickerOpen] = useState(false);
+  const [entityFilter, setEntityFilter] = useState<EntityReferenceFilter>("all");
+  const [entityQuery, setEntityQuery] = useState("");
+  const [entityPage, setEntityPage] = useState(1);
   const linkDialogTitleId = useId();
+  const filteredEntities = useMemo(
+    () => filterEntityReferences(entities, entityFilter, entityQuery),
+    [entities, entityFilter, entityQuery],
+  );
+  const entityResults = paginateEntityReferences(filteredEntities, entityPage);
   if (!editor) return null;
   const insertEntity = (entity: Entity) =>
     editor
@@ -523,6 +524,13 @@ export function RichNoteEditor({
         attrs: { entityType: entity.type, label: entity.name },
       })
       .run();
+  const chooseEntity = (entity: Entity) => {
+    insertEntity(entity);
+    setEntityPickerOpen(false);
+    setEntityQuery("");
+    setEntityFilter("all");
+    setEntityPage(1);
+  };
   const button = (
     label: string,
     icon: ReactNode,
@@ -634,25 +642,105 @@ export function RichNoteEditor({
           )}
         </div>
       </div>
-      <div className="border-b border-stone-200 p-2">
-        <select
-          aria-label="Insert entity reference"
-          defaultValue=""
-          onChange={(event) => {
-            const entity = entities.find(
-              (item) => item.id === event.target.value,
-            );
-            if (entity) insertEntity(entity);
-            event.currentTarget.value = "";
-          }}
-          className="max-w-full rounded border border-stone-200 bg-white px-2 py-1.5 text-xs">
-          <option value="">[[ Entity reference ]]</option>
-          {entities.map((entity) => (
-            <option key={entity.id} value={entity.id}>
-              {entity.type}: {entity.name}
-            </option>
-          ))}
-        </select>
+      <div className="relative border-b border-stone-200 p-2">
+        <button
+          type="button"
+          aria-expanded={entityPickerOpen}
+          aria-controls="entity-reference-picker"
+          onClick={() => setEntityPickerOpen((open) => !open)}
+          className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 shadow-sm transition hover:border-stone-300 hover:bg-stone-50">
+          [[ Entity reference ]]
+        </button>
+        {entityPickerOpen ? (
+          <div
+            id="entity-reference-picker"
+            className="absolute left-2 top-full z-30 mt-1 w-[min(30rem,calc(100vw-3rem))] rounded-xl border border-stone-200 bg-white p-3 shadow-xl">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+              <input
+                autoFocus
+                value={entityQuery}
+                onChange={(event) => {
+                  setEntityQuery(event.target.value);
+                  setEntityPage(1);
+                }}
+                placeholder="Search name or alias"
+                className="w-full rounded-lg border border-stone-200 py-2 pl-8 pr-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-stone-400"
+              />
+            </label>
+            <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Filter entity type">
+              {(["all", ...ENTITY_REFERENCE_TYPES] as EntityReferenceFilter[]).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => {
+                    setEntityFilter(type);
+                    setEntityPage(1);
+                  }}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize transition ${entityFilter === type ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
+                  {type}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 max-h-72 overflow-y-auto rounded-lg border border-stone-100">
+              {entityResults.items.length ? (
+                entityResults.items.map((entity) => (
+                  <button
+                    key={entity.id}
+                    type="button"
+                    onClick={() => chooseEntity(entity)}
+                    className="flex w-full items-start justify-between gap-3 border-b border-stone-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-stone-50">
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-stone-900">
+                        {entity.name}
+                      </span>
+                      {entity.aliases.length ? (
+                        <span className="block truncate text-xs text-stone-500">
+                          {entity.aliases.join(", ")}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span
+                      className="shrink-0 text-xs font-medium capitalize"
+                      style={{ color: TAG_COLORS[entity.type].color }}>
+                      {entity.type}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <p className="px-3 py-8 text-center text-sm text-stone-500">
+                  No matching entities
+                </p>
+              )}
+            </div>
+            <div className="mt-3 flex items-center justify-between text-xs text-stone-500">
+              <span>
+                {filteredEntities.length} result{filteredEntities.length === 1 ? "" : "s"}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Previous entity page"
+                  onClick={() => setEntityPage((page) => page - 1)}
+                  disabled={entityResults.currentPage === 1}
+                  className="grid size-7 place-items-center rounded border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40">
+                  <ChevronLeft className="size-4" />
+                </button>
+                <span>
+                  {entityResults.currentPage} / {entityResults.totalPages}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Next entity page"
+                  onClick={() => setEntityPage((page) => page + 1)}
+                  disabled={entityResults.currentPage === entityResults.totalPages}
+                  className="grid size-7 place-items-center rounded border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40">
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
       <EditorContent editor={editor} />
       <ModalDialog
