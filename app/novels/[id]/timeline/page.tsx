@@ -26,6 +26,7 @@ import {
 import ConfirmDialog from "../../ConfirmDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Select } from "@/components/ui/Select";
 import {
   createCharacter,
   createEvent,
@@ -738,47 +739,38 @@ function EventFormFields({
           <label className={smallLabelClassName}>
             {t("timeline.field.volumeRequired")}
           </label>
-          <select
+          <Select
             value={form.chapter_volume_id}
-            required
-            onChange={(event) =>
-              setGroupField("chapter_volume_id", event.target.value)
-            }
-            className={inputClassName}>
-            <option value="">{t("timeline.field.selectVolume")}</option>
-            {volumes.map((volume) => (
-              <option key={volume.id} value={volume.id}>
-                {t("timeline.volume")} {volume.number} ·{" "}
-                {localizedVolumeTitle(volume, language)}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => setGroupField("chapter_volume_id", value)}
+            options={[
+              { value: "", label: t("timeline.field.selectVolume") },
+              ...volumes.map((volume) => ({
+                value: volume.id,
+                label: `${t("timeline.volume")} ${volume.number} · ${localizedVolumeTitle(volume, language)}`,
+              })),
+            ]}
+          />
         </div>
         <div>
           <label className={smallLabelClassName}>
             {t("timeline.field.chapterRequired")}
           </label>
-          <select
+          <Select
             value={form.chapter_id}
-            required={requireChapter}
+            aria-required={requireChapter}
             disabled={!form.chapter_volume_id}
-            onChange={(event) =>
-              setGroupField("chapter_id", event.target.value)
-            }
-            className={inputClassName}>
-            <option value="">{t("timeline.field.selectChapter")}</option>
-            {available.map((chapter) => (
-              <option key={chapter.id} value={chapter.id}>
-                {formatChapterLabel(
-                  {
-                    ...chapter,
-                    title: localizedChapterTitle(chapter, language),
-                  },
+            onValueChange={(value) => setGroupField("chapter_id", value)}
+            options={[
+              { value: "", label: t("timeline.field.selectChapter") },
+              ...available.map((chapter) => ({
+                value: chapter.id,
+                label: formatChapterLabel(
+                  { ...chapter, title: localizedChapterTitle(chapter, language) },
                   labels,
-                )}
-              </option>
-            ))}
-          </select>
+                ),
+              })),
+            ]}
+          />
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -862,17 +854,14 @@ function EventFormFields({
             className={inputClassName}
             placeholder={t("timeline.quickCharacterName")}
           />
-          <select
+          <Select
             value={roleId}
-            onChange={(event) => setRoleId(event.target.value)}
-            className={inputClassName}>
-            <option value="">{t("timeline.defaultMinor")}</option>
-            {roles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={setRoleId}
+            options={[
+              { value: "", label: t("timeline.defaultMinor") },
+              ...roles.map((role) => ({ value: role.id, label: role.name })),
+            ]}
+          />
           <button
             type="button"
             onClick={() => void quickAdd()}

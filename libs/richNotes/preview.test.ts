@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Entity } from "@/libs/entities/types";
-import { genericEntityHref, resolveGenericReference } from "./preview";
+import {
+  genericEntityHref,
+  resolveCharacterReference,
+  resolveGenericReference,
+} from "./preview";
 
 const entities: Entity[] = [
   { id: "novel-1:location:tempest", novelId: "novel-1", type: "location", name: "Jura-Tempest Federation", aliases: ["Tempest"], description: "" },
@@ -10,6 +14,15 @@ const entities: Entity[] = [
 ];
 
 describe("generic rich-note references", () => {
+  it("resolves a character reference by name or alias", () => {
+    const characters = [
+      { id: "rimuru", name: "Rimuru Tempest", aliases: ["Rimuru", "Slime"] },
+    ];
+
+    expect(resolveCharacterReference(characters, "rimuru")?.id).toBe("rimuru");
+    expect(resolveCharacterReference(characters, "SLIME")?.id).toBe("rimuru");
+  });
+
   it("resolves a typed generic entity by name or alias", () => {
     expect(resolveGenericReference(entities, "location", "Jura-Tempest Federation")?.id).toBe("novel-1:location:tempest");
     expect(resolveGenericReference(entities, "location", "Tempest")?.id).toBe("novel-1:location:tempest");

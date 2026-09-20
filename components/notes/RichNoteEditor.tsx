@@ -36,8 +36,15 @@ import {
   secondaryButtonClassName,
 } from "@/app/novels/ui";
 import type { Entity, EntityType } from "@/libs/entities/types";
-import { genericEntityHref, resolveGenericReference } from "@/libs/richNotes/preview";
-import { TAG_COLORS, entityReferenceClassName } from "@/libs/richNotes/tagColors";
+import {
+  genericEntityHref,
+  resolveCharacterReference,
+  resolveGenericReference,
+} from "@/libs/richNotes/preview";
+import {
+  TAG_COLORS,
+  entityReferenceClassName,
+} from "@/libs/richNotes/tagColors";
 import {
   ENTITY_REFERENCE_TYPES,
   filterEntityReferences,
@@ -50,6 +57,7 @@ import {
   type RichNoteDocument,
   type RichNoteNode,
 } from "@/libs/richNotes/document";
+import { createLinkPreviewRequestGate } from "@/libs/linkPreviewState";
 
 const richNoteContentClassName =
   "text-sm leading-7 text-stone-700 [&_p]:my-2 [&_h3]:my-4 [&_h3]:text-lg [&_h3]:font-semibold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-stone-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:underline";
@@ -91,13 +99,17 @@ function previewNode(
   if (node.type === "entityReference") {
     const character =
       node.attrs?.entityType === "character"
-        ? characters.find((item) => item.name === node.attrs?.label)
+        ? resolveCharacterReference(characters, node.attrs?.label ?? "")
         : undefined;
     const linkedHref = node.marks?.find((mark) => mark.type === "link")?.attrs
       ?.href;
     const generic =
       node.attrs?.entityType && node.attrs.entityType !== "character"
-        ? resolveGenericReference(entities, node.attrs.entityType, node.attrs.label ?? "")
+        ? resolveGenericReference(
+            entities,
+            node.attrs.entityType,
+            node.attrs.label ?? "",
+          )
         : null;
     return [
       {
@@ -145,7 +157,7 @@ function previewNode(
     const label = entityType === "character" ? match[1] : rest.join(":");
     const character =
       entityType === "character"
-        ? characters.find((item) => item.name === label)
+        ? resolveCharacterReference(characters, label)
         : undefined;
     const generic =
       entityType === "character"
@@ -366,6 +378,7 @@ export function RichNoteContent({
   const [linkPreview, setLinkPreview] = useState<
     (ExternalLinkPreview & { left: number; top: number }) | null
   >(null);
+  const linkPreviewRequestGate = useRef(createLinkPreviewRequestGate());
   const editor = useEditor(
     {
       immediatelyRender: false,
@@ -386,12 +399,43 @@ export function RichNoteContent({
     clientY: number,
   ) {
     const url = new URL(anchor.href, window.location.href);
-    if (url.origin === window.location.origin) return;
+    if (url.origin === window.location.origin) {
+      clearLinkPreview();
+      return;
+    }
+    const request = linkPreviewRequestGate.current.start();
     const rect = container.getBoundingClientRect();
+    // const position = {
+    //   left: clientX - rect.left,
+    //   top: clientY - rect.top + 24,
+    // };
+    const tooltipWidth = 220;
+    const tooltipHeight = 40;
+    const gap = 12;
+
+    let left = clientX - rect.left + gap;
+    let top = clientY - rect.top - tooltipHeight / 2;
+
+    // ถ้าด้านขวาไม่พอ ให้ย้ายไปด้านซ้ายของเมาส์
+    if (left + tooltipWidth > rect.width) {
+      left = clientX - rect.left - tooltipWidth - gap;
+    }
+
+    // กันหลุดด้านบน
+    if (top < 0) {
+      top = 0;
+    }
+
+    // กันหลุดด้านล่าง
+    if (top + tooltipHeight > rect.height) {
+      top = rect.height - tooltipHeight;
+    }
+
     const position = {
-      left: clientX - rect.left,
-      top: clientY - rect.top + 24,
+      left,
+      top,
     };
+
     const cached = linkPreviewCache.get(url.href);
     if (cached) {
       setLinkPreview({ ...cached, ...position });
@@ -408,12 +452,22 @@ export function RichNoteContent({
         response.ok ? (response.json() as Promise<ExternalLinkPreview>) : null,
       )
       .then((preview) => {
-        if (preview) {
+        if (preview && linkPreviewRequestGate.current.isCurrent(request)) {
           linkPreviewCache.set(url.href, preview);
           setLinkPreview({ ...preview, ...position });
         }
       })
       .catch(() => undefined);
+  }
+  function clearLinkPreview() {
+    linkPreviewRequestGate.current.clear();
+    setLinkPreview(null);
+  }
+  function remainsInsideAnchor(
+    anchor: HTMLAnchorElement,
+    relatedTarget: EventTarget | null,
+  ) {
+    return relatedTarget instanceof globalThis.Node && anchor.contains(relatedTarget);
   }
   return editor ? (
     <div
@@ -435,7 +489,25 @@ export function RichNoteContent({
           showLinkPreview(anchor, event.currentTarget, rect.left, rect.bottom);
         }
       }}
-      onPointerLeave={() => setLinkPreview(null)}>
+      onPointerOut={(event) => {
+        const anchor = (event.target as HTMLElement).closest("a");
+        if (
+          anchor instanceof HTMLAnchorElement &&
+          !remainsInsideAnchor(anchor, event.relatedTarget)
+        ) {
+          clearLinkPreview();
+        }
+      }}
+      onBlur={(event) => {
+        const anchor = (event.target as HTMLElement).closest("a");
+        if (
+          anchor instanceof HTMLAnchorElement &&
+          !remainsInsideAnchor(anchor, event.relatedTarget)
+        ) {
+          clearLinkPreview();
+        }
+      }}
+      onPointerLeave={clearLinkPreview}>
       <EditorContent editor={editor} />
       {linkPreview ? (
         <div
@@ -505,7 +577,8 @@ export function RichNoteEditor({
   const [linkHref, setLinkHref] = useState("");
   const [linkError, setLinkError] = useState("");
   const [entityPickerOpen, setEntityPickerOpen] = useState(false);
-  const [entityFilter, setEntityFilter] = useState<EntityReferenceFilter>("all");
+  const [entityFilter, setEntityFilter] =
+    useState<EntityReferenceFilter>("all");
   const [entityQuery, setEntityQuery] = useState("");
   const [entityPage, setEntityPage] = useState(1);
   const linkDialogTitleId = useId();
@@ -668,8 +741,12 @@ export function RichNoteEditor({
                 className="w-full rounded-lg border border-stone-200 py-2 pl-8 pr-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-stone-400"
               />
             </label>
-            <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Filter entity type">
-              {(["all", ...ENTITY_REFERENCE_TYPES] as EntityReferenceFilter[]).map((type) => (
+            <div
+              className="mt-3 flex flex-wrap gap-1.5"
+              aria-label="Filter entity type">
+              {(
+                ["all", ...ENTITY_REFERENCE_TYPES] as EntityReferenceFilter[]
+              ).map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -715,7 +792,8 @@ export function RichNoteEditor({
             </div>
             <div className="mt-3 flex items-center justify-between text-xs text-stone-500">
               <span>
-                {filteredEntities.length} result{filteredEntities.length === 1 ? "" : "s"}
+                {filteredEntities.length} result
+                {filteredEntities.length === 1 ? "" : "s"}
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -733,7 +811,9 @@ export function RichNoteEditor({
                   type="button"
                   aria-label="Next entity page"
                   onClick={() => setEntityPage((page) => page + 1)}
-                  disabled={entityResults.currentPage === entityResults.totalPages}
+                  disabled={
+                    entityResults.currentPage === entityResults.totalPages
+                  }
                   className="grid size-7 place-items-center rounded border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40">
                   <ChevronRight className="size-4" />
                 </button>

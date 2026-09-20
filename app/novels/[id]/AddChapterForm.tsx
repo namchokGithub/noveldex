@@ -23,6 +23,8 @@ import { userErrorMessage } from "@/libs/userErrorMessage";
 import { normalizeChapter } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
+import { Select } from "@/components/ui/Select";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 
 export default function AddChapterForm({
   novelId,
@@ -47,6 +49,7 @@ export default function AddChapterForm({
   const [fetchingNumber, setFetchingNumber] = useState(false);
   const [kind, setKind] = useState<ChapterKind>("chapter");
   const [customLabel, setCustomLabel] = useState("");
+  const [readAt, setReadAt] = useState("");
 
   useEffect(() => {
     if (!snackbar) return;
@@ -106,6 +109,7 @@ export default function AddChapterForm({
       setNextNumber(null);
       setKind("chapter");
       setCustomLabel("");
+      setReadAt("");
       setOpen(false);
       setSnackbar({ tone: "success", message: t("addChapter.success") });
       router.refresh();
@@ -146,20 +150,16 @@ export default function AddChapterForm({
                   <label className={smallLabelClassName}>
                     {t("addChapter.entryType")}
                   </label>
-                  <select
+                  <Select
                     value={kind}
-                    onChange={(event) =>
-                      setKind(event.target.value as ChapterKind)
-                    }
-                    className={inputClassName}>
-                    {CHAPTER_KINDS.map((entryKind) => (
-                      <option key={entryKind} value={entryKind}>
-                        {t(
-                          `chapter.kind.${entryKind === "side_story" ? "sideStory" : entryKind}` as "chapter.kind.chapter",
-                        )}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(value) => setKind(value as ChapterKind)}
+                    options={CHAPTER_KINDS.map((entryKind) => ({
+                      value: entryKind,
+                      label: t(
+                        `chapter.kind.${entryKind === "side_story" ? "sideStory" : entryKind}` as "chapter.kind.chapter",
+                      ),
+                    }))}
+                  />
                 </div>
                 {kind === "chapter" && (
                   <div>
@@ -229,11 +229,10 @@ export default function AddChapterForm({
                   <label className={smallLabelClassName}>
                     {t("addChapter.dateRead")}
                   </label>
-                  <input
+                  <DateTimePicker
                     name="read_at"
-                    type="datetime-local"
-                    step={60}
-                    className={inputClassName}
+                    value={readAt}
+                    onValueChange={setReadAt}
                   />
                 </div>
                 {error && <FormError>{error}</FormError>}
@@ -247,6 +246,7 @@ export default function AddChapterForm({
                       setNextNumber(null);
                       setKind("chapter");
                       setCustomLabel("");
+                      setReadAt("");
                     }}
                     className={ghostButtonClassName}>
                     {t("common.cancel")}

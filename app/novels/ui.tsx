@@ -100,10 +100,11 @@ export const statusColorClassNames: Record<string, string> = {
 };
 
 export const roleColorClassNames: Record<string, string> = {
-  protagonist: "bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200",
-  antagonist: "bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-200",
-  supporting: "bg-violet-100 text-violet-700 ring-1 ring-inset ring-violet-200",
-  minor: "bg-stone-100 text-stone-600 ring-1 ring-inset ring-stone-200",
+  protagonist: "border border-[#93C5FD] bg-[#DBEAFE] text-[#1D4ED8]",
+  antagonist: "border border-[#FCA5A5] bg-[#FEE2E2] text-[#B91C1C]",
+  main: "border border-[#C4B5FD] bg-[#EDE9FE] text-[#7C3AED]",
+  supporting: "border border-[#6EE7B7] bg-[#D1FAE5] text-[#047857]",
+  minor: "border border-[#D6D3D1] bg-[#F5F5F4] text-[#57534E]",
 };
 
 export function DashboardPage({

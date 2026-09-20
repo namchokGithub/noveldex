@@ -13,6 +13,7 @@ import {
   SectionHeading,
 } from "@/app/novels/ui";
 import { T } from "@/components/i18n/I18nProvider";
+import RecentNovelPageTracker from "@/components/navigation/RecentNovelPageTracker";
 import {
   getAdaptationsByChapter,
   getAllCharacters,
@@ -66,6 +67,7 @@ export default async function ChapterPage({
   let events;
   let adaptations;
   let noteEntities;
+  let noteCharacters;
 
   try {
     const [loadedChapter, loadedEvents, loadedAdaptations, characters, genericEntities] = await Promise.all([
@@ -78,6 +80,7 @@ export default async function ChapterPage({
     chapter = loadedChapter;
     events = loadedEvents;
     adaptations = loadedAdaptations;
+    noteCharacters = characters;
     noteEntities = [
       ...characters.map((character) => ({ id: buildEntityId(id, "character", character.id), novelId: id, type: "character" as const, name: character.name, aliases: character.aliases, description: character.description })),
       ...genericEntities,
@@ -87,9 +90,19 @@ export default async function ChapterPage({
     throw error;
   }
 
+  const chapterPrefix = formatChapterPrefix(chapter, {
+    chapter: "Ch.",
+    prologue: "Prologue",
+    epilogue: "Epilogue",
+    afterword: "Afterword",
+    side_story: "Side Story",
+    other: "Other",
+  });
+
   return (
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
+        <RecentNovelPageTracker novelId={id} label={chapterPrefix} />
         <Link
           id="chapter-back-link"
           href={`/novels/${id}/volumes/${volumeId}`}
@@ -98,14 +111,7 @@ export default async function ChapterPage({
         </Link>
 
         <SectionHeading
-          eyebrow={formatChapterPrefix(chapter, {
-            chapter: "Ch.",
-            prologue: "Prologue",
-            epilogue: "Epilogue",
-            afterword: "Afterword",
-            side_story: "Side Story",
-            other: "Other",
-          })}
+          eyebrow={chapterPrefix}
           title={
             <ChapterTitleEditor
               chapter={chapter}
@@ -123,7 +129,7 @@ export default async function ChapterPage({
           notesEditor={
             <ChapterNotesEditor
               notes={chapter.notes}
-              characters={chapter.characters}
+              characters={noteCharacters}
               entities={noteEntities}
               tags={chapter.tags}
               novelId={id}

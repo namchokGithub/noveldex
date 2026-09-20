@@ -34,6 +34,21 @@ const payload = {
 
 describe("adaptations", () => {
   it("reads only chapter ids from the selected volume when validating adapted chapters", async () => {
+    await setDoc(doc(db, "novels", "novel-1"), {
+      volume_count: 2,
+      chapter_count: 0,
+      read_count: 0,
+    });
+    await Promise.all(
+      ["volume-1", "volume-2"].map((volumeId, index) =>
+        setDoc(doc(db, "novels", "novel-1", "volumes", volumeId), {
+          number: index + 1,
+          chapter_count: 0,
+          read_count: 0,
+        }),
+      ),
+    );
+
     const matching = await createChapter("novel-1", "volume-1", {
       number: 1,
       title_en: "Matching chapter",

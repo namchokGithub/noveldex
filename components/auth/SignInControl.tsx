@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { signInAdmin, signOutAdmin } from "@/libs/firebase/auth";
@@ -83,11 +88,13 @@ export default function SignInControl() {
   if (user) {
     const accountName =
       user.displayName?.trim() || user.email?.split("@")[0] || "Account";
-    const initial = (user.displayName || user.email || "A")
-      .trim()
-      .charAt(0)
-      .toLocaleUpperCase();
-    const handleAccountMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    // const initial = (user.displayName || user.email || "A")
+    //   .trim()
+    //   .charAt(0)
+    //   .toLocaleUpperCase();
+    const handleAccountMenuKeyDown = (
+      event: ReactKeyboardEvent<HTMLDivElement>,
+    ) => {
       if (event.key === "Escape") {
         event.preventDefault();
         closeAccountMenu();
@@ -115,11 +122,11 @@ export default function SignInControl() {
           aria-haspopup="menu"
           aria-expanded={accountOpen}
           className="inline-flex h-9 items-center gap-2 rounded-full px-1.5 pr-2.5 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400">
-          <span
+          {/* <span
             aria-hidden="true"
             className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-stone-200 text-xs font-semibold text-stone-700">
             {initial}
-          </span>
+          </span> */}
           <span className="hidden max-w-28 truncate sm:inline">
             {accountName}
           </span>

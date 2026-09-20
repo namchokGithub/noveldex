@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -33,6 +32,8 @@ import { dependentRefreshes } from "@/libs/search/refresh";
 import { buildEntityId } from "@/libs/entities/keys";
 import { relatedNotesForCharacter } from "@/libs/characterRelatedNotes";
 import { crossReferencePreview } from "@/libs/crossReferencePreview";
+import { Select } from "@/components/ui/Select";
+import CharacterProfileImageModal from "./CharacterProfileImageModal";
 
 export default function CharacterDetail({
   character,
@@ -140,10 +141,9 @@ export default function CharacterDetail({
       <div className={cardClassName}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
-            <CharacterAvatar
+            <CharacterProfileImageModal
               name={character.name}
               profileImageUrl={character.profile_image_url}
-              size="lg"
             />
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
@@ -193,16 +193,11 @@ export default function CharacterDetail({
         <div className={cardClassName}>
           <p className={smallLabelClassName}>{t("character.role")}</p>
           {editing ? (
-            <select
+            <Select
               value={roleId}
-              onChange={(e) => setRoleId(e.target.value)}
-              className={inputClassName}>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              onValueChange={setRoleId}
+              options={roles.map((role) => ({ value: role.id, label: role.name }))}
+            />
           ) : (
             <span
               className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleColorClassNames[character.role] ?? roleColorClassNames.minor}`}>
@@ -409,43 +404,6 @@ export default function CharacterDetail({
         onClose={() => setSnackbar(null)}
         closeLabel={t("common.ok")}
       />
-    </div>
-  );
-}
-
-function CharacterAvatar({
-  name,
-  profileImageUrl,
-  size = "md",
-}: {
-  name: string;
-  profileImageUrl: string | null;
-  size?: "md" | "lg";
-}) {
-  const [failed, setFailed] = useState(false);
-  const sizeClass =
-    size === "lg"
-      ? "h-16 w-16 rounded-3xl text-base"
-      : "h-11 w-11 rounded-2xl text-sm";
-
-  if (profileImageUrl && !failed) {
-    return (
-      <Image
-        src={profileImageUrl}
-        alt={name}
-        width={size === "lg" ? 64 : 44}
-        height={size === "lg" ? 64 : 44}
-        onError={() => setFailed(true)}
-        className={`shrink-0 object-cover ${sizeClass}`}
-        unoptimized
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`flex shrink-0 items-center justify-center bg-stone-900 font-semibold text-stone-50 ${sizeClass}`}>
-      {name.slice(0, 2).toUpperCase()}
     </div>
   );
 }

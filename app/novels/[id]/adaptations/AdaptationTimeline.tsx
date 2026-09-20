@@ -15,7 +15,6 @@ import {
   DashboardPage,
   FormError,
   ghostButtonClassName,
-  inputClassName,
   modalPanelClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
@@ -36,6 +35,7 @@ import {
   type AdaptationCreatePayload,
 } from "@/libs/api";
 import type { VolumeSearchSource } from "@/libs/firebase/volumes";
+import { Select } from "@/components/ui/Select";
 import { localizedVolumeTitle } from "@/libs/volumeTitle";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
@@ -314,18 +314,17 @@ export default function AdaptationTimeline({
           <span className={smallLabelClassName}>
             {t("adaptations.filterVolume")}
           </span>
-          <select
-            className={inputClassName}
+          <Select
             value={volumeFilter}
-            onChange={(event) => setVolumeFilter(event.target.value)}>
-            <option value="all">{t("adaptations.allVolumes")}</option>
-            {volumes.map((volume) => (
-              <option key={volume.id} value={volume.id}>
-                {t("adaptations.volume")} {volume.number} ·{" "}
-                {localizedVolumeTitle(volume, language)}
-              </option>
-            ))}
-          </select>
+            onValueChange={setVolumeFilter}
+            options={[
+              { value: "all", label: t("adaptations.allVolumes") },
+              ...volumes.map((volume) => ({
+                value: volume.id,
+                label: `${t("adaptations.volume")} ${volume.number} · ${localizedVolumeTitle(volume, language)}`,
+              })),
+            ]}
+          />
         </label>
         {showAdd && isAdmin ? (
           <form className={`${cardClassName} space-y-4`} onSubmit={saveAdd}>

@@ -57,8 +57,7 @@ export default function VolumeOverview({
       <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
         <T k="volume.overview" />
       </p>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        <SummaryCard label={<T k="volume.chapters" />} count={summary.chapters} />
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         <SummaryCard label={<T k="volume.notes" />} count={summary.notes} />
         <SummaryCard
           label={<T k="volume.events" />}

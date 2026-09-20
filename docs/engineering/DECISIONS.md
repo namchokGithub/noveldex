@@ -115,3 +115,22 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 **Why:** The app needs an authenticated writer and a guest who only views. Firebase Auth's built-in session handling covers this without reintroducing the JWT/refresh-token machinery the Firestore migration removed.
 
 **Trade-offs:** UI hiding of mutation controls is a UX convenience only; the Firestore rule is the actual enforcement boundary. This deliberately does not distinguish among authenticated users; add roles, an allowlist, or custom claims only through a new ADR.
+
+---
+
+## ADR-013: Denormalized Novel and Volume counters
+
+**Decision:** Store maintained summary counters on each Novel and Volume document so readers can use bounded Volume pagination without scanning all descendant Chapters. The source-of-truth ownership is:
+
+| Owner document | Stored fields | Source of truth |
+| --- | --- | --- |
+| `novels/{novelId}` | `volume_count`, `chapter_count`, `read_count` | Descendant Volume documents and regular Chapter documents in the Novel. |
+| `novels/{novelId}/volumes/{volumeId}` | `chapter_count`, `read_count` | Regular Chapter documents directly beneath that Volume. |
+
+A Chapter counts only when `kind === "chapter"`. A regular unread Chapter contributes `{ chapter_count: 1, read_count: 0 }`; a regular read Chapter contributes `{ chapter_count: 1, read_count: 1 }`. Every special entry — including `prologue`, `epilogue`, `interlude`, and `other` — contributes zero to both counters regardless of `read_at`. Therefore, changing a special entry's Date Read never changes `read_count`; changing a regular Chapter from unread to read adds one, and changing its read date while it remains read adds zero.
+
+Stored counters are derived data and never the source of truth. Chapter and Volume mutations maintain them alongside source writes; a Firebase Admin backfill recomputes absolute totals from source documents and is used to reconcile existing data before readers switch to counters.
+
+**Rollout:** (1) deploy counter-writing mutations while readers retain current queries, (2) block authenticated client writes for maintenance, (3) dry-run/apply/verify the Admin backfill, (4) deploy counter readers and cursor UI, (5) restore writes, then (6) verify after a create/read/unread/delete Chapter smoke sequence.
+
+**Trade-offs:** This adds write maintenance and a temporary production write pause, but keeps Firebase Lite and avoids unavailable aggregation APIs. Counter drift is recoverable by rerunning the source-of-truth backfill.

@@ -31,6 +31,8 @@ corepack pnpm lint
 corepack pnpm test
 ```
 
+Do not run `corepack pnpm build` as routine verification. Run it only when a change affects rendering, routing, dynamic imports, or production behavior directly.
+
 Set Firebase browser configuration in `.env.local`. Use the Firestore emulator by setting `NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1`; production uses `0` and requires deliberate user approval for writes.
 
 Firestore Lite is REST-only: do not introduce listeners, offline persistence, or full-SDK aggregation calls into `libs/firebase`. The current app uses one-off reads and writes. `getVolumes` derives volume and novel summaries from one volume query plus one returned chapter collection-group query because Lite does not expose `getCountFromServer`; revisit cursor pagination or denormalized counters as novels grow.

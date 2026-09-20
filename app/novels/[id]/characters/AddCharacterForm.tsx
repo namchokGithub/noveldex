@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { CharacterRole } from "@/app/types";
 import {
   ghostButtonClassName,
   inputClassName,
-  modalBackdropClassName,
+  fullScreenModalBackdropClassName,
   modalPanelClassName,
   primaryButtonClassName,
   Snackbar,
@@ -15,6 +16,7 @@ import {
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { createCharacter } from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Select } from "@/components/ui/Select";
 
 export default function AddCharacterForm({
   novelId,
@@ -94,8 +96,9 @@ export default function AddCharacterForm({
           className={primaryButtonClassName}>
           {t("addCharacter.button")}
         </button>
-      ) : (
-        <div className={modalBackdropClassName}>
+      ) : typeof document !== "undefined" ? (
+        createPortal(
+        <div className={fullScreenModalBackdropClassName}>
           <div className={modalPanelClassName}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
@@ -121,16 +124,11 @@ export default function AddCharacterForm({
                 <label className={smallLabelClassName}>
                   {t("addCharacter.role")}
                 </label>
-                <select
+                <Select
                   name="role_id"
                   defaultValue={defaultRoleId}
-                  className={inputClassName}>
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                  options={roles.map((role) => ({ value: role.id, label: role.name }))}
+                />
               </div>
               <div>
                 <label className={smallLabelClassName}>
@@ -185,8 +183,10 @@ export default function AddCharacterForm({
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body,
+        )
+      ) : null}
 
       <Snackbar
         open={Boolean(snackbar)}

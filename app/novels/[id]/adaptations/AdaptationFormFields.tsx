@@ -15,6 +15,7 @@ import { localizedVolumeTitle } from "@/libs/volumeTitle";
 import type { VolumeSearchSource } from "@/libs/firebase/volumes";
 import { formatChapterLabel } from "@/libs/chapterLabel";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
+import { Select } from "@/components/ui/Select";
 
 export type AdaptationFormState = {
   volume_id: string;
@@ -57,36 +58,33 @@ export default function AdaptationFormFields({
       >,
     ) =>
       onChange({ ...form, [field]: event.target.value });
+  const setValue = (field: keyof AdaptationFormState) => (value: string) =>
+    onChange({ ...form, [field]: value });
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <label>
         <span className={smallLabelClassName}>
           {t("adaptations.field.volume")}
         </span>
-        <select
-          className={inputClassName}
+        <Select
           value={form.volume_id}
-          onChange={set("volume_id")}
-          disabled={volumeLocked}>
-          {volumes.map((volume) => (
-            <option key={volume.id} value={volume.id}>
-              {volume.number} · {localizedVolumeTitle(volume, language)}
-            </option>
-          ))}
-        </select>
+          onValueChange={setValue("volume_id")}
+          disabled={volumeLocked}
+          options={volumes.map((volume) => ({
+            value: volume.id,
+            label: `${volume.number} · ${localizedVolumeTitle(volume, language)}`,
+          }))}
+        />
       </label>
       <label>
         <span className={smallLabelClassName}>
           {t("adaptations.field.medium")}
         </span>
-        <select
-          className={inputClassName}
+        <Select
           value={form.medium}
-          onChange={set("medium")}>
-          {ADAPTATION_MEDIA.map((medium) => (
-            <option key={medium}>{medium}</option>
-          ))}
-        </select>
+          onValueChange={setValue("medium")}
+          options={ADAPTATION_MEDIA.map((medium) => ({ value: medium, label: medium }))}
+        />
       </label>
       <label>
         <span className={smallLabelClassName}>
@@ -116,14 +114,11 @@ export default function AdaptationFormFields({
         <span className={smallLabelClassName}>
           {t("adaptations.field.entryType")}
         </span>
-        <select
-          className={inputClassName}
+        <Select
           value={form.entry_type}
-          onChange={set("entry_type")}>
-          {ADAPTATION_ENTRY_TYPES.map((entryType) => (
-            <option key={entryType}>{entryType}</option>
-          ))}
-        </select>
+          onValueChange={setValue("entry_type")}
+          options={ADAPTATION_ENTRY_TYPES.map((entryType) => ({ value: entryType, label: entryType }))}
+        />
       </label>
       <label>
         <span className={smallLabelClassName}>

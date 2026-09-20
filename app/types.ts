@@ -8,6 +8,9 @@ export interface Novel {
   status: "reading" | "completed" | "dropped" | "on_hold";
   description: string;
   cover_url: string;
+  volume_count: number;
+  chapter_count: number;
+  read_count: number;
   created_at: string;
   updated_at: string;
 }

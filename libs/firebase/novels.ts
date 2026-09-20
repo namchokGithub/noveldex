@@ -19,6 +19,9 @@ interface NovelDoc {
   status: Novel["status"];
   description: string;
   cover_url: string;
+  volume_count?: number;
+  chapter_count?: number;
+  read_count?: number;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -35,13 +38,18 @@ function toNovel(id: string, data: NovelDoc): Novel {
     status: data.status,
     description: data.description,
     cover_url: data.cover_url,
+    volume_count: data.volume_count ?? 0,
+    chapter_count: data.chapter_count ?? 0,
+    read_count: data.read_count ?? 0,
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
   };
 }
 
 export async function getNovels(): Promise<Novel[]> {
-  const snapshot = await getDocs(query(novelsCol(), orderBy("created_at", "desc")));
+  const snapshot = await getDocs(
+    query(novelsCol(), orderBy("created_at", "desc")),
+  );
   return snapshot.docs.map((d) => toNovel(d.id, d.data() as NovelDoc));
 }
 
@@ -62,7 +70,15 @@ export interface NovelCreatePayload {
 }
 
 export async function createNovel(payload: NovelCreatePayload): Promise<Novel> {
-  const ref = await addDoc(novelsCol(), withCreateTimestamps(payload));
+  const ref = await addDoc(
+    novelsCol(),
+    withCreateTimestamps({
+      ...payload,
+      volume_count: 0,
+      chapter_count: 0,
+      read_count: 0,
+    }),
+  );
   const snapshot = await getDoc(ref);
   return toNovel(snapshot.id, snapshot.data() as NovelDoc);
 }

@@ -18,6 +18,7 @@ import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
 import { normalizeEntity } from "@/libs/search/normalize";
 import { entityTypeBadgeStyle } from "@/libs/richNotes/tagColors";
 import { userErrorMessage } from "@/libs/userErrorMessage";
+import { Select } from "@/components/ui/Select";
 
 const TYPES: GenericEntityType[] = [
   "location",
@@ -97,18 +98,11 @@ export default function EntityList({
     <div className="space-y-5">
       {isAdmin && (
         <div className="flex flex-wrap gap-2 rounded-2xl border border-stone-200 bg-white p-4">
-          <select
+          <Select
             value={type}
-            onChange={(event) =>
-              setType(event.target.value as GenericEntityType)
-            }
-            className={inputClassName}>
-            {TYPES.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => setType(value as GenericEntityType)}
+            options={TYPES.map((value) => ({ value, label: value }))}
+          />
           <input
             className={inputClassName}
             value={name}

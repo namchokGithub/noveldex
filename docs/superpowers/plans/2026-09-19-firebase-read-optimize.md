@@ -35,10 +35,12 @@
 ### Task 1: Record the Firebase Lite capability boundary
 
 **Files:**
+
 - Modify: `docs/firebase-recheck.md`
 - Test: TypeScript compiler import check
 
 **Interfaces:**
+
 - Consumes: public exports from `firebase/firestore/lite` at Firebase 11.10.
 - Produces: an audit that does not propose unavailable aggregate APIs as an immediate implementation.
 
@@ -46,7 +48,7 @@
 
   State that the public Lite entry point in Firebase 11.10 does not export `getCountFromServer` or `getAggregateFromServer`, despite newer Firebase documentation describing aggregation APIs.
 
-- [x] **Step 2: Mark H5, H6, and M1 as blocked by that constraint**
+- [x] **Step 2: Mark H5 and H6 as blocked by that constraint**
 
   Replace each immediate aggregation proposal with these supported choices: retain current reads, run a dedicated Firebase upgrade plus Cloudflare compatibility test, or design denormalized counters with migration/write maintenance.
 
@@ -66,11 +68,13 @@
 ### Task 2: Lazy-start the global MiniSearch dataset (H7)
 
 **Files:**
+
 - Modify: `libs/search/SearchIndexProvider.tsx`
 - Modify: `components/commands/CommandPalette.tsx`
 - Create: `libs/search/SearchIndexProvider.test.tsx`
 
 **Interfaces:**
+
 - Produces: `start(): void` in `SearchIndexContextValue`.
 - Consumes: `start()` from the command palette on every open path (button event and Ctrl/Cmd shortcut).
 
@@ -121,10 +125,12 @@
 ### Task 3: Make adaptation chapter-membership validation lightweight (M7)
 
 **Files:**
+
 - Modify: `libs/firebase/adaptations.ts`
 - Modify: `libs/firebase/adaptations.test.ts`
 
 **Interfaces:**
+
 - Replaces: `validateChapterIds()` dependency on `getChaptersByVolume()`.
 - Produces: a local `chapterIdsForVolume(novelId, volumeId): Promise<Set<string>>` that reads the chapter collection only and never hydrates tags or note references.
 
@@ -142,7 +148,9 @@
 
   ```ts
   async function chapterIdsForVolume(novelId: string, volumeId: string) {
-    const snapshot = await getDocs(collection(db, "novels", novelId, "volumes", volumeId, "chapters"));
+    const snapshot = await getDocs(
+      collection(db, "novels", novelId, "volumes", volumeId, "chapters"),
+    );
     return new Set(snapshot.docs.map((chapter) => chapter.id));
   }
   ```
@@ -168,10 +176,12 @@
 ### Task 4: Share legacy-reference lookup work across a bulk chapter read (M6)
 
 **Files:**
+
 - Modify: `libs/firebase/chapters.ts`
 - Create: `libs/firebase/chaptersLookup.test.ts`
 
 **Interfaces:**
+
 - Consumes: `firestoreEntityLookup()` memoization scoped to one lookup instance.
 - Produces: one lookup instance per bulk operation, threaded into `hydrateNoteReferences()` for all chapters in that operation.
 
@@ -203,13 +213,15 @@
   git commit -m "perf(chapters): share legacy reference lookup per bulk read"
   ```
 
-### Task 5: Decide the counter strategy before H5, H6, and M1
+### Task 5: Decide the counter strategy before H5 and H6
 
 **Files:**
+
 - Modify: `docs/engineering/DECISIONS.md` only if a strategy is approved
 - Modify: `docs/firebase-recheck.md` after the chosen strategy is proven
 
 **Interfaces:**
+
 - Option A: upgrade Firebase and prove `firebase/firestore/lite` supports required aggregate exports in both Next.js and `vinext build`.
 - Option B: define denormalized counters and all event/chapter mutation ownership before any schema write.
 
