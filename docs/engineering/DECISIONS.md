@@ -127,7 +127,7 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 | `novels/{novelId}` | `volume_count`, `chapter_count`, `read_count` | Descendant Volume documents and regular Chapter documents in the Novel. |
 | `novels/{novelId}/volumes/{volumeId}` | `chapter_count`, `read_count` | Regular Chapter documents directly beneath that Volume. |
 
-A Chapter counts only when `kind === "chapter"`. A regular unread Chapter contributes `{ chapter_count: 1, read_count: 0 }`; a regular read Chapter contributes `{ chapter_count: 1, read_count: 1 }`; every special entry contributes zero regardless of `read_at`.
+A Chapter counts only when `kind === "chapter"`. A regular unread Chapter contributes `{ chapter_count: 1, read_count: 0 }`; a regular read Chapter contributes `{ chapter_count: 1, read_count: 1 }`. Every special entry — including `prologue`, `epilogue`, `interlude`, and `other` — contributes zero to both counters regardless of `read_at`. Therefore, changing a special entry's Date Read never changes `read_count`; changing a regular Chapter from unread to read adds one, and changing its read date while it remains read adds zero.
 
 Stored counters are derived data and never the source of truth. Chapter and Volume mutations maintain them alongside source writes; a Firebase Admin backfill recomputes absolute totals from source documents and is used to reconcile existing data before readers switch to counters.
 

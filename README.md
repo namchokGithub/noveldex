@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.10.0-DD2C00?logo=firebase&logoColor=white)](https://firebase.google.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Version](https://img.shields.io/badge/version-0.1.1-6B7280)](package.json)
+[![Version](https://img.shields.io/badge/version-0.2.0--1789862400-6B7280)](package.json)
 
 Novelndex is a calm workspace for mapping a novel as you read or write it: volumes, chapters, notes, characters, story events, and adaptations live together in one searchable place.
 

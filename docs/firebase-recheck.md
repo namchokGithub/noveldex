@@ -53,6 +53,8 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 **Fix:** each normal request reads exactly one Novel document for `volume_count`, `chapter_count`, and `read_count`, then a single ordered Volume query limited to `per_page`. The query orders by `number` then document ID; opaque `{ number, id }` cursors make duplicate Volume numbers deterministic in both directions. The page renders stored Volume and Novel counters directly and never queries the Chapters collection.
 **Impact:** list reads are `1 Novel + at most per_page Volumes`, instead of every Volume and every Chapter in the Novel.
 
+**Counter semantics:** `chapter_count` and `read_count` include only entries whose `kind` is `"chapter"`. A regular Chapter contributes to `read_count` only when `read_at` is non-null. Special entries such as Prologue retain their Date Read value for display, but never affect either counter.
+
 #### Production counter migration record
 
 | Field | Record |

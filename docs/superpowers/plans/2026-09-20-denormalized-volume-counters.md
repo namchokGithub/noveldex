@@ -15,7 +15,7 @@
 - Keep `firebase ^11.10.0`, Firestore Lite, and Cloudflare Workers compatibility. Do not import browser full Firestore SDK or aggregation APIs.
 - Keep the current guest-read/authenticated-write rule. Its recursive authenticated-write match already permits updating a parent Novel or Volume counter in the same client mutation.
 - M1 is closed: `/novels/:id` no longer shows a tracked-character count or reads characters. Do not add character counters in this plan; H6 remains separate work.
-- A Chapter counts only when `kind === "chapter"`. A regular unread Chapter contributes `{ chapter_count: 1, read_count: 0 }`; a regular read Chapter contributes `{ chapter_count: 1, read_count: 1 }`; every special entry contributes zero regardless of `read_at`.
+- A Chapter counts only when `kind === "chapter"`. A regular unread Chapter contributes `{ chapter_count: 1, read_count: 0 }`; a regular read Chapter contributes `{ chapter_count: 1, read_count: 1 }`; every special entry (including `prologue`) contributes zero regardless of `read_at`. A Date Read change only affects `read_count` when it crosses between absent and present on a regular Chapter.
 - Run production backfill in a temporary authenticated-write maintenance window. The backfill writes absolute totals; a concurrent client write between source scan and counter write can otherwise create drift.
 - Use `corepack pnpm` and emulator-backed tests. Do not run `pnpm build` unless explicitly requested.
 

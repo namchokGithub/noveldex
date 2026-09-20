@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.1.1",
+  "version": "0.2.0-1789862400",
   "private": true,
   "scripts": {
     "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && node scripts/open-dev-url.mjs http://localhost:3000\"",
