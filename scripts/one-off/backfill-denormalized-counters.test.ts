@@ -67,6 +67,9 @@ describe("parseOptions", () => {
       mode: "apply",
       projectId: "demo",
     });
+    expect(
+      parseOptions(["--", "--project", "demo", "--dry-run"], {}),
+    ).toEqual({ mode: "dry-run", projectId: "demo" });
     expect(() => parseOptions(["--project", "demo"], {})).toThrow(
       "Pass exactly one of --dry-run, --apply, or --verify.",
     );

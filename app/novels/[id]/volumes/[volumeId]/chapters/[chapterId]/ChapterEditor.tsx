@@ -37,6 +37,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { Select } from "@/components/ui/Select";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { chapterEditorInitialMode } from "@/libs/chapterEditor";
 import {
@@ -504,15 +505,15 @@ export default function ChapterEditor({
     }
   }
 
-  async function saveReadAt() {
+  async function saveReadAt(value = readAt) {
     setReadAtError(null);
     setReadAtSaving(true);
     try {
       const updated = await updateChapter(novelId, volumeId, chapter.id, {
-        read_at: normalizeDateTimeLocalToISOString(readAt),
+        read_at: normalizeDateTimeLocalToISOString(value),
       });
       upsert(normalizeChapter(novelId, updated, entityMap, kindLabels));
-      setSavedReadAt(readAt);
+      setSavedReadAt(value);
       setReadAtEditing(false);
       setSnackbar({
         tone: "success",
@@ -689,18 +690,10 @@ export default function ChapterEditor({
           </div>
           {readAtEditing ? (
             <>
-              <input
-                type="datetime-local"
-                step={60}
+              <DateTimePicker
                 value={readAt}
-                onChange={(e) => setReadAt(e.target.value)}
-                onKeyDown={(event) => {
-                  if (shouldCancelInlineEdit(event.key, readAtSaving)) {
-                    event.preventDefault();
-                    cancelReadAt();
-                  }
-                }}
-                className={inputClassName}
+                onValueChange={setReadAt}
+                disabled={readAtSaving}
               />
               {readAtError && <FormError>{readAtError}</FormError>}
               <div className="mt-3 flex flex-wrap justify-end gap-2">
@@ -711,6 +704,15 @@ export default function ChapterEditor({
                   className={secondaryButtonClassName}>
                   {t("common.cancel")}
                 </button>
+                {savedReadAt && (
+                  <button
+                    type="button"
+                    onClick={() => void saveReadAt("")}
+                    disabled={readAtSaving}
+                    className={secondaryButtonClassName}>
+                    {t("chapter.clearDate")}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => void saveReadAt()}

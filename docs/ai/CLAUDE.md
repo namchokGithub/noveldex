@@ -11,6 +11,8 @@ corepack pnpm test
 corepack pnpm build
 ```
 
+Do not run `corepack pnpm build` as routine verification. Run it only when a change affects rendering, routing, dynamic imports, or production behavior directly.
+
 `make dev` starts local PostgreSQL only for legacy backup/recovery work and then starts the Next.js app. The production application reads and writes Firestore directly; do not add a Go API, Redis, or `NEXT_PUBLIC_API_URL` dependency.
 
 > **Platform note:** `make stop` calls PowerShell (`Get-NetTCPConnection`, `Stop-Process`) and only works on Windows. On macOS/Linux, stop the dev server manually (e.g. find the port with `lsof -i :3000` and `kill` it). The `pnpm dev` browser auto-open step is cross-platform — `scripts/open-dev-url.mjs` dispatches to `scripts/open-dev-url.ps1` on Windows and `scripts/open-dev-url.sh` (Chrome/Safari via `osascript`, falling back to `open-cli`) elsewhere.

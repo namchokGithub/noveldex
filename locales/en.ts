@@ -52,6 +52,11 @@ const en = {
   "common.requestFailed": "Request failed: {status}",
   "common.descriptionTooLong":
     "Description must be {limit} characters or fewer.",
+  "datePicker.placeholder": "Choose date and time",
+  "datePicker.ariaLabel": "Choose date and time",
+  "datePicker.time": "Time",
+  "datePicker.clear": "Clear",
+  "datePicker.today": "Today",
 
   "status.reading": "Reading",
   "status.completed": "Completed",
@@ -354,6 +359,7 @@ const en = {
   "chapter.deleteNoteTitle": "Delete this note?",
   "chapter.deleteNoteBody": "This note will be permanently deleted.",
   "chapter.saveDate": "Save date",
+  "chapter.clearDate": "Clear date",
   "chapter.characters": "Characters",
   "chapter.noLinkedCharacters": "No characters linked yet.",
   "chapter.tags": "Tags",

@@ -68,6 +68,8 @@ export function parseOptions(
 
   for (let index = 0; index < values.length; index += 1) {
     const value = values[index];
+    // pnpm can forward its argument separator to the script process.
+    if (index === 0 && value === "--") continue;
     if (value === "--dry-run" || value === "--apply" || value === "--verify") {
       if (mode !== undefined) {
         throw new Error("Pass exactly one of --dry-run, --apply, or --verify.");

@@ -24,6 +24,7 @@ import { normalizeChapter } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import { Select } from "@/components/ui/Select";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 
 export default function AddChapterForm({
   novelId,
@@ -48,6 +49,7 @@ export default function AddChapterForm({
   const [fetchingNumber, setFetchingNumber] = useState(false);
   const [kind, setKind] = useState<ChapterKind>("chapter");
   const [customLabel, setCustomLabel] = useState("");
+  const [readAt, setReadAt] = useState("");
 
   useEffect(() => {
     if (!snackbar) return;
@@ -107,6 +109,7 @@ export default function AddChapterForm({
       setNextNumber(null);
       setKind("chapter");
       setCustomLabel("");
+      setReadAt("");
       setOpen(false);
       setSnackbar({ tone: "success", message: t("addChapter.success") });
       router.refresh();
@@ -226,11 +229,10 @@ export default function AddChapterForm({
                   <label className={smallLabelClassName}>
                     {t("addChapter.dateRead")}
                   </label>
-                  <input
+                  <DateTimePicker
                     name="read_at"
-                    type="datetime-local"
-                    step={60}
-                    className={inputClassName}
+                    value={readAt}
+                    onValueChange={setReadAt}
                   />
                 </div>
                 {error && <FormError>{error}</FormError>}
@@ -244,6 +246,7 @@ export default function AddChapterForm({
                       setNextNumber(null);
                       setKind("chapter");
                       setCustomLabel("");
+                      setReadAt("");
                     }}
                     className={ghostButtonClassName}>
                     {t("common.cancel")}
