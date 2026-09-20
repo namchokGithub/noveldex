@@ -48,7 +48,7 @@
 
   State that the public Lite entry point in Firebase 11.10 does not export `getCountFromServer` or `getAggregateFromServer`, despite newer Firebase documentation describing aggregation APIs.
 
-- [x] **Step 2: Mark H5, H6, and M1 as blocked by that constraint**
+- [x] **Step 2: Mark H5 and H6 as blocked by that constraint**
 
   Replace each immediate aggregation proposal with these supported choices: retain current reads, run a dedicated Firebase upgrade plus Cloudflare compatibility test, or design denormalized counters with migration/write maintenance.
 
@@ -213,7 +213,7 @@
   git commit -m "perf(chapters): share legacy reference lookup per bulk read"
   ```
 
-### Task 5: Decide the counter strategy before H5, H6, and M1
+### Task 5: Decide the counter strategy before H5 and H6
 
 **Files:**
 

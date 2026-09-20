@@ -14,8 +14,13 @@ import {
   mutedCardClassName,
   statusColorClassNames,
 } from "../ui";
-import { getNovel, getVolumes } from "@/libs/api";
+import {
+  encodeVolumeCursor,
+  getVolumesPage,
+  resolveVolumeCursorSearch,
+} from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
+import { normalizeCursorPage } from "@/libs/pagination";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
 
@@ -24,30 +29,39 @@ export default async function NovelPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ page?: string; per_page?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    per_page?: string;
+    after?: string;
+    before?: string;
+  }>;
 }) {
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
-  const page = parsePositiveInt(resolvedSearchParams.page, 1);
   const requestedPerPage = parsePositiveInt(resolvedSearchParams.per_page, 5);
   const perPage = ALLOWED_PAGE_SIZES.has(requestedPerPage)
     ? requestedPerPage
     : 5;
-  let novel;
+  const { after, before } = resolveVolumeCursorSearch(resolvedSearchParams);
+  const page = normalizeCursorPage(
+    parsePositiveInt(resolvedSearchParams.page, 1),
+    Boolean(after || before),
+  );
   let volumes;
 
   try {
-    [novel, volumes] = await Promise.all([
-      getNovel(id),
-      getVolumes(id, { page, perPage }),
-    ]);
+    volumes = await getVolumesPage(id, {
+      page,
+      perPage,
+      after,
+      before,
+    });
   } catch (error) {
     if (error instanceof ResourceNotFoundError) notFound();
     throw error;
   }
 
-  const totalChapters = volumes.summary.total_chapters;
-  const readCount = volumes.summary.read_count;
+  const novel = volumes.novel;
 
   return (
     <DashboardPage maxWidth="w-full max-w-6xl">
@@ -116,7 +130,7 @@ export default async function NovelPage({
                       <T k="novel.volumes" />
                     </p>
                     <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">
-                      {volumes.summary.total_volumes}
+                      {novel.volume_count}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200/70 sm:px-4 sm:py-3">
@@ -124,7 +138,7 @@ export default async function NovelPage({
                       <T k="novel.chapters" />
                     </p>
                     <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">
-                      {totalChapters}
+                      {novel.chapter_count}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200/70 sm:px-4 sm:py-3">
@@ -132,7 +146,7 @@ export default async function NovelPage({
                       <T k="novel.read" />
                     </p>
                     <p className="mt-1 text-xl font-semibold text-stone-900 sm:mt-2 sm:text-2xl">
-                      {readCount}
+                      {novel.read_count}
                     </p>
                   </div>
                 </div>
@@ -206,6 +220,16 @@ export default async function NovelPage({
                   chapterCount: volume.chapter_count,
                 }))}
                 pagination={volumes.pagination}
+                previousCursor={
+                  volumes.previousCursor
+                    ? encodeVolumeCursor(volumes.previousCursor)
+                    : null
+                }
+                nextCursor={
+                  volumes.nextCursor
+                    ? encodeVolumeCursor(volumes.nextCursor)
+                    : null
+                }
               />
             </div>
           </div>

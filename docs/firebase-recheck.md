@@ -9,7 +9,7 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 ## Baseline facts (apply to the whole app)
 
 - **No `onSnapshot` anywhere** (`grep -rn onSnapshot app components libs` → 0 hits). The app uses `firebase/firestore/lite`, which doesn't even expose realtime listeners. There is nothing to trim on that axis, and nothing should be added — realtime behavior isn't part of the current design (guest users only read).
-- **Only one collection uses real Firestore-level pagination**: `getTagsPage` (`libs/firebase/tags.ts:42`, `limit()` + `startAfter()`), used by the tag picker in `ChapterEditor.tsx`. Every other "paginated" list (`getVolumes`, `getCharacters`) paginates **in memory** after reading the full collection — see High-priority items below.
+- **Firestore-level pagination:** `getTagsPage` (`libs/firebase/tags.ts:42`) and `getVolumesPage` (`libs/firebase/volumes.ts`) use bounded cursor queries. The Character list remains an in-memory pagination concern (H6).
 - **Firebase Lite 11.10 aggregation constraint:** the installed public `firebase/firestore/lite` entry point does **not** export `getCountFromServer` or `getAggregateFromServer`. This was verified by TypeScript compilation. Current Firebase documentation describes aggregation APIs for newer SDK surfaces, but this audit must plan against the pinned `firebase ^11.10.0` runtime. Do not add full-SDK aggregation imports to work around this: Cloudflare Workers depend on Lite modules.
 - **Global search is one eager client-side MiniSearch index** (`libs/search/SearchIndexProvider.tsx`, mounted once in `app/layout.tsx`), built by `loadSearchDataset()` (`libs/search/loader.ts`), which walks **every novel → every volume/chapter/note/character/entity/event/adaptation** on first page load. This is the intentional Phase 3 architecture (`docs/ai/AGENTS.md`: "one derived client-side MiniSearch index... do not add Firestore full-text queries, an HTTP search endpoint, or a second authoritative datastore"), so it is **not** being redesigned here, but it is the single largest read-cost driver in the app and is called out explicitly below.
 - Tests were run against the local Firestore/Auth emulator (`corepack pnpm run emulators`) before and after this session's edits. Baseline had 4 pre-existing failures in `libs/firebase/chapters.test.ts` (mention auto-link / legacy-notes assertions) unrelated to Firestore reads; they fail identically with and without this session's changes, so they're not a regression. Everything else (164 tests) passes; `tsc --noEmit` and `pnpm lint` are clean.
@@ -47,20 +47,31 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 **Impact:** turns O(mentions) reads into O(distinct entity types actually referenced) — typically 1–2 — for any single note/chapter/adaptation/event write or legacy-note hydration.
 **Follow-up not done (see M6):** this only dedupes _within_ one lookup instance. `getChaptersByVolume`/`getChaptersFlatDetailed` still create a fresh lookup per chapter in their per-chapter loop, so cross-chapter dedup on a volume/novel-wide read would need hoisting one lookup instance up to the caller — bigger surface area, tracked below instead of done opportunistically.
 
-### H5 — `[ ]` Volume list pagination reads every chapter in the novel regardless of page size
+### H5 — `[x]` Volume list reads a bounded page from stored counters
 
-**Page:** `app/novels/[id]/page.tsx` → `getVolumes(novelId, { page, perPage })` (`libs/firebase/volumes.ts:164-218`)
-**Current behavior:** the novel page shows 5 volumes per page, but `getVolumes` always runs `getDocs(query(collectionGroup(db,"chapters"), where("novel_id","==",novelId)))` — **every chapter in the entire novel** — to compute `chapter_count`/`read_count` per volume and the page's summary tiles. Read cost is `O(total chapters in the novel)`, independent of `perPage`. For a novel with, say, 300 chapters, viewing any page of the 5-per-page volume list reads all 300 chapter docs.
-**Former proposed optimization (not currently available):** Firestore aggregation counts would avoid downloading all chapters, but `firebase/firestore/lite` from the pinned Firebase 11.10 dependency does not publicly export the required APIs. The previous claim that it did was incorrect.
-**Next decision:** either keep the existing schema/read shape, upgrade Firebase in a dedicated Cloudflare compatibility change, or add denormalized counters with a reviewed migration and write-path maintenance. Do not silently switch to the full Firestore SDK.
-**Estimated impact when a supported approach is chosen:** this remains the largest list-page read reduction for novels with many chapters.
+**Page:** `app/novels/[id]/page.tsx` → `getVolumesPage(novelId, { page, perPage, after, before })`.
+**Fix:** each normal request reads exactly one Novel document for `volume_count`, `chapter_count`, and `read_count`, then a single ordered Volume query limited to `per_page`. The query orders by `number` then document ID; opaque `{ number, id }` cursors make duplicate Volume numbers deterministic in both directions. The page renders stored Volume and Novel counters directly and never queries the Chapters collection.
+**Impact:** list reads are `1 Novel + at most per_page Volumes`, instead of every Volume and every Chapter in the Novel.
+
+#### Production counter migration record
+
+| Field | Record |
+| --- | --- |
+| Production migration date | 2026-09-20 (record prepared) |
+| Project identifier | Pending — do not record credentials |
+| Maintenance window | Pending approval |
+| Dry-run mismatches | Pending execution |
+| Apply writes | Pending execution |
+| Verify result | Pending execution |
+| Post-write smoke verification | Pending execution |
+
+This record is intentionally pending: no production maintenance window, Firebase Admin backfill, deployment, or post-write smoke sequence has run yet. Fill the remaining fields only after `--dry-run`, `--apply`, and `--verify` complete inside the approved maintenance window.
 
 ### H6 — `[ ]` Character list has the same pagination illusion
 
 **Page:** `app/novels/[id]/characters/page.tsx` → `getCharacters(novelId, { page, perPage })` (`libs/firebase/characters.ts:285-310`)
 **Current behavior:** identical shape to H5 — `chapterCountsByNovel()` (`characters.ts:140-151`) reads **every chapter in the novel** via `collectionGroup("chapters") where novel_id == X` just to compute each character's `chapter_count`, even though only `perPage` (default 10) characters are shown per page.
-**Former proposed optimization (not currently available):** per-character aggregation counts have the same Firebase Lite 11.10 constraint as H5.
-**Next decision:** resolve the H5 aggregation/counter strategy first, then apply the same supported strategy here. Do not add a full-SDK import only for this list.
+**Next decision:** separately choose and maintain a Character counter strategy before changing this reader. Do not add a full-SDK import only for this list.
 
 ### H7 — `[x]` Defer the global search index until the command palette opens
 
@@ -74,12 +85,11 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 
 ## Medium priority
 
-### M1 — `[ ]` Novel detail page loads every character just to show a count
+### M1 — `[x]` Novel detail page no longer loads characters for a tracked-count chip
 
-**Page:** `app/novels/[id]/page.tsx:41-45`
-**Current:** `getAllCharacters(id)` (full characters collection) is fetched only to render `characters.length` in the "trackedCast" chip.
-**Proposed:** drop the eager cast count, or defer this until the H5 aggregation/counter strategy is selected. The installed Lite SDK cannot currently provide the proposed aggregation query.
-**Impact:** small in absolute terms (character collections are usually modest), but it's a full collection read purely for a number.
+**Page:** `app/novels/[id]/page.tsx`
+**Fix:** Done: the Explore card displays static navigation help; `/novels/:id` no longer reads the characters collection.
+**Impact:** This concern is closed independently of the Volume counter strategy; no character counter is needed for the Novel detail page.
 
 ### M2 — `[ ]` `getEventsForCharacter` / `getEventsForEntity` read the full events collection
 
@@ -136,10 +146,10 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 | H2  | Chapter detail: dedupe`getChapter` via request-scoped `cache()`                 | High     | ✅ Done                                          |
 | H3  | Volume detail: share one`getTags()` read with `getChaptersByVolume`             | High     | ✅ Done                                          |
 | H4  | Memoize entity/character lookups inside`firestoreEntityLookup()`                | High     | ✅ Done                                          |
-| H5  | Volume list: choose Lite-compatible count strategy before reducing chapter scan | High     | ⚠️ Decision required                             |
-| H6  | Character list: apply the H5 count strategy                                     | High     | ⚠️ Blocked by H5                                 |
+| H5  | Volume list: bounded cursor page from stored counters                            | High     | ✅ Done                                          |
+| H6  | Character list: choose a separate maintained counter strategy                    | High     | ⬜ Open                                          |
 | H7  | Search index: lazy-start instead of eager root-layout load                      | High     | ✅ Done                                          |
-| M1  | Novel page: drop cast count or await H5 count strategy                          | Medium   | ⚠️ Decision required                             |
+| M1  | Novel page: removed tracked-character count read                                | Medium   | ✅ Done                                          |
 | M2  | `getEventsForCharacter`/`getEventsForEntity` full-collection reads              | Medium   | ⬜ Open (fix requires schema change — see notes) |
 | M3  | Cache`getCharacterRoles()` (tiny, global, rarely changes)                       | Medium   | ⬜ Open                                          |
 | M4  | Time-based cache for`getNovels()` and similar reference reads                   | Medium   | ⬜ Open                                          |

@@ -1,4 +1,10 @@
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore/lite";
+import {
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  Timestamp,
+} from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import { createCharacter } from "./characters";
@@ -34,10 +40,30 @@ beforeEach(async () => {
 });
 
 async function seedVolume(novelId: string, volumeId: string) {
+  await setDoc(doc(db, "novels", novelId), {
+    volume_count: 1,
+    chapter_count: 0,
+    read_count: 0,
+  });
   await setDoc(doc(db, "novels", novelId, "volumes", volumeId), {
     number: 1,
     title: "Volume One",
+    chapter_count: 0,
+    read_count: 0,
   });
+}
+
+async function expectParentCounters(
+  novelId: string,
+  volumeId: string,
+  counters: { chapter_count: number; read_count: number },
+) {
+  expect((await getDoc(doc(db, "novels", novelId))).data()).toMatchObject(
+    counters,
+  );
+  expect(
+    (await getDoc(doc(db, "novels", novelId, "volumes", volumeId))).data(),
+  ).toMatchObject(counters);
 }
 
 describe("chapters", () => {
@@ -69,6 +95,10 @@ describe("chapters", () => {
     expect(chapter.notes).toHaveLength(1);
     expect(chapter.notes[0].content).toBe("Something happens.");
     expect(data?.notes).toHaveLength(1);
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 0,
+    });
   });
 
   it("allows the same chapter number in different volumes", async () => {
@@ -196,6 +226,71 @@ describe("chapters", () => {
     expect(fetched.title).toBe("One (revised)");
     expect(fetched.read_at).toBe("2026-08-28T00:00:00.000Z");
     expect(fetched.number).toBe(1);
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 1,
+    });
+
+    await updateChapter("novel-1", "vol-1", chapter.id, {
+      read_at: "2026-08-29T00:00:00Z",
+    });
+
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 1,
+    });
+
+    await updateChapter("novel-1", "vol-1", chapter.id, { read_at: null });
+
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 0,
+    });
+  });
+
+  it("renumbers a regular chapter without changing parent counters", async () => {
+    await seedVolume("novel-1", "vol-1");
+    const chapter = await createChapter("novel-1", "vol-1", {
+      number: 1,
+      title_en: "One",
+    });
+
+    await updateChapter("novel-1", "vol-1", chapter.id, { number: 2 });
+
+    expect(
+      (
+        await getDoc(
+          doc(
+            db,
+            "novels",
+            "novel-1",
+            "volumes",
+            "vol-1",
+            "chapterNumbers",
+            "1",
+          ),
+        )
+      ).exists(),
+    ).toBe(false);
+    expect(
+      (
+        await getDoc(
+          doc(
+            db,
+            "novels",
+            "novel-1",
+            "volumes",
+            "vol-1",
+            "chapterNumbers",
+            "2",
+          ),
+        )
+      ).data(),
+    ).toEqual({ chapter_id: chapter.id });
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 0,
+    });
   });
 
   it("creates and updates a chapter description, defaulting to an empty string", async () => {
@@ -245,7 +340,12 @@ describe("chapters", () => {
         content: "First note",
         content_json: {
           type: "doc" as const,
-          content: [{ type: "paragraph", content: [{ type: "text", text: "First note" }] }],
+          content: [
+            {
+              type: "paragraph",
+              content: [{ type: "text", text: "First note" }],
+            },
+          ],
         },
         created_at: "2026-08-29T00:00:00.000Z",
         updated_at: "2026-08-29T00:00:00.000Z",
@@ -261,7 +361,21 @@ describe("chapters", () => {
     await updateChapter("novel-1", "vol-1", chapter.id, { notes });
 
     const fetched = await getChapter("novel-1", "vol-1", chapter.id);
-    expect(fetched.notes).toEqual(notes);
+    expect(fetched.notes).toEqual([
+      {
+        ...notes[0],
+        character_ids: [],
+        mentioned_character_names: [],
+        references: [],
+      },
+      {
+        ...notes[1],
+        content_json: undefined,
+        character_ids: [],
+        mentioned_character_names: [],
+        references: [],
+      },
+    ]);
     expect(fetched.summary).toBe("First note\nSecond note");
     const raw = await getDoc(
       doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", chapter.id),
@@ -314,9 +428,20 @@ describe("chapters", () => {
     const chapter = await createChapter("novel-1", "vol-1", {
       number: 1,
       title_en: "One",
+      read_at: "2026-08-28T00:00:00Z",
+    });
+
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 1,
     });
 
     await deleteChapter("novel-1", "vol-1", chapter.id);
+
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 0,
+      read_count: 0,
+    });
 
     const marker = await getDoc(
       doc(db, "novels", "novel-1", "volumes", "vol-1", "chapterNumbers", "1"),
@@ -325,6 +450,26 @@ describe("chapters", () => {
     await expect(
       createChapter("novel-1", "vol-1", { number: 1, title_en: "Reused" }),
     ).resolves.toBeTruthy();
+  });
+
+  it("does not decrement counters when deleting a legacy missing-kind chapter", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await setDoc(
+      doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "legacy"),
+      {
+        number: null,
+        read_at: Timestamp.now(),
+        novel_id: "novel-1",
+        volume_id: "vol-1",
+      },
+    );
+
+    await deleteChapter("novel-1", "vol-1", "legacy");
+
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 0,
+      read_count: 0,
+    });
   });
 });
 
@@ -433,6 +578,11 @@ describe("special chapter entries", () => {
     const chapter = await createChapter("novel-1", "vol-1", {
       number: 1,
       title_en: "One",
+      read_at: "2026-08-28T00:00:00Z",
+    });
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 1,
     });
     await updateChapter("novel-1", "vol-1", chapter.id, { kind: "epilogue" });
     expect(
@@ -453,6 +603,10 @@ describe("special chapter entries", () => {
         )
       ).exists(),
     ).toBe(false);
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 0,
+      read_count: 0,
+    });
 
     await updateChapter("novel-1", "vol-1", chapter.id, {
       kind: "chapter",
@@ -474,6 +628,41 @@ describe("special chapter entries", () => {
         )
       ).data(),
     ).toEqual({ chapter_id: chapter.id });
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 1,
+    });
+  });
+
+  it("adds counters when a legacy missing kind becomes an explicit chapter", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await setDoc(
+      doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "legacy"),
+      {
+        number: null,
+        title: "Legacy",
+        title_en: "Legacy",
+        summary: "",
+        notes: [],
+        read_at: Timestamp.fromDate(new Date("2026-08-28T00:00:00Z")),
+        novel_id: "novel-1",
+        volume_id: "vol-1",
+        tag_ids: [],
+        character_ids: [],
+        created_at: Timestamp.now(),
+        updated_at: Timestamp.now(),
+      },
+    );
+
+    await updateChapter("novel-1", "vol-1", "legacy", {
+      kind: "chapter",
+      number: 1,
+    });
+
+    await expectParentCounters("novel-1", "vol-1", {
+      chapter_count: 1,
+      read_count: 1,
+    });
   });
 
   it("orders a prologue before numbered chapters without renumbering them", async () => {
@@ -559,14 +748,21 @@ describe("mention auto-link", () => {
     });
 
     await updateChapter("novel-1", "vol-1", chapter.id, {
-      summary: "[[TestMentionCharacter]] appears.",
+      notes: [
+        {
+          id: "note-1",
+          content: "[[TestMentionCharacter]] appears.",
+          created_at: "2026-08-29T00:00:00.000Z",
+          updated_at: "2026-08-29T00:00:00.000Z",
+        },
+      ],
     });
 
     const fetched = await getChapter("novel-1", "vol-1", chapter.id);
     expect(fetched.characters.map((c) => c.id)).toContain(character.id);
   });
 
-  it("links mentions from all notes and does not unlink a character after a note is removed", async () => {
+  it("unlinks a character when its final mentioning note is removed", async () => {
     await seedVolume("novel-1", "vol-1");
     const character = await createCharacter("novel-1", {
       name: "MultiNoteCharacter",
@@ -600,7 +796,7 @@ describe("mention auto-link", () => {
       (await getChapter("novel-1", "vol-1", chapter.id)).characters.map(
         (item) => item.id,
       ),
-    ).toContain(character.id);
+    ).not.toContain(character.id);
   });
 
   it("does not throw when no characters match, and is non-blocking on lookup failure", async () => {

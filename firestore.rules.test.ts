@@ -6,7 +6,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, increment, setDoc, updateDoc } from "firebase/firestore";
 
 let testEnv: RulesTestEnvironment;
 
@@ -49,6 +49,27 @@ describe("firestore.rules", () => {
 
     await assertSucceeds(
       setDoc(doc(authedDb, "novels/n1"), { title: "Authed Novel" }),
+    );
+  });
+
+  it("lets an authenticated user update denormalized parent counters", async () => {
+    const authedDb = testEnv.authenticatedContext("test-uid").firestore();
+    const novel = doc(authedDb, "novels/n1");
+    const volume = doc(authedDb, "novels/n1/volumes/v1");
+    await assertSucceeds(setDoc(novel, { chapter_count: 0, read_count: 0 }));
+    await assertSucceeds(setDoc(volume, { chapter_count: 0, read_count: 0 }));
+
+    await assertSucceeds(
+      updateDoc(novel, {
+        chapter_count: increment(1),
+        read_count: increment(1),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(volume, {
+        chapter_count: increment(1),
+        read_count: increment(1),
+      }),
     );
   });
 });

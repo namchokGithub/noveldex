@@ -1,24 +1,32 @@
 import {
-  addDoc,
   collection,
-  collectionGroup,
-  deleteDoc,
   doc,
+  documentId,
   getDoc,
   getDocs,
+  increment,
   limit,
   orderBy,
   query,
+  runTransaction,
+  startAfter,
   Timestamp,
   updateDoc,
   where,
   writeBatch,
   type DocumentReference,
 } from "firebase/firestore/lite";
-import type { PaginatedVolumes, Volume, VolumeListSummary } from "@/app/types";
+import type { ChapterKind, Novel, Volume } from "@/app/types";
 import { ResourceNotFoundError } from "@/libs/errors";
+import { normalizeCursorPage } from "@/libs/pagination";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
+import {
+  applyChapterCounterDelta,
+  chapterCounterContribution,
+  type ChapterCounter,
+} from "./counters";
+import { getNovel } from "./novels";
 
 interface VolumeDoc {
   number: number;
@@ -28,6 +36,9 @@ interface VolumeDoc {
   title_th?: string;
   description?: string;
   source_img_url?: string | null;
+  chapter_count?: number;
+  read_count?: number;
+  deleting?: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -56,8 +67,8 @@ function validateDescription(description: string | undefined) {
   }
 }
 
-const ALLOWED_PER_PAGE = [5, 10, 20, 50];
 const BATCH_CHUNK_SIZE = 200; // chapter+marker = 2 ops/chapter, stays well under the 500-op cap
+const MAX_VOLUME_PAGE_SIZE = 50;
 
 function volumesCol(novelId: string) {
   return collection(db, "novels", novelId, "volumes");
@@ -77,6 +88,13 @@ const EMPTY_VOLUME_AGGREGATE: VolumeAggregate = {
   chapter_count: 0,
   read_count: 0,
 };
+
+function storedVolumeCounters(data: VolumeDoc): VolumeAggregate {
+  return {
+    chapter_count: data.chapter_count ?? 0,
+    read_count: data.read_count ?? 0,
+  };
+}
 
 function aggregateChaptersByVolume(
   snapshots: Iterable<{ data: () => unknown }>,
@@ -134,7 +152,7 @@ async function toVolume(
   novelId: string,
   id: string,
   data: VolumeDoc,
-  aggregate: VolumeAggregate = EMPTY_VOLUME_AGGREGATE,
+  aggregate: VolumeAggregate = storedVolumeCounters(data),
 ): Promise<Volume> {
   return {
     ...toVolumeMetadata(novelId, id, data),
@@ -162,51 +180,131 @@ export interface VolumePayload {
   source_img_url?: string | null;
 }
 
-export async function getVolumes(
-  novelId: string,
-  options?: { page?: number; perPage?: number },
-): Promise<PaginatedVolumes> {
-  const page = options?.page && options.page > 0 ? options.page : 1;
-  const perPage = ALLOWED_PER_PAGE.includes(options?.perPage as number)
-    ? (options!.perPage as number)
-    : 5;
+export type VolumeCursor = { number: number; id: string };
 
-  const novelChapters = collectionGroup(db, "chapters");
-  const [allSnap, novelChaptersSnap] = await Promise.all([
-    getDocs(query(volumesCol(novelId), orderBy("number", "asc"))),
-    getDocs(query(novelChapters, where("novel_id", "==", novelId))),
+export interface VolumePage {
+  novel: Novel;
+  items: Volume[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total_items: number;
+    total_pages: number;
+  };
+  previousCursor: VolumeCursor | null;
+  nextCursor: VolumeCursor | null;
+}
+
+export function previousVolumeCursor(
+  page: number,
+  cursor: VolumeCursor | null,
+): VolumeCursor | null {
+  return page > 1 ? cursor : null;
+}
+
+export function encodeVolumeCursor(cursor: VolumeCursor): string {
+  return encodeURIComponent(JSON.stringify(cursor));
+}
+
+export function decodeVolumeCursor(value: string): VolumeCursor | null {
+  try {
+    const parsed = JSON.parse(decodeURIComponent(value)) as unknown;
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      typeof (parsed as VolumeCursor).number !== "number" ||
+      !Number.isFinite((parsed as VolumeCursor).number) ||
+      typeof (parsed as VolumeCursor).id !== "string" ||
+      !(parsed as VolumeCursor).id ||
+      (parsed as VolumeCursor).id.includes("/")
+    ) {
+      return null;
+    }
+    return parsed as VolumeCursor;
+  } catch {
+    return null;
+  }
+}
+
+export function resolveVolumeCursorSearch({
+  after,
+  before,
+}: {
+  after?: string;
+  before?: string;
+}): { after: VolumeCursor | null; before: VolumeCursor | null } {
+  const decodedAfter = decodeVolumeCursor(after ?? "");
+  const decodedBefore = decodeVolumeCursor(before ?? "");
+  const hasInvalidCursor =
+    (after !== undefined && !decodedAfter) ||
+    (before !== undefined && !decodedBefore);
+
+  return hasInvalidCursor
+    ? { after: null, before: null }
+    : { after: decodedAfter, before: decodedBefore };
+}
+
+export async function getVolumesPage(
+  novelId: string,
+  options?: {
+    page?: number;
+    perPage?: number;
+    after?: VolumeCursor | null;
+    before?: VolumeCursor | null;
+  },
+): Promise<VolumePage> {
+  const after = options?.after ?? null;
+  const before = options?.before ?? null;
+  const page = normalizeCursorPage(
+    options?.page ?? 1,
+    Boolean(after || before),
+  );
+  const perPage =
+    Number.isInteger(options?.perPage) &&
+    (options?.perPage ?? 0) > 0 &&
+    (options?.perPage ?? 0) <= MAX_VOLUME_PAGE_SIZE
+      ? (options?.perPage as number)
+      : 5;
+  const volumesQuery = before
+    ? query(
+        volumesCol(novelId),
+        orderBy("number", "desc"),
+        orderBy(documentId(), "desc"),
+        startAfter(before.number, before.id),
+        limit(perPage),
+      )
+    : after
+      ? query(
+          volumesCol(novelId),
+          orderBy("number", "asc"),
+          orderBy(documentId(), "asc"),
+          startAfter(after.number, after.id),
+          limit(perPage),
+        )
+      : query(
+          volumesCol(novelId),
+          orderBy("number", "asc"),
+          orderBy(documentId(), "asc"),
+          limit(perPage),
+        );
+
+  const [novel, snapshot] = await Promise.all([
+    getNovel(novelId),
+    getDocs(volumesQuery),
   ]);
-  const totalItems = allSnap.size;
-  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-  const start = (page - 1) * perPage;
-  const pageDocs = allSnap.docs.slice(start, start + perPage);
-  const aggregates = aggregateChaptersByVolume(novelChaptersSnap.docs);
+  const pageDocs = before ? [...snapshot.docs].reverse() : snapshot.docs;
   const items = await Promise.all(
-    pageDocs.map((d) =>
-      toVolume(
-        novelId,
-        d.id,
-        d.data() as VolumeDoc,
-        aggregates.get(d.id) ?? EMPTY_VOLUME_AGGREGATE,
-      ),
+    pageDocs.map((volume) =>
+      toVolume(novelId, volume.id, volume.data() as VolumeDoc),
     ),
   );
-
-  const summaryAggregate = [...aggregates.values()].reduce(
-    (summary, aggregate) => ({
-      chapter_count: summary.chapter_count + aggregate.chapter_count,
-      read_count: summary.read_count + aggregate.read_count,
-    }),
-    EMPTY_VOLUME_AGGREGATE,
-  );
-
-  const summary: VolumeListSummary = {
-    total_volumes: totalItems,
-    total_chapters: summaryAggregate.chapter_count,
-    read_count: summaryAggregate.read_count,
-  };
+  const totalItems = novel.volume_count;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+  const first = pageDocs[0];
+  const last = pageDocs.at(-1);
 
   return {
+    novel,
     items,
     pagination: {
       page,
@@ -214,7 +312,16 @@ export async function getVolumes(
       total_items: totalItems,
       total_pages: totalPages,
     },
-    summary,
+    previousCursor: previousVolumeCursor(
+      page,
+      first
+        ? { number: (first.data() as VolumeDoc).number, id: first.id }
+        : null,
+    ),
+    nextCursor:
+      page < totalPages && last
+        ? { number: (last.data() as VolumeDoc).number, id: last.id }
+        : null,
   };
 }
 
@@ -228,7 +335,7 @@ export interface VolumeSearchSource {
   description: string;
 }
 
-// Search does not need the chapter/read aggregates calculated by getVolumes().
+// Search does not need the stored chapter/read counters returned by getVolumesPage().
 export async function getVolumesFlat(
   novelId: string,
 ): Promise<VolumeSearchSource[]> {
@@ -327,8 +434,10 @@ export async function createVolume(
   if (!title_en) throw new Error("English volume title is required");
   const title_th = payload.title_th?.trim() ?? "";
   const source_img_url = optionalUrl(payload.source_img_url, "source_img_url");
-  const ref = await addDoc(
-    volumesCol(novelId),
+  const ref = doc(volumesCol(novelId));
+  const batch = writeBatch(db);
+  batch.set(
+    ref,
     withCreateTimestamps({
       number: payload.number,
       title: title_en,
@@ -336,8 +445,12 @@ export async function createVolume(
       title_th,
       description: payload.description ?? "",
       source_img_url,
+      chapter_count: 0,
+      read_count: 0,
     }),
   );
+  batch.update(doc(db, "novels", novelId), { volume_count: increment(1) });
+  await batch.commit();
   const snapshot = await getDoc(ref);
   return toVolume(novelId, snapshot.id, snapshot.data() as VolumeDoc);
 }
@@ -387,33 +500,74 @@ export async function deleteVolume(
   novelId: string,
   volumeId: string,
 ): Promise<void> {
-  const [chapterDocs, adaptationDocs] = await Promise.all([
-    getDocs(chaptersCol(novelId, volumeId)),
-    getDocs(adaptationsCol(novelId, volumeId)),
-  ]);
+  const volumeRef = doc(db, "novels", novelId, "volumes", volumeId);
+  const deletionStarted = await runTransaction(db, async (tx) => {
+    const volumeSnapshot = await tx.get(volumeRef);
+    if (!volumeSnapshot.exists()) return false;
+    if ((volumeSnapshot.data() as VolumeDoc).deleting !== true) {
+      tx.update(volumeRef, { deleting: true });
+    }
+    return true;
+  });
+  if (!deletionStarted) return;
 
-  for (let i = 0; i < chapterDocs.docs.length; i += BATCH_CHUNK_SIZE) {
-    const chunk = chapterDocs.docs.slice(i, i + BATCH_CHUNK_SIZE);
-    const batch = writeBatch(db);
-    chunk.forEach((chapterDoc) => {
-      const number = (chapterDoc.data() as { number: number | null }).number;
-      batch.delete(chapterDoc.ref);
-      if (number !== null)
-        batch.delete(
-          doc(
-            db,
-            "novels",
-            novelId,
-            "volumes",
-            volumeId,
-            "chapterNumbers",
-            String(number),
-          ),
-        );
+  while (true) {
+    const chapterDocs = await getDocs(
+      query(chaptersCol(novelId, volumeId), limit(BATCH_CHUNK_SIZE)),
+    );
+    if (chapterDocs.empty) break;
+
+    const chunk = chapterDocs.docs;
+    await runTransaction(db, async (tx) => {
+      const [volumeSnapshot, chapterSnapshots] = await Promise.all([
+        tx.get(volumeRef),
+        Promise.all(chunk.map((chapterDoc) => tx.get(chapterDoc.ref))),
+      ]);
+      if (!volumeSnapshot.exists()) return;
+
+      const chunkCounters = chapterSnapshots.reduce<ChapterCounter>(
+        (total, chapterSnapshot) => {
+          if (!chapterSnapshot.exists()) return total;
+          const contribution = chapterCounterContribution(
+            chapterSnapshot.data() as {
+              kind?: ChapterKind;
+              read_at?: Timestamp | null;
+            },
+          );
+          return {
+            chapter_count: total.chapter_count + contribution.chapter_count,
+            read_count: total.read_count + contribution.read_count,
+          };
+        },
+        { chapter_count: 0, read_count: 0 },
+      );
+
+      chapterSnapshots.forEach((chapterSnapshot) => {
+        if (!chapterSnapshot.exists()) return;
+        const number = (chapterSnapshot.data() as { number: number | null })
+          .number;
+        tx.delete(chapterSnapshot.ref);
+        if (number !== null)
+          tx.delete(
+            doc(
+              db,
+              "novels",
+              novelId,
+              "volumes",
+              volumeId,
+              "chapterNumbers",
+              String(number),
+            ),
+          );
+      });
+      applyChapterCounterDelta(tx, novelId, volumeId, {
+        chapter_count: -chunkCounters.chapter_count,
+        read_count: -chunkCounters.read_count,
+      });
     });
-    await batch.commit();
   }
 
+  const adaptationDocs = await getDocs(adaptationsCol(novelId, volumeId));
   for (let i = 0; i < adaptationDocs.docs.length; i += BATCH_CHUNK_SIZE) {
     const batch = writeBatch(db);
     adaptationDocs.docs
@@ -424,5 +578,14 @@ export async function deleteVolume(
     await batch.commit();
   }
 
-  await deleteDoc(doc(db, "novels", novelId, "volumes", volumeId));
+  // The guarded Chapter drain above is authoritative. Stored counters are
+  // derived data and may be absent or stale on legacy Volumes.
+  await runTransaction(db, async (tx) => {
+    const volumeSnapshot = await tx.get(volumeRef);
+    if (!volumeSnapshot.exists()) return;
+    tx.delete(volumeRef);
+    tx.update(doc(db, "novels", novelId), {
+      volume_count: increment(-1),
+    });
+  });
 }

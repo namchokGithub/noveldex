@@ -25,7 +25,7 @@ import { userErrorMessage } from "@/libs/userErrorMessage";
 import { normalizeVolume } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { descendantsOf } from "@/libs/search/cascadeDelete";
-import { canNavigatePage } from "@/libs/pagination";
+import { buildCursorPageSearch } from "@/libs/pagination";
 import { localizedVolumeTitle } from "@/libs/volumeTitle";
 import { Select } from "@/components/ui/Select";
 
@@ -49,10 +49,14 @@ export default function VolumeManager({
   novelId,
   volumes,
   pagination,
+  previousCursor,
+  nextCursor,
 }: {
   novelId: string;
   volumes: VolumeItem[];
   pagination: PaginationMeta;
+  previousCursor: string | null;
+  nextCursor: string | null;
 }) {
   const { t, language } = useI18n();
   const { documents, discardMany, upsert } = useSearchIndex();
@@ -76,30 +80,29 @@ export default function VolumeManager({
     setConfirmState(null);
   });
 
-  function buildPageHref(page: number, perPage = pagination.per_page) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(page));
-    params.set("per_page", String(perPage));
-    return `${pathname}?${params.toString()}`;
+  function buildPageHref(
+    page: number,
+    cursor: { name: "after" | "before"; value: string } | null,
+  ) {
+    return `${pathname}?${buildCursorPageSearch(searchParams.toString(), {
+      page,
+      perPage: pagination.per_page,
+      cursor,
+    })}`;
   }
 
   function handlePerPageChange(nextPerPage: number) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-    params.set("per_page", String(nextPerPage));
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(
+      `${pathname}?${buildCursorPageSearch(searchParams.toString(), {
+        page: 1,
+        perPage: nextPerPage,
+        cursor: null,
+      })}`,
+    );
   }
 
-  const canGoPrevious = canNavigatePage(
-    pagination.page,
-    pagination.total_pages,
-    "previous",
-  );
-  const canGoNext = canNavigatePage(
-    pagination.page,
-    pagination.total_pages,
-    "next",
-  );
+  const canGoPrevious = previousCursor !== null;
+  const canGoNext = nextCursor !== null;
 
   useEffect(() => {
     if (!snackbar) return;
@@ -258,7 +261,10 @@ export default function VolumeManager({
             onValueChange={(value) => handlePerPageChange(Number(value))}
             wrapperClassName="min-w-20"
             className="py-2"
-            options={[5, 10, 20, 50].map((size) => ({ value: String(size), label: String(size) }))}
+            options={[5, 10, 20, 50].map((size) => ({
+              value: String(size),
+              label: String(size),
+            }))}
           />
         </label>
       </div>
@@ -270,7 +276,7 @@ export default function VolumeManager({
         </div>
       </div>
 
-      <div className="lg:h-[535px] lg:overflow-y-auto">
+      <div className="lg:h-133.75 lg:overflow-y-auto">
         <ul className="divide-y divide-stone-200">
           {volumes.map((volume) => (
             <li key={volume.id} className="px-4 py-4">
@@ -316,7 +322,9 @@ export default function VolumeManager({
                       <input
                         type="url"
                         value={sourceImgUrl}
-                        onChange={(event) => setSourceImgUrl(event.target.value)}
+                        onChange={(event) =>
+                          setSourceImgUrl(event.target.value)
+                        }
                         className={inputClassName}
                         placeholder="https://..."
                       />
@@ -402,22 +410,30 @@ export default function VolumeManager({
           <button
             type="button"
             disabled={!canGoPrevious}
-            onClick={() =>
-              router.push(buildPageHref(Math.max(1, pagination.page - 1)))
-            }
+            onClick={() => {
+              if (!previousCursor) return;
+              router.push(
+                buildPageHref(Math.max(1, pagination.page - 1), {
+                  name: "before",
+                  value: previousCursor,
+                }),
+              );
+            }}
             className={secondaryButtonClassName}>
             {t("common.previous")}
           </button>
           <button
             type="button"
             disabled={!canGoNext}
-            onClick={() =>
+            onClick={() => {
+              if (!nextCursor) return;
               router.push(
-                buildPageHref(
-                  Math.min(pagination.total_pages, pagination.page + 1),
-                ),
-              )
-            }
+                buildPageHref(pagination.page + 1, {
+                  name: "after",
+                  value: nextCursor,
+                }),
+              );
+            }}
             className={secondaryButtonClassName}>
             {t("common.next")}
           </button>

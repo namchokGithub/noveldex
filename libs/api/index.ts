@@ -13,7 +13,10 @@ export type { TagCursor } from "@/libs/firebase/tags";
 
 // Volumes domain via Firestore
 export {
-  getVolumes,
+  decodeVolumeCursor,
+  encodeVolumeCursor,
+  getVolumesPage,
+  resolveVolumeCursorSearch,
   getVolumesFlat,
   getVolume,
   getVolumeMetadata,
@@ -24,6 +27,8 @@ export {
 } from "@/libs/firebase/volumes";
 export type {
   VolumeCreatePayload,
+  VolumeCursor,
+  VolumePage,
   VolumePayload,
   VolumeMetadata,
   VolumeSearchSource,
