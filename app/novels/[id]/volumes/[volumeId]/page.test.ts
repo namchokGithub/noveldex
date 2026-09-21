@@ -35,3 +35,9 @@ it("does not render a separate chapters summary below adaptations", () => {
   expect(source).not.toContain('k="volume.chapters"');
   expect(source).not.toContain("chapterCount === 1");
 });
+
+it("loads only the latest adaptation and omits the volume overview", () => {
+  expect(source).toContain("getLatestAdaptationByVolume");
+  expect(source).not.toContain("getAdaptationsByVolume");
+  expect(source).not.toContain("VolumeOverview");
+});

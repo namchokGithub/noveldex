@@ -61,17 +61,13 @@ function AdaptationImage({ adaptation }: { adaptation: Adaptation }) {
 
 export default function AdaptationSection({
   novelId,
-  adaptations,
+  adaptation,
 }: {
   novelId: string;
   volumeId: string;
-  adaptations: Adaptation[];
+  adaptation: Adaptation | null;
 }) {
-  const latest = [...adaptations].sort(
-    (a, b) =>
-      b.updated_at.localeCompare(a.updated_at) || b.id.localeCompare(a.id),
-  )[0];
-  const groups = latest ? groupAdaptations([latest]) : [];
+  const groups = adaptation ? groupAdaptations([adaptation]) : [];
   return (
     <section className={cardClassName}>
       <div className="flex flex-wrap items-center justify-between gap-3">

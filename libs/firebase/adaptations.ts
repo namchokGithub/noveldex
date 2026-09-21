@@ -6,6 +6,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
+  orderBy,
   query,
   Timestamp,
   updateDoc,
@@ -312,6 +314,23 @@ export async function getAdaptationsByVolume(
   return snapshot.docs
     .map((item) => toAdaptation(item.id, item.data() as AdaptationDoc))
     .sort(compareAdaptations);
+}
+
+export async function getLatestAdaptationByVolume(
+  novelId: string,
+  volumeId: string,
+): Promise<Adaptation | null> {
+  const snapshot = await getDocs(
+    query(
+      adaptationsCol(novelId, volumeId),
+      orderBy("updated_at", "desc"),
+      limit(1),
+    ),
+  );
+  const latest = snapshot.docs[0];
+  return latest
+    ? toAdaptation(latest.id, latest.data() as AdaptationDoc)
+    : null;
 }
 
 export async function getAdaptationsByChapter(

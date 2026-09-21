@@ -6,7 +6,6 @@ import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import VolumeTitleEditor from "./VolumeTitleEditor";
 import AdaptationSection from "./AdaptationSection";
-import VolumeOverview from "./VolumeOverview";
 import VolumeSourceImageModal from "./VolumeSourceImageModal";
 import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
 import { T } from "@/components/i18n/I18nProvider";
@@ -18,10 +17,9 @@ import {
   secondaryButtonClassName,
 } from "@/app/novels/ui";
 import {
-  getAdaptationsByVolume,
   getAdjacentVolumeMetadata,
   getChaptersByVolume,
-  getEventsByVolume,
+  getLatestAdaptationByVolume,
   getNovel,
   getVolumeMetadata,
 } from "@/libs/api";
@@ -37,17 +35,15 @@ export default async function VolumePage({
   let novel: Awaited<ReturnType<typeof getNovel>>;
   let volume: Awaited<ReturnType<typeof getVolumeMetadata>>;
   let chapters: Awaited<ReturnType<typeof getChaptersByVolume>>;
-  let adaptations: Awaited<ReturnType<typeof getAdaptationsByVolume>>;
-  let events: Awaited<ReturnType<typeof getEventsByVolume>>;
+  let latestAdaptation: Awaited<ReturnType<typeof getLatestAdaptationByVolume>>;
   let adjacentVolumes: Awaited<ReturnType<typeof getAdjacentVolumeMetadata>>;
 
   try {
-    [novel, volume, chapters, adaptations, events] = await Promise.all([
+    [novel, volume, chapters, latestAdaptation] = await Promise.all([
       getNovel(id),
       getVolumeMetadata(id, volumeId),
       getChaptersByVolume(id, volumeId),
-      getAdaptationsByVolume(id, volumeId),
-      getEventsByVolume(id, volumeId),
+      getLatestAdaptationByVolume(id, volumeId),
     ]);
     adjacentVolumes = await getAdjacentVolumeMetadata(id, volume.number);
   } catch (error) {
@@ -108,12 +104,6 @@ export default async function VolumePage({
           initialDescription={volume.description}
           collapsedLines={3}
         />
-        <VolumeOverview
-          novelId={id}
-          chapters={chapters}
-          events={events}
-          adaptations={adaptations}
-        />
         <ChapterListWithFilters
           novelId={id}
           volumeId={volumeId}
@@ -124,7 +114,7 @@ export default async function VolumePage({
               <AdaptationSection
                 novelId={id}
                 volumeId={volumeId}
-                adaptations={adaptations}
+                adaptation={latestAdaptation}
               />
             </>
           }
