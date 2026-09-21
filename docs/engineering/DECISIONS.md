@@ -134,3 +134,5 @@ Stored counters are derived data and never the source of truth. Chapter and Volu
 **Rollout:** (1) deploy counter-writing mutations while readers retain current queries, (2) block authenticated client writes for maintenance, (3) dry-run/apply/verify the Admin backfill, (4) deploy counter readers and cursor UI, (5) restore writes, then (6) verify after a create/read/unread/delete Chapter smoke sequence.
 
 **Trade-offs:** This adds write maintenance and a temporary production write pause, but keeps Firebase Lite and avoids unavailable aggregation APIs. Counter drift is recoverable by rerunning the source-of-truth backfill.
+
+Event and adaptation counts are intentionally not denormalized. The volume detail page does not show an aggregate overview; it avoids an events query entirely and fetches at most one adaptation for its latest-item preview. Add counters only if a future UX requires displaying those totals without reading their source collections.
