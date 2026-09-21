@@ -126,7 +126,7 @@ export default function CommandPalette() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
-  const { index, documents, status, start } = useSearchIndex();
+  const { index, documents, status, start, ensureGlobal } = useSearchIndex();
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(""),
     [draft, setDraft] = useState<ChapterSearchSource | null>(null),
@@ -201,9 +201,9 @@ export default function CommandPalette() {
     setScopeOverride(null);
     setActiveIndex(0);
     setDraft(chapterPage ? currentDraft() : null);
-    start();
+    start(novelId);
     setOpen(true);
-  }, [chapterPage, start]);
+  }, [chapterPage, novelId, start]);
   useEffect(() => {
     const listener = () => openPalette();
     const key = (event: KeyboardEvent) => {
@@ -337,7 +337,10 @@ export default function CommandPalette() {
               <button
                 key={option.kind}
                 type="button"
-                onClick={() => setScopeOverride(option)}
+                onClick={() => {
+                  setScopeOverride(option);
+                  if (option.kind === "global") void ensureGlobal();
+                }}
                 className="rounded-full border border-stone-200 px-2 py-0.5 hover:border-stone-400 hover:text-stone-900">
                 {t("command.widenTo", {
                   scope: t(`command.scope.${option.kind}` as TranslationKey),

@@ -4,8 +4,12 @@ import type MiniSearch from "minisearch";
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import type { Entity, EntityId } from "@/libs/entities/types";
-import { buildIndexAsync } from "./buildIndex";
-import { loadSearchDataset } from "./loader";
+import { addToIndexAsync, buildIndexAsync } from "./buildIndex";
+import {
+  loadSearchDataset,
+  loadSearchDatasetForNovel,
+  type SearchDataset,
+} from "./loader";
 import type { EntityMap } from "./normalize";
 import type { SearchDocument } from "./types";
 import { shouldVacuum } from "./vacuumSchedule";
@@ -41,7 +45,9 @@ export interface SearchIndexContextValue extends SearchMutations {
   documents: Map<string, SearchDocument>;
   dependents: Map<EntityId, Set<string>>;
   entityMap: EntityMap;
-  start: () => void;
+  start: (novelId: string | null) => void;
+  ensureNovel: (novelId: string) => Promise<void>;
+  ensureGlobal: () => Promise<void>;
   reload: () => void;
   rawSearch: (query: string) => SearchDocument[];
 }
@@ -72,8 +78,13 @@ export function SearchIndexProvider({ children }: { children: ReactNode }) {
   const dirtyCountRef = useRef(0);
   const pendingRef = useRef<Operation[]>([]);
   const reloadInFlightRef = useRef(false);
+  const datasetLoadCountRef = useRef(0);
+  const datasetLoadFailedRef = useRef(false);
+  const loadedNovelIdsRef = useRef(new Set<string>());
+  const inFlightNovelLoadsRef = useRef(new Map<string, Promise<void>>());
+  const globalLoadRef = useRef<Promise<void> | null>(null);
+  const appendQueueRef = useRef(Promise.resolve());
   const buildId = useRef(0);
-  const hasStartedInitialBuild = useRef(false);
 
   const publish = useCallback((nextIndex: MiniSearch<SearchDocument>, nextDocuments: Map<string, SearchDocument>, nextEntities: EntityMap) => {
     indexRef.current = nextIndex; documentsRef.current = nextDocuments; entityMapRef.current = nextEntities;
@@ -81,7 +92,7 @@ export function SearchIndexProvider({ children }: { children: ReactNode }) {
   }, []);
   const apply = useCallback((operation: Operation) => {
     const target = indexRef.current;
-    if (!target || reloadInFlightRef.current) { pendingRef.current.push(operation); return; }
+    if (!target || reloadInFlightRef.current || datasetLoadCountRef.current > 0) { pendingRef.current.push(operation); return; }
     const nextDocuments = new Map(documentsRef.current), nextEntities = new Map(entityMapRef.current);
     operation(target, nextDocuments, nextEntities); publish(target, nextDocuments, nextEntities);
   }, [publish]);
@@ -104,25 +115,129 @@ export function SearchIndexProvider({ children }: { children: ReactNode }) {
   const upsert = useCallback((document: SearchDocument) => upsertMany([document]), [upsertMany]);
   const discard = useCallback((id: string) => discardMany([id]), [discardMany]);
 
+  const appendDataset = useCallback(async (dataset: SearchDataset) => {
+    const existingIndex = indexRef.current;
+    const nextIndex = existingIndex ?? await buildIndexAsync(dataset.documents);
+    if (existingIndex) await addToIndexAsync(nextIndex, dataset.documents);
+    const nextDocuments = new Map(documentsRef.current);
+    const nextEntities = new Map(entityMapRef.current);
+    for (const document of dataset.documents) nextDocuments.set(document.id, document);
+    for (const [id, entity] of dataset.entityMap) nextEntities.set(id, entity);
+    for (const operation of pendingRef.current.splice(0)) operation(nextIndex, nextDocuments, nextEntities);
+    publish(nextIndex, nextDocuments, nextEntities);
+  }, [publish]);
+
+  const appendDatasetSerialized = useCallback((dataset: SearchDataset) => {
+    const next = appendQueueRef.current.then(() => appendDataset(dataset));
+    appendQueueRef.current = next.catch(() => undefined);
+    return next;
+  }, [appendDataset]);
+
+  const ensureNovel = useCallback(async (novelId: string): Promise<void> => {
+    if (loadedNovelIdsRef.current.has(novelId)) return;
+    const globalLoad = globalLoadRef.current;
+    if (globalLoad) return globalLoad;
+    const existing = inFlightNovelLoadsRef.current.get(novelId);
+    if (existing) return existing;
+    const load = (async () => {
+      if (datasetLoadCountRef.current === 0) datasetLoadFailedRef.current = false;
+      datasetLoadCountRef.current += 1;
+      setStatus("loading");
+      setError(null);
+      try {
+        const dataset = await loadSearchDatasetForNovel(novelId, labels);
+        await appendDatasetSerialized(dataset);
+        dataset.novelIds.forEach((id) => loadedNovelIdsRef.current.add(id));
+      } catch (cause) {
+        datasetLoadFailedRef.current = true;
+        setError(cause instanceof Error ? cause.message : "Failed to load the search index.");
+        setStatus("error");
+        throw cause;
+      } finally {
+        datasetLoadCountRef.current -= 1;
+        inFlightNovelLoadsRef.current.delete(novelId);
+        if (datasetLoadCountRef.current === 0 && !reloadInFlightRef.current)
+          setStatus(datasetLoadFailedRef.current ? "error" : "ready");
+      }
+    })();
+    inFlightNovelLoadsRef.current.set(novelId, load);
+    return load;
+  }, [appendDatasetSerialized, labels]);
+
+  const ensureGlobal = useCallback(async (): Promise<void> => {
+    const existing = globalLoadRef.current;
+    if (existing) return existing;
+    const load = (async () => {
+      if (datasetLoadCountRef.current === 0) datasetLoadFailedRef.current = false;
+      datasetLoadCountRef.current += 1;
+      setStatus("loading");
+      setError(null);
+      try {
+        while (true) {
+          const inFlight = [...inFlightNovelLoadsRef.current.values()];
+          if (inFlight.length > 0) await Promise.all(inFlight);
+          const dataset = await loadSearchDataset(labels, loadedNovelIdsRef.current);
+          if (dataset.novelIds.length === 0) break;
+          await appendDatasetSerialized(dataset);
+          dataset.novelIds.forEach((id) => loadedNovelIdsRef.current.add(id));
+        }
+      } catch (cause) {
+        datasetLoadFailedRef.current = true;
+        setError(cause instanceof Error ? cause.message : "Failed to build the search index.");
+        setStatus("error");
+        throw cause;
+      } finally {
+        datasetLoadCountRef.current -= 1;
+        globalLoadRef.current = null;
+        if (datasetLoadCountRef.current === 0 && !reloadInFlightRef.current)
+          setStatus(datasetLoadFailedRef.current ? "error" : "ready");
+      }
+    })();
+    globalLoadRef.current = load;
+    return load;
+  }, [appendDatasetSerialized, labels]);
+
   const reload = useCallback(() => {
-    const nextBuildId = ++buildId.current; reloadInFlightRef.current = true; setStatus("loading"); setError(null);
-    void loadSearchDataset(labels).then(async ({ documents: loaded, entityMap: loadedEntities }) => {
-      if (buildId.current !== nextBuildId) return;
-      const nextIndex = await buildIndexAsync(loaded);
-      if (buildId.current !== nextBuildId) return;
-      const nextDocuments = new Map(loaded.map((document) => [document.id, document])), nextEntities = new Map(loadedEntities);
-      for (const operation of pendingRef.current.splice(0)) operation(nextIndex, nextDocuments, nextEntities);
-      publish(nextIndex, nextDocuments, nextEntities); reloadInFlightRef.current = false; setStatus("ready");
-    }).catch((cause: unknown) => { if (buildId.current === nextBuildId) { reloadInFlightRef.current = false; setError(cause instanceof Error ? cause.message : "Failed to build the search index."); setStatus("error"); } });
-  }, [labels, publish]);
-  const start = useCallback(() => {
-    startSearchIndexOnce(hasStartedInitialBuild, reload);
-  }, [reload]);
+    const loadedIds = [...loadedNovelIdsRef.current];
+    if (loadedIds.length === 0) {
+      void ensureGlobal();
+      return;
+    }
+    const nextBuildId = ++buildId.current;
+    reloadInFlightRef.current = true;
+    setStatus("loading");
+    setError(null);
+    void Promise.all(loadedIds.map((novelId) => loadSearchDatasetForNovel(novelId, labels)))
+      .then(async (datasets) => {
+        if (buildId.current !== nextBuildId) return;
+        const loaded = datasets.flatMap((dataset) => dataset.documents);
+        const loadedEntities = new Map(datasets.flatMap((dataset) => [...dataset.entityMap]));
+        const nextIndex = await buildIndexAsync(loaded);
+        if (buildId.current !== nextBuildId) return;
+        const nextDocuments = new Map(loaded.map((document) => [document.id, document]));
+        for (const operation of pendingRef.current.splice(0)) operation(nextIndex, nextDocuments, loadedEntities);
+        publish(nextIndex, nextDocuments, loadedEntities);
+        setStatus("ready");
+      })
+      .catch((cause: unknown) => {
+        if (buildId.current === nextBuildId) {
+          setError(cause instanceof Error ? cause.message : "Failed to build the search index.");
+          setStatus("error");
+        }
+      })
+      .finally(() => {
+        if (buildId.current === nextBuildId) reloadInFlightRef.current = false;
+      });
+  }, [ensureGlobal, labels, publish]);
+
+  const start = useCallback((novelId: string | null) => {
+    void (novelId ? ensureNovel(novelId) : ensureGlobal());
+  }, [ensureGlobal, ensureNovel]);
   const rawSearch = useCallback((query: string) => {
     const target = indexRef.current; if (!target || !query.trim()) return [];
     return target.search(query).flatMap((result) => documentsRef.current.get(String(result.id)) ?? []);
   }, []);
-  const value = useMemo<SearchIndexContextValue>(() => ({ status, error, index, documents, dependents, entityMap, start, reload, upsert, discard, upsertMany, discardMany, rawSearch }), [status, error, index, documents, dependents, entityMap, start, reload, upsert, discard, upsertMany, discardMany, rawSearch]);
+  const value = useMemo<SearchIndexContextValue>(() => ({ status, error, index, documents, dependents, entityMap, start, ensureNovel, ensureGlobal, reload, upsert, discard, upsertMany, discardMany, rawSearch }), [status, error, index, documents, dependents, entityMap, start, ensureNovel, ensureGlobal, reload, upsert, discard, upsertMany, discardMany, rawSearch]);
   return <SearchIndexContext.Provider value={value}>{children}</SearchIndexContext.Provider>;
 }
 

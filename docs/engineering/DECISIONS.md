@@ -78,11 +78,11 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 ## ADR-010: Client-side MiniSearch is the Phase 3 search engine
 
-**Decision:** Build one disposable MiniSearch index per application session from Firestore data. Search scopes filter the same global index; Firestore remains the sole source of truth.
+**Decision:** Build one disposable MiniSearch index per application session from Firestore data. Load the current novel first when the command palette opens from a novel route, then append remaining novels only when global scope is requested. Search scopes filter the same index; Firestore remains the sole source of truth.
 
 **Why:** Firestore has no native full-text search and Phase 3 does not add a server-side search service. The recorded synthetic checkpoints keep engine p95 below 100 ms through 50,000 documents, while chunked builds prevent long initial indexing tasks from blocking the browser.
 
-**Trade-offs:** The index, document map, entity map, and dependency map use client memory and are rebuilt after reload. Benchmark results require renewed review at later growth checkpoints. IndexedDB and a Web Worker remain deferred until measured cold-start, main-thread, or memory costs justify their added complexity.
+**Trade-offs:** The index, document map, entity map, and dependency map use client memory and are rebuilt after reload. Incremental loading reduces the first palette-open read and CPU cost, but global search has a deferred loading cost when first requested. Benchmark results require renewed review at later growth checkpoints. IndexedDB and a Web Worker remain deferred until measured cold-start, main-thread, or memory costs justify their added complexity.
 
 ---
 
