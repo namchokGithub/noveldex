@@ -23,7 +23,6 @@ import {
   getChaptersByVolume,
   getEventsByVolume,
   getNovel,
-  getTags,
   getVolumeMetadata,
 } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
@@ -38,20 +37,15 @@ export default async function VolumePage({
   let novel: Awaited<ReturnType<typeof getNovel>>;
   let volume: Awaited<ReturnType<typeof getVolumeMetadata>>;
   let chapters: Awaited<ReturnType<typeof getChaptersByVolume>>;
-  let tags: Awaited<ReturnType<typeof getTags>>;
   let adaptations: Awaited<ReturnType<typeof getAdaptationsByVolume>>;
   let events: Awaited<ReturnType<typeof getEventsByVolume>>;
   let adjacentVolumes: Awaited<ReturnType<typeof getAdjacentVolumeMetadata>>;
 
   try {
-    // Shared so getChaptersByVolume's internal tag lookup and this page's own
-    // tags read hit Firestore once instead of twice for the same collection.
-    const tagsPromise = getTags(id);
-    [novel, volume, chapters, tags, adaptations, events] = await Promise.all([
+    [novel, volume, chapters, adaptations, events] = await Promise.all([
       getNovel(id),
       getVolumeMetadata(id, volumeId),
-      getChaptersByVolume(id, volumeId, tagsPromise),
-      tagsPromise,
+      getChaptersByVolume(id, volumeId),
       getAdaptationsByVolume(id, volumeId),
       getEventsByVolume(id, volumeId),
     ]);
@@ -61,20 +55,23 @@ export default async function VolumePage({
     throw error;
   }
 
-  const availableTags =
-    tags.length > 0
-      ? tags
-      : chapters
-          .flatMap((chapter) => chapter.tags)
-          .filter(
-            (tag, index, array) =>
-              array.findIndex((entry) => entry.id === tag.id) === index,
-          );
+  const availableTags = chapters
+    .flatMap((chapter) => chapter.tags)
+    .filter(
+      (tag, index, array) =>
+        array.findIndex((entry) => entry.id === tag.id) === index,
+    );
 
   return (
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
-        <RecentNovelPageTracker novelId={id} label={volumeRecentPageLabel(volume.number, volume.title_en || volume.title)} />
+        <RecentNovelPageTracker
+          novelId={id}
+          label={volumeRecentPageLabel(
+            volume.number,
+            volume.title_en || volume.title,
+          )}
+        />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             id="volume-back-link"
@@ -162,9 +159,7 @@ function VolumeNavigation({
             <T k="common.previous" /> #{previous.number}
           </span>
         </Link>
-      ) : (
-        null
-      )}
+      ) : null}
       {next ? (
         <Link
           href={`/novels/${novelId}/volumes/${next.id}`}
@@ -174,9 +169,7 @@ function VolumeNavigation({
           </span>
           <span aria-hidden="true">→</span>
         </Link>
-      ) : (
-        null
-      )}
+      ) : null}
     </nav>
   );
 }

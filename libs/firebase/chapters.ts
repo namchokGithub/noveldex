@@ -34,7 +34,7 @@ import type {
   ReferenceOccurrence,
 } from "@/libs/entities/references";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
-import { getTags } from "./tags";
+import { getTags, getTagsByIds } from "./tags";
 import { notesForEntity } from "@/libs/entityCrossReferences";
 import type { EntityId } from "@/libs/entities/types";
 import {
@@ -320,22 +320,25 @@ function incrementCounts(
 export async function getChaptersByVolume(
   novelId: string,
   volumeId: string,
-  tags?: Tag[] | Promise<Tag[]>,
 ): Promise<Chapter[]> {
   const snapshot = await getDocs(chaptersCol(novelId, volumeId));
-  // Fetch the novel's tags exactly once (not per chapter) to avoid N+1 reads.
-  // Callers that already loaded tags (such as the Volume page) can supply
-  // their tags promise so both reads share a single tags collection fetch.
-  const allTags = await (tags ?? getTags(novelId));
+  const chapterDocs = snapshot.docs.map((document) => ({
+    id: document.id,
+    data: document.data() as ChapterDoc,
+  }));
+  // The volume list and filter only need tags referenced by its chapters.
+  const allTags = await getTagsByIds(
+    novelId,
+    chapterDocs.flatMap((chapter) => chapter.data.tag_ids ?? []),
+  );
   const byId = new Map(allTags.map((t) => [t.id, t]));
   const lookup = firestoreEntityLookup();
   return (
     await Promise.all(
-      snapshot.docs.map(async (d) => {
-        const data = d.data() as ChapterDoc;
+      chapterDocs.map(async ({ id, data }) => {
         const notes = await hydrateChapterNotes(novelId, data, lookup);
         return toChapter(
-          d.id,
+          id,
           notes === undefined ? data : { ...data, notes },
           resolveTags(data.tag_ids ?? [], byId),
         );

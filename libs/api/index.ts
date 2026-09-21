@@ -5,6 +5,7 @@ export type { NovelCreatePayload } from "@/libs/firebase/novels";
 // Tags domain via Firestore
 export {
   getTags,
+  getTagsByIds,
   getTagsPage,
   createTag,
   TAG_NAME_MAX_LENGTH,
