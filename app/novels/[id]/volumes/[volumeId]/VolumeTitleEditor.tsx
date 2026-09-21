@@ -99,7 +99,12 @@ export default function VolumeTitleEditor({
   if (!editing) {
     return (
       <span className="inline-flex flex-wrap items-center gap-2">
-        <span>{localizedVolumeTitle({ ...volume, title_en: titleEn, title_th: titleTh }, language)}</span>
+        <span>
+          {localizedVolumeTitle(
+            { ...volume, title_en: titleEn, title_th: titleTh },
+            language,
+          )}
+        </span>
         {isAdmin ? (
           <button
             type="button"
@@ -127,7 +132,7 @@ export default function VolumeTitleEditor({
               cancel();
             }
           }}
-          className={`${inputClassName} mt-1 w-full py-1 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl`}
+          className={`${inputClassName} mt-1 w-full py-1 text-base font-normal tracking-normal`}
           placeholder={t("addVolume.titlePlaceholder")}
         />
       </label>
@@ -142,7 +147,7 @@ export default function VolumeTitleEditor({
               cancel();
             }
           }}
-          className={`${inputClassName} mt-1 w-full py-1 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl`}
+          className={`${inputClassName} mt-1 w-full py-1 text-base font-normal tracking-normal`}
         />
       </label>
       <label className="text-sm font-medium text-stone-700">

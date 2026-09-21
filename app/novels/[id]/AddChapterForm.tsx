@@ -19,6 +19,8 @@ import { createChapter, getLastOrderNos } from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { ChapterKind } from "@/app/types";
 import { CHAPTER_KINDS } from "@/libs/chapterLabel";
+import { customLabelForKind } from "@/libs/chapterCustomLabel";
+import { titleForChapterKind } from "@/libs/chapterDefaultTitle";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { normalizeChapter } from "@/libs/search/normalize";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
@@ -49,6 +51,7 @@ export default function AddChapterForm({
   const [fetchingNumber, setFetchingNumber] = useState(false);
   const [kind, setKind] = useState<ChapterKind>("chapter");
   const [customLabel, setCustomLabel] = useState("");
+  const [titleEn, setTitleEn] = useState("");
   const [readAt, setReadAt] = useState("");
 
   useEffect(() => {
@@ -109,6 +112,7 @@ export default function AddChapterForm({
       setNextNumber(null);
       setKind("chapter");
       setCustomLabel("");
+      setTitleEn("");
       setReadAt("");
       setOpen(false);
       setSnackbar({ tone: "success", message: t("addChapter.success") });
@@ -152,7 +156,16 @@ export default function AddChapterForm({
                   </label>
                   <Select
                     value={kind}
-                    onValueChange={(value) => setKind(value as ChapterKind)}
+                    onValueChange={(value) => {
+                      const nextKind = value as ChapterKind;
+                      setKind(nextKind);
+                      setCustomLabel((current) =>
+                        customLabelForKind(nextKind, current),
+                      );
+                      setTitleEn((current) =>
+                        titleForChapterKind(nextKind, current),
+                      );
+                    }}
                     options={CHAPTER_KINDS.map((entryKind) => ({
                       value: entryKind,
                       label: t(
@@ -199,6 +212,8 @@ export default function AddChapterForm({
                   <input
                     name="title_en"
                     required
+                    value={titleEn}
+                    onChange={(event) => setTitleEn(event.target.value)}
                     className={inputClassName}
                     placeholder={t("addChapter.titleEnglishPlaceholder")}
                   />
@@ -246,6 +261,7 @@ export default function AddChapterForm({
                       setNextNumber(null);
                       setKind("chapter");
                       setCustomLabel("");
+                      setTitleEn("");
                       setReadAt("");
                     }}
                     className={ghostButtonClassName}>

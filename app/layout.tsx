@@ -23,18 +23,21 @@ const googleSans = localFont({
   ],
   variable: "--font-google-sans",
   display: "swap",
+  preload: false,
 });
 
 const notoSansThai = localFont({
   src: "../src/fonts/Noto_Sans_Thai/NotoSansThai-VariableFont_wdth,wght.ttf",
   variable: "--font-noto-sans-thai",
   display: "swap",
+  preload: false,
 });
 
 const notoSansJp = localFont({
   src: "../src/fonts/Noto_Sans_JP/NotoSansJP-VariableFont_wght.ttf",
   variable: "--font-noto-sans-jp",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
