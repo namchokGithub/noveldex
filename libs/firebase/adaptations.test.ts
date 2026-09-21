@@ -1,9 +1,16 @@
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore/lite";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  Timestamp,
+  updateDoc,
+} from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import {
   chapterIdsForVolume,
   createAdaptation,
+  deleteAdaptation,
   getAdaptationsByChapter,
   getAdaptationsForNovel,
   reorderAdaptations,
@@ -21,6 +28,21 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await clearFirestoreEmulator();
+  await Promise.all(
+    [
+      ["novel-1", "volume-1"],
+      ["novel-1", "volume-2"],
+      ["novel-2", "volume-1"],
+    ].map(([novelId, volumeId]) =>
+      setDoc(doc(db, "novels", novelId, "volumes", volumeId), {
+        number: 1,
+        chapter_count: 0,
+        read_count: 0,
+        adaptation_count: 0,
+        event_count: 0,
+      }),
+    ),
+  );
 });
 
 const payload = {
@@ -33,6 +55,35 @@ const payload = {
 };
 
 describe("adaptations", () => {
+  it("maintains adaptation_count and clamps it at zero", async () => {
+    const volumeRef = doc(db, "novels", "novel-1", "volumes", "volume-1");
+    await setDoc(volumeRef, {
+      number: 1,
+      chapter_count: 0,
+      read_count: 0,
+      adaptation_count: 0,
+      event_count: 0,
+    });
+
+    const adaptation = await createAdaptation("novel-1", "volume-1", payload);
+    expect((await getDoc(volumeRef)).data()).toMatchObject({
+      adaptation_count: 1,
+    });
+
+    await updateAdaptation("novel-1", "volume-1", adaptation.id, {
+      title: "Renamed",
+    });
+    expect((await getDoc(volumeRef)).data()).toMatchObject({
+      adaptation_count: 1,
+    });
+
+    await updateDoc(volumeRef, { adaptation_count: 0 });
+    await deleteAdaptation("novel-1", "volume-1", adaptation.id);
+    expect((await getDoc(volumeRef)).data()).toMatchObject({
+      adaptation_count: 0,
+    });
+  });
+
   it("reads only chapter ids from the selected volume when validating adapted chapters", async () => {
     await setDoc(doc(db, "novels", "novel-1"), {
       volume_count: 2,

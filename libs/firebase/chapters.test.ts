@@ -147,6 +147,23 @@ describe("chapters", () => {
     expect(fetched.characters).toEqual([]);
   });
 
+  it("gets only linked tags in the chapter tag_ids order", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await createTag("novel-1", "Unrelated");
+    const second = await createTag("novel-1", "Second");
+    const first = await createTag("novel-1", "First");
+    const chapter = await createChapter("novel-1", "vol-1", {
+      number: 1,
+      title_en: "One",
+    });
+    await linkChapterTag("novel-1", "vol-1", chapter.id, second.id);
+    await linkChapterTag("novel-1", "vol-1", chapter.id, first.id);
+
+    const fetched = await getChapter("novel-1", "vol-1", chapter.id);
+
+    expect(fetched.tags.map((tag) => tag.id)).toEqual([second.id, first.id]);
+  });
+
   it("getChapter resolves with characters: [] when a character_id has no matching character document", async () => {
     await seedVolume("novel-1", "vol-1");
     const chapter = await createChapter("novel-1", "vol-1", {

@@ -40,6 +40,7 @@ const chapter: Chapter = {
   description: "",
   notes: [],
   read_at: null,
+  event_count: 0,
   tags: [],
   created_at: "",
   updated_at: "",

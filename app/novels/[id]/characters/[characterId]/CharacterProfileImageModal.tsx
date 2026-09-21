@@ -2,12 +2,16 @@
 
 import Image from "next/image";
 import { useId, useState } from "react";
-import {
-  modalPanelClassName,
-  secondaryButtonClassName,
-} from "../../../ui";
+import { modalPanelClassName, secondaryButtonClassName } from "../../../ui";
 import ModalDialog from "@/components/a11y/ModalDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
+
+export function modalImageUrl(sourceImgUrl: string): string {
+  const url = new URL(sourceImgUrl);
+  if (url.searchParams.has("s")) return sourceImgUrl;
+  url.searchParams.set("view", "modal");
+  return url.toString();
+}
 
 export default function CharacterProfileImageModal({
   name,
@@ -36,6 +40,8 @@ export default function CharacterProfileImageModal({
       </div>
     );
   }
+
+  const fullSizeImgUrl = modalImageUrl(profileImageUrl);
 
   return (
     <>
@@ -86,7 +92,7 @@ export default function CharacterProfileImageModal({
             </p>
           ) : (
             <Image
-              src={profileImageUrl}
+              src={fullSizeImgUrl}
               alt={name}
               width={1280}
               height={1280}

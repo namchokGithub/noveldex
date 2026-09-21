@@ -1,15 +1,13 @@
 import {
-  addDoc,
   collection,
-  deleteDoc,
   doc,
   DocumentReference,
   getDoc,
   getDocs,
   orderBy,
   query,
+  runTransaction,
   Timestamp,
-  updateDoc,
   where,
 } from "firebase/firestore/lite";
 import type { NovelEvent } from "@/app/types";
@@ -22,6 +20,7 @@ import type { EntityId } from "@/libs/entities/types";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getAllCharacters } from "./characters";
+import { applyNonNegativeCounterDeltas } from "./counters";
 
 interface EventDoc {
   title: string;
@@ -45,6 +44,45 @@ function eventsCol(novelId: string) {
 
 function eventRef(novelId: string, eventId: string) {
   return doc(db, "novels", novelId, "events", eventId);
+}
+
+type EventCounterTarget = { volumeId: string; chapterId: string };
+
+function eventCounterTarget(event: {
+  chapter_id?: string | null;
+  chapter_volume_id?: string | null;
+}): EventCounterTarget | null {
+  return event.chapter_id && event.chapter_volume_id
+    ? { volumeId: event.chapter_volume_id, chapterId: event.chapter_id }
+    : null;
+}
+
+function eventCounterDeltas(
+  novelId: string,
+  target: EventCounterTarget | null,
+  delta: number,
+) {
+  if (!target || delta === 0) return [];
+  return [
+    {
+      reference: doc(db, "novels", novelId, "volumes", target.volumeId),
+      field: "event_count" as const,
+      delta,
+    },
+    {
+      reference: doc(
+        db,
+        "novels",
+        novelId,
+        "volumes",
+        target.volumeId,
+        "chapters",
+        target.chapterId,
+      ),
+      field: "event_count" as const,
+      delta,
+    },
+  ];
 }
 
 function toEvent(
@@ -149,24 +187,29 @@ export async function createEvent(
     payload.chapter_id,
     payload.chapter_volume_id,
   );
-  const ref = await addDoc(
-    eventsCol(novelId),
-    withCreateTimestamps({
-      title: payload.title ?? "",
-      description: payload.description ?? "",
-      story_date: payload.story_date ?? "",
-      sort_order: payload.sort_order ?? 0,
-      page_number: payload.page_number ?? null,
-      character_ids: payload.character_ids ?? [],
-      description_references: await reconcileReferenceOccurrences(
-        novelId,
-        payload.description ?? "",
-        null,
-        firestoreEntityLookup(),
-      ),
-      ...chapterFields,
-    }),
-  );
+  const ref = doc(eventsCol(novelId));
+  const event = withCreateTimestamps({
+    title: payload.title ?? "",
+    description: payload.description ?? "",
+    story_date: payload.story_date ?? "",
+    sort_order: payload.sort_order ?? 0,
+    page_number: payload.page_number ?? null,
+    character_ids: payload.character_ids ?? [],
+    description_references: await reconcileReferenceOccurrences(
+      novelId,
+      payload.description ?? "",
+      null,
+      firestoreEntityLookup(),
+    ),
+    ...chapterFields,
+  });
+  await runTransaction(db, async (transaction) => {
+    await applyNonNegativeCounterDeltas(
+      transaction,
+      eventCounterDeltas(novelId, eventCounterTarget(chapterFields), 1),
+    );
+    transaction.set(ref, event);
+  });
   const snapshot = await getDoc(ref);
   const data = snapshot.data() as EventDoc;
   const nameById = await characterNameLookup(novelId, data.character_ids ?? []);
@@ -178,6 +221,10 @@ export async function updateEvent(
   eventId: string,
   payload: EventPayload,
 ): Promise<NovelEvent> {
+  const ref = eventRef(novelId, eventId) as DocumentReference<
+    EventDoc,
+    EventDoc
+  >;
   const update: Record<string, unknown> = {};
   if (payload.title !== undefined) update.title = payload.title;
   if (payload.description !== undefined) {
@@ -201,22 +248,31 @@ export async function updateEvent(
     update.page_number = payload.page_number;
   if (payload.character_ids !== undefined)
     update.character_ids = payload.character_ids;
+  let nextTarget: EventCounterTarget | null | undefined;
   if (payload.chapter_id !== undefined) {
-    Object.assign(
-      update,
-      await resolveChapterFields(
-        novelId,
-        payload.chapter_id,
-        payload.chapter_volume_id,
-      ),
+    const chapterFields = await resolveChapterFields(
+      novelId,
+      payload.chapter_id,
+      payload.chapter_volume_id,
     );
+    Object.assign(update, chapterFields);
+    nextTarget = eventCounterTarget(chapterFields);
   }
 
-  const ref = eventRef(novelId, eventId) as DocumentReference<
-    EventDoc,
-    EventDoc
-  >;
-  await updateDoc(ref, withUpdateTimestamp(update));
+  await runTransaction(db, async (transaction) => {
+    const previous = await transaction.get(ref);
+    if (!previous.exists()) throw new Error("Request failed.");
+    const previousTarget = eventCounterTarget(previous.data());
+    await applyNonNegativeCounterDeltas(transaction, [
+      ...eventCounterDeltas(novelId, previousTarget, -1),
+      ...eventCounterDeltas(
+        novelId,
+        nextTarget === undefined ? previousTarget : nextTarget,
+        1,
+      ),
+    ]);
+    transaction.update(ref, withUpdateTimestamp(update));
+  });
   const snapshot = await getDoc(ref);
   const data = snapshot.data() as EventDoc;
   const nameById = await characterNameLookup(novelId, data.character_ids ?? []);
@@ -306,7 +362,9 @@ export async function getEventsForEntity(
   const snapshot = await getDocs(eventsCol(novelId));
   return eventsForEntity(
     snapshot.docs
-      .map((item) => toEvent(novelId, item.id, item.data() as EventDoc, new Map()))
+      .map((item) =>
+        toEvent(novelId, item.id, item.data() as EventDoc, new Map()),
+      )
       .sort(
         (left, right) =>
           left.sort_order - right.sort_order || left.id.localeCompare(right.id),
@@ -319,5 +377,17 @@ export async function deleteEvent(
   novelId: string,
   eventId: string,
 ): Promise<void> {
-  await deleteDoc(eventRef(novelId, eventId));
+  const ref = eventRef(novelId, eventId) as DocumentReference<
+    EventDoc,
+    EventDoc
+  >;
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists()) return;
+    await applyNonNegativeCounterDeltas(
+      transaction,
+      eventCounterDeltas(novelId, eventCounterTarget(snapshot.data()), -1),
+    );
+    transaction.delete(ref);
+  });
 }

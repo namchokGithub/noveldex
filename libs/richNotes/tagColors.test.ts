@@ -10,9 +10,9 @@ describe("rich note entity tag colors", () => {
     expect(TAG_COLORS.location.color).toBe("#047857");
     expect(TAG_COLORS.organization.color).toBe("#B45309");
     expect(TAG_COLORS.concept).toEqual({
-      color: "#C49F0E",
-      hover: "#F2C411",
-      underline: "#B08F0C",
+      color: "#FF40F5",
+      hover: "#F71EEC",
+      underline: "#FFD9FD",
     });
   });
 

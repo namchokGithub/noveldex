@@ -38,6 +38,8 @@ interface VolumeDoc {
   source_img_url?: string | null;
   chapter_count?: number;
   read_count?: number;
+  adaptation_count?: number;
+  event_count?: number;
   deleting?: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -125,7 +127,10 @@ async function volumeAggregates(novelId: string, volumeId: string) {
   );
 }
 
-export type VolumeMetadata = Omit<Volume, "chapter_count" | "read_count">;
+export type VolumeMetadata = Omit<
+  Volume,
+  "chapter_count" | "read_count" | "adaptation_count" | "event_count"
+>;
 
 function toVolumeMetadata(
   novelId: string,
@@ -157,6 +162,8 @@ async function toVolume(
   return {
     ...toVolumeMetadata(novelId, id, data),
     ...aggregate,
+    adaptation_count: data.adaptation_count ?? 0,
+    event_count: data.event_count ?? 0,
   };
 }
 
@@ -447,6 +454,8 @@ export async function createVolume(
       source_img_url,
       chapter_count: 0,
       read_count: 0,
+      adaptation_count: 0,
+      event_count: 0,
     }),
   );
   batch.update(doc(db, "novels", novelId), { volume_count: increment(1) });

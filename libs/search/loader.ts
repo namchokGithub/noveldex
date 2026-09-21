@@ -4,9 +4,11 @@ import {
   getChaptersFlatDetailed,
   getEntities,
   getEvents,
+  getNovel,
   getNovels,
   getVolumesFlat,
 } from "@/libs/api";
+import type { Novel } from "@/app/types";
 import type { ChapterKindLabels } from "@/libs/chapterLabel";
 import { buildEntityId } from "@/libs/entities/keys";
 import type { Entity } from "@/libs/entities/types";
@@ -22,17 +24,29 @@ import {
 } from "./normalize";
 import type { SearchDocument } from "./types";
 
+export interface SearchDataset {
+  documents: SearchDocument[];
+  entityMap: EntityMap;
+  novelIds: string[];
+}
+
 async function loadNovel(
-  novelId: string,
+  novel: Novel,
   labels: ChapterKindLabels,
 ): Promise<{ documents: SearchDocument[]; entities: Entity[] }> {
+  const novelId = novel.id;
+  const charactersPromise = getAllCharacters(novelId);
+  const characterNameById = charactersPromise.then(
+    (characters) =>
+      new Map(characters.map((character) => [character.id, character.name])),
+  );
   const [volumes, chapters, characters, genericEntities, events, adaptations] =
     await Promise.all([
       getVolumesFlat(novelId),
       getChaptersFlatDetailed(novelId),
-      getAllCharacters(novelId),
+      charactersPromise,
       getEntities(novelId),
-      getEvents(novelId),
+      getEvents(novelId, characterNameById),
       getAdaptationsForNovel(novelId),
     ]);
   const entities: Entity[] = [
@@ -90,16 +104,35 @@ async function loadNovel(
   };
 }
 
+export async function loadSearchDatasetForNovel(
+  novelId: string,
+  labels: ChapterKindLabels,
+): Promise<SearchDataset> {
+  const novel = await getNovel(novelId);
+  const dataset = await loadNovel(novel, labels);
+  return {
+    documents: [normalizeNovel(novel), ...dataset.documents],
+    entityMap: new Map(
+      dataset.entities.map((entity) => [entity.id, entity]),
+    ),
+    novelIds: [novel.id],
+  };
+}
+
 export async function loadSearchDataset(
   labels: ChapterKindLabels,
-): Promise<{ documents: SearchDocument[]; entityMap: EntityMap }> {
+  loadedNovelIds: ReadonlySet<string> = new Set(),
+): Promise<SearchDataset> {
   const novels = await getNovels();
+  const remainingNovels = novels.filter(
+    (novel) => !loadedNovelIds.has(novel.id),
+  );
   const datasets = await Promise.all(
-    novels.map((novel) => loadNovel(novel.id, labels)),
+    remainingNovels.map((novel) => loadNovel(novel, labels)),
   );
   return {
     documents: [
-      ...novels.map(normalizeNovel),
+      ...remainingNovels.map(normalizeNovel),
       ...datasets.flatMap((dataset) => dataset.documents),
     ],
     entityMap: new Map(
@@ -107,5 +140,6 @@ export async function loadSearchDataset(
         .flatMap((dataset) => dataset.entities)
         .map((entity) => [entity.id, entity]),
     ),
+    novelIds: remainingNovels.map((novel) => novel.id),
   };
 }

@@ -6,7 +6,6 @@ import ChapterListWithFilters from "../../ChapterListWithFilters";
 import VolumeDescriptionEditor from "./VolumeDescriptionEditor";
 import VolumeTitleEditor from "./VolumeTitleEditor";
 import AdaptationSection from "./AdaptationSection";
-import VolumeOverview from "./VolumeOverview";
 import VolumeSourceImageModal from "./VolumeSourceImageModal";
 import LocalizedVolumePageDescription from "@/components/volumes/LocalizedVolumePageDescription";
 import { T } from "@/components/i18n/I18nProvider";
@@ -18,12 +17,10 @@ import {
   secondaryButtonClassName,
 } from "@/app/novels/ui";
 import {
-  getAdaptationsByVolume,
   getAdjacentVolumeMetadata,
   getChaptersByVolume,
-  getEventsByVolume,
+  getLatestAdaptationByVolume,
   getNovel,
-  getTags,
   getVolumeMetadata,
 } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
@@ -38,22 +35,15 @@ export default async function VolumePage({
   let novel: Awaited<ReturnType<typeof getNovel>>;
   let volume: Awaited<ReturnType<typeof getVolumeMetadata>>;
   let chapters: Awaited<ReturnType<typeof getChaptersByVolume>>;
-  let tags: Awaited<ReturnType<typeof getTags>>;
-  let adaptations: Awaited<ReturnType<typeof getAdaptationsByVolume>>;
-  let events: Awaited<ReturnType<typeof getEventsByVolume>>;
+  let latestAdaptation: Awaited<ReturnType<typeof getLatestAdaptationByVolume>>;
   let adjacentVolumes: Awaited<ReturnType<typeof getAdjacentVolumeMetadata>>;
 
   try {
-    // Shared so getChaptersByVolume's internal tag lookup and this page's own
-    // tags read hit Firestore once instead of twice for the same collection.
-    const tagsPromise = getTags(id);
-    [novel, volume, chapters, tags, adaptations, events] = await Promise.all([
+    [novel, volume, chapters, latestAdaptation] = await Promise.all([
       getNovel(id),
       getVolumeMetadata(id, volumeId),
-      getChaptersByVolume(id, volumeId, tagsPromise),
-      tagsPromise,
-      getAdaptationsByVolume(id, volumeId),
-      getEventsByVolume(id, volumeId),
+      getChaptersByVolume(id, volumeId),
+      getLatestAdaptationByVolume(id, volumeId),
     ]);
     adjacentVolumes = await getAdjacentVolumeMetadata(id, volume.number);
   } catch (error) {
@@ -61,20 +51,23 @@ export default async function VolumePage({
     throw error;
   }
 
-  const availableTags =
-    tags.length > 0
-      ? tags
-      : chapters
-          .flatMap((chapter) => chapter.tags)
-          .filter(
-            (tag, index, array) =>
-              array.findIndex((entry) => entry.id === tag.id) === index,
-          );
+  const availableTags = chapters
+    .flatMap((chapter) => chapter.tags)
+    .filter(
+      (tag, index, array) =>
+        array.findIndex((entry) => entry.id === tag.id) === index,
+    );
 
   return (
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
-        <RecentNovelPageTracker novelId={id} label={volumeRecentPageLabel(volume.number, volume.title_en || volume.title)} />
+        <RecentNovelPageTracker
+          novelId={id}
+          label={volumeRecentPageLabel(
+            volume.number,
+            volume.title_en || volume.title,
+          )}
+        />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             id="volume-back-link"
@@ -111,12 +104,6 @@ export default async function VolumePage({
           initialDescription={volume.description}
           collapsedLines={3}
         />
-        <VolumeOverview
-          novelId={id}
-          chapters={chapters}
-          events={events}
-          adaptations={adaptations}
-        />
         <ChapterListWithFilters
           novelId={id}
           volumeId={volumeId}
@@ -127,7 +114,7 @@ export default async function VolumePage({
               <AdaptationSection
                 novelId={id}
                 volumeId={volumeId}
-                adaptations={adaptations}
+                adaptation={latestAdaptation}
               />
             </>
           }
@@ -162,9 +149,7 @@ function VolumeNavigation({
             <T k="common.previous" /> #{previous.number}
           </span>
         </Link>
-      ) : (
-        null
-      )}
+      ) : null}
       {next ? (
         <Link
           href={`/novels/${novelId}/volumes/${next.id}`}
@@ -174,9 +159,7 @@ function VolumeNavigation({
           </span>
           <span aria-hidden="true">→</span>
         </Link>
-      ) : (
-        null
-      )}
+      ) : null}
     </nav>
   );
 }

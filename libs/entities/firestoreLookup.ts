@@ -8,23 +8,30 @@ const normalize = (value: string) => value.normalize("NFC").trim().toLocaleLower
 
 export function firestoreEntityLookup(): EntityLookup {
   // A note's content can carry several [[mentions]], and resolving each one
-  // calls findByName separately. Cache each (novelId, type) collection read
-  // for the lifetime of this lookup instance so N mentions of the same type
-  // cost one Firestore read instead of N.
-  const entitiesByTypeCache = new Map<string, Promise<Entity[]>>();
+  // calls findByName separately. Generic entities share one collection, so
+  // cache its full novel dataset once and filter it by type in memory.
+  const charactersByNovelCache = new Map<string, Promise<Entity[]>>();
+  const genericEntitiesByNovelCache = new Map<string, Promise<Entity[]>>();
+
   function entitiesOfType(novelId: string, type: EntityType): Promise<Entity[]> {
-    const key = `${novelId}:${type}`;
-    let pending = entitiesByTypeCache.get(key);
-    if (!pending) {
-      pending = type === "character"
-        ? getAllCharacters(novelId).then((characters) => characters.map((character) => ({
+    if (type === "character") {
+      let characters = charactersByNovelCache.get(novelId);
+      if (!characters) {
+        characters = getAllCharacters(novelId).then((items) => items.map((character) => ({
             id: buildEntityId(novelId, "character", character.id), novelId, type: "character" as const, name: character.name,
             aliases: character.aliases, description: character.description,
-          })))
-        : getEntities(novelId, type);
-      entitiesByTypeCache.set(key, pending);
+          })));
+        charactersByNovelCache.set(novelId, characters);
+      }
+      return characters;
     }
-    return pending;
+
+    let entities = genericEntitiesByNovelCache.get(novelId);
+    if (!entities) {
+      entities = getEntities(novelId);
+      genericEntitiesByNovelCache.set(novelId, entities);
+    }
+    return entities.then((items) => items.filter((entity) => entity.type === type));
   }
 
   return {

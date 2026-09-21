@@ -28,3 +28,15 @@ export async function buildIndexAsync(documents: SearchDocument[], chunkSize = 5
   }
   return index;
 }
+
+export async function addToIndexAsync(
+  index: MiniSearch<SearchDocument>,
+  documents: SearchDocument[],
+  chunkSize = 500,
+): Promise<void> {
+  for (let start = 0; start < documents.length; start += chunkSize) {
+    index.addAll(documents.slice(start, start + chunkSize));
+    if (start + chunkSize < documents.length)
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+  }
+}

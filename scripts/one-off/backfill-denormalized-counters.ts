@@ -5,10 +5,18 @@ import { getFirestore } from "firebase-admin/firestore";
 export type VolumeCounterTarget = {
   chapter_count: number;
   read_count: number;
+  adaptation_count: number;
+  event_count: number;
 };
 
-export type NovelCounterTarget = VolumeCounterTarget & {
+export type ChapterCounterTarget = {
+  event_count: number;
+};
+
+export type NovelCounterTarget = {
   volume_count: number;
+  chapter_count: number;
+  read_count: number;
 };
 
 export type BackfillMode = "dry-run" | "apply" | "verify";
@@ -53,9 +61,19 @@ type SourceVolume = {
 };
 
 type SourceChapter = {
+  id: string;
   volume_id: string;
   kind?: unknown;
   read_at?: unknown;
+};
+
+type SourceEvent = {
+  chapter_id?: unknown;
+  chapter_volume_id?: unknown;
+};
+
+type SourceAdaptation = {
+  volume_id: string;
 };
 
 export function parseOptions(
@@ -158,6 +176,11 @@ export async function backfillDatabase(
     volumeCount += volumeSnapshots.size;
     const sourceVolumes: SourceVolume[] = [];
     const sourceChapters: SourceChapter[] = [];
+    const sourceChapterDocuments: Array<{
+      document: SourceDocument;
+      volumeId: string;
+    }> = [];
+    const sourceAdaptations: SourceAdaptation[] = [];
 
     for (const volume of volumeSnapshots.docs) {
       const volumeData = volume.data();
@@ -167,17 +190,40 @@ export async function backfillDatabase(
       sourceChapters.push(
         ...chapterSnapshots.docs.map((chapter) => ({
           ...chapter.data(),
+          id: chapter.id,
           volume_id: volume.id,
         })),
       );
+      sourceChapterDocuments.push(
+        ...chapterSnapshots.docs.map((document) => ({
+          document,
+          volumeId: volume.id,
+        })),
+      );
+      const adaptationSnapshots = await volume.ref
+        .collection("adaptations")
+        .get();
+      sourceAdaptations.push(
+        ...adaptationSnapshots.docs.map(() => ({ volume_id: volume.id })),
+      );
     }
 
-    const targets = counterTargets(sourceVolumes, sourceChapters);
+    const eventSnapshots = await novel.ref.collection("events").get();
+    const sourceEvents = eventSnapshots.docs.map(
+      (event) => event.data() as SourceEvent,
+    );
+
+    const targets = counterTargets(
+      sourceVolumes,
+      sourceChapters,
+      sourceEvents,
+      sourceAdaptations,
+    );
     documents.push({
       path: novel.ref.path,
       reference: novel.ref,
       actual: novel.data(),
-      target: { ...targets.novel, counter_schema_version: 1 },
+      target: { ...targets.novel, counter_schema_version: 2 },
     });
     for (const volume of volumeSnapshots.docs) {
       documents.push({
@@ -186,8 +232,18 @@ export async function backfillDatabase(
         actual: volume.data(),
         target: {
           ...targets.volumes[volume.id],
-          counter_schema_version: 1,
+          counter_schema_version: 2,
         },
+      });
+    }
+    for (const { document, volumeId } of sourceChapterDocuments) {
+      const target = targets.chapters[volumeId]?.[document.id];
+      if (!target) continue;
+      documents.push({
+        path: document.ref.path,
+        reference: document.ref,
+        actual: document.data(),
+        target,
       });
     }
   }
@@ -243,13 +299,33 @@ export async function backfillDatabase(
 export function counterTargets(
   volumes: SourceVolume[],
   chapters: SourceChapter[],
+  events: SourceEvent[],
+  adaptations: SourceAdaptation[],
 ): {
   novel: NovelCounterTarget;
   volumes: Record<string, VolumeCounterTarget>;
+  chapters: Record<string, Record<string, ChapterCounterTarget>>;
 } {
   const volumeTargets = Object.fromEntries(
-    volumes.map((volume) => [volume.id, { chapter_count: 0, read_count: 0 }]),
+    volumes.map((volume) => [
+      volume.id,
+      {
+        chapter_count: 0,
+        read_count: 0,
+        adaptation_count: 0,
+        event_count: 0,
+      },
+    ]),
   ) as Record<string, VolumeCounterTarget>;
+  const chapterTargets: Record<
+    string,
+    Record<string, ChapterCounterTarget>
+  > = {};
+  for (const chapter of chapters) {
+    if (!volumeTargets[chapter.volume_id]) continue;
+    chapterTargets[chapter.volume_id] ??= {};
+    chapterTargets[chapter.volume_id][chapter.id] = { event_count: 0 };
+  }
 
   for (const chapter of chapters) {
     if (chapter.kind !== "chapter") continue;
@@ -257,6 +333,25 @@ export function counterTargets(
     if (!target) continue;
     target.chapter_count += 1;
     if (chapter.read_at != null) target.read_count += 1;
+  }
+
+  for (const adaptation of adaptations) {
+    const target = volumeTargets[adaptation.volume_id];
+    if (target) target.adaptation_count += 1;
+  }
+  for (const event of events) {
+    if (
+      typeof event.chapter_id !== "string" ||
+      typeof event.chapter_volume_id !== "string"
+    ) {
+      continue;
+    }
+    const volumeTarget = volumeTargets[event.chapter_volume_id];
+    const chapterTarget =
+      chapterTargets[event.chapter_volume_id]?.[event.chapter_id];
+    if (!volumeTarget || !chapterTarget) continue;
+    volumeTarget.event_count += 1;
+    chapterTarget.event_count += 1;
   }
 
   const novel = Object.values(volumeTargets).reduce<NovelCounterTarget>(
@@ -268,7 +363,7 @@ export function counterTargets(
     { volume_count: volumes.length, chapter_count: 0, read_count: 0 },
   );
 
-  return { novel, volumes: volumeTargets };
+  return { novel, volumes: volumeTargets, chapters: chapterTargets };
 }
 
 async function main(): Promise<void> {

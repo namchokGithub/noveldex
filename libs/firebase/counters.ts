@@ -2,9 +2,11 @@ import type { ChapterKind } from "@/app/types";
 import {
   doc,
   increment,
+  type DocumentData,
   type DocumentReference,
   type FieldValue,
   type Timestamp,
+  type Transaction,
 } from "firebase/firestore/lite";
 import { db } from "./app";
 
@@ -12,6 +14,52 @@ export type ChapterCounter = {
   chapter_count: number;
   read_count: number;
 };
+
+export type MaintainedCounterField = "adaptation_count" | "event_count";
+
+export type MaintainedCounterDelta = {
+  reference: DocumentReference<DocumentData>;
+  field: MaintainedCounterField;
+  delta: number;
+};
+
+/**
+ * Applies source-document counter changes within the caller's transaction.
+ * Reads happen before writes, and bad or legacy values are treated as zero.
+ */
+export async function applyNonNegativeCounterDeltas(
+  transaction: Transaction,
+  deltas: MaintainedCounterDelta[],
+): Promise<void> {
+  const combined = new Map<string, MaintainedCounterDelta>();
+  for (const delta of deltas) {
+    if (delta.delta === 0) continue;
+    const key = `${delta.reference.path}:${delta.field}`;
+    const existing = combined.get(key);
+    if (existing) existing.delta += delta.delta;
+    else combined.set(key, { ...delta });
+  }
+
+  const nonZero = [...combined.values()].filter(({ delta }) => delta !== 0);
+  const snapshots = await Promise.all(
+    nonZero.map(async (delta) => ({
+      delta,
+      snapshot: await transaction.get(delta.reference),
+    })),
+  );
+  for (const { delta, snapshot } of snapshots) {
+    if (!snapshot.exists()) throw new Error("Request failed.");
+    const current = snapshot.data()?.[delta.field];
+    transaction.update(delta.reference, {
+      [delta.field]: Math.max(
+        0,
+        (typeof current === "number" && Number.isFinite(current)
+          ? current
+          : 0) + delta.delta,
+      ),
+    });
+  }
+}
 
 type CounterWriter = {
   update(

@@ -26,6 +26,8 @@ export interface Volume {
   source_img_url: string | null;
   chapter_count: number;
   read_count: number;
+  adaptation_count: number;
+  event_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -120,6 +122,7 @@ export interface Chapter {
   description: string;
   notes: ChapterNote[];
   read_at: string | null;
+  event_count: number;
   tags: Tag[];
   created_at: string;
   updated_at: string;
@@ -196,6 +199,7 @@ export interface Character {
 }
 
 export interface ChapterWithCharacters extends Chapter {
+  character_ids: string[];
   characters: Character[];
   mentioned_character_names: string[];
 }

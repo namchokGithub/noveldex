@@ -22,37 +22,64 @@ type TestQuerySnapshot = {
 };
 
 describe("counterTargets", () => {
-  it("rebuilds exact counters from regular chapters and ignores stored counters and special entries", () => {
+  it("rebuilds exact counters from source documents and ignores stale links", () => {
     const targets = counterTargets(
       [
         { id: "volume-1", chapter_count: 99, read_count: 98 },
         { id: "volume-2" },
       ],
       [
-        { volume_id: "volume-1", kind: "chapter", read_at: null },
+        { id: "c1", volume_id: "volume-1", kind: "chapter", read_at: null },
         {
+          id: "c2",
           volume_id: "volume-1",
           kind: "chapter",
           read_at: new Date("2026-09-20T00:00:00Z"),
         },
         {
+          id: "p1",
           volume_id: "volume-1",
           kind: "prologue",
           read_at: new Date("2026-09-20T00:00:00Z"),
         },
         {
+          id: "legacy",
           volume_id: "volume-1",
           read_at: new Date("2026-09-20T00:00:00Z"),
         },
-        { volume_id: "volume-2", kind: "chapter" },
+        { id: "c3", volume_id: "volume-2", kind: "chapter" },
       ],
+      [
+        { chapter_id: "c2", chapter_volume_id: "volume-1" },
+        { chapter_id: "missing", chapter_volume_id: "volume-1" },
+      ],
+      [{ volume_id: "volume-1" }],
     );
 
     expect(targets).toEqual({
       novel: { volume_count: 2, chapter_count: 3, read_count: 1 },
       volumes: {
-        "volume-1": { chapter_count: 2, read_count: 1 },
-        "volume-2": { chapter_count: 1, read_count: 0 },
+        "volume-1": {
+          chapter_count: 2,
+          read_count: 1,
+          adaptation_count: 1,
+          event_count: 1,
+        },
+        "volume-2": {
+          chapter_count: 1,
+          read_count: 0,
+          adaptation_count: 0,
+          event_count: 0,
+        },
+      },
+      chapters: {
+        "volume-1": {
+          c1: { event_count: 0 },
+          c2: { event_count: 1 },
+          p1: { event_count: 0 },
+          legacy: { event_count: 0 },
+        },
+        "volume-2": { c3: { event_count: 0 } },
       },
     });
   });
@@ -67,9 +94,10 @@ describe("parseOptions", () => {
       mode: "apply",
       projectId: "demo",
     });
-    expect(
-      parseOptions(["--", "--project", "demo", "--dry-run"], {}),
-    ).toEqual({ mode: "dry-run", projectId: "demo" });
+    expect(parseOptions(["--", "--project", "demo", "--dry-run"], {})).toEqual({
+      mode: "dry-run",
+      projectId: "demo",
+    });
     expect(() => parseOptions(["--project", "demo"], {})).toThrow(
       "Pass exactly one of --dry-run, --apply, or --verify.",
     );
@@ -223,7 +251,11 @@ describe("backfillDatabase", () => {
         { volumes: volumeDocuments },
       ),
     ];
-    const writableDocuments = [...novelDocuments, ...volumeDocuments];
+    const writableDocuments = [
+      ...novelDocuments,
+      ...volumeDocuments,
+      ...chapterDocuments,
+    ];
 
     return {
       database: {
@@ -294,7 +326,7 @@ describe("backfillDatabase", () => {
 
       expect(result).toEqual({
         scanned: { novels: 1, volumes: 1, chapters: 3 },
-        mismatches: 2,
+        mismatches: 5,
         writes: 0,
       });
       expect(fixture.state()).toEqual({
@@ -303,7 +335,7 @@ describe("backfillDatabase", () => {
         writerCloses: 0,
       });
       expect(output[0]).toBe("Scanned 1 novels, 1 volumes, and 3 chapters.");
-      expect(output).toHaveLength(3);
+      expect(output).toHaveLength(6);
     },
   );
 
@@ -318,8 +350,8 @@ describe("backfillDatabase", () => {
 
     expect(result).toEqual({
       scanned: { novels: 1, volumes: 1, chapters: 3 },
-      mismatches: 2,
-      writes: 2,
+      mismatches: 5,
+      writes: 5,
     });
     expect(fixture.state()).toEqual({
       writerCreations: 1,
@@ -331,7 +363,7 @@ describe("backfillDatabase", () => {
             volume_count: 1,
             chapter_count: 2,
             read_count: 1,
-            counter_schema_version: 1,
+            counter_schema_version: 2,
           },
           options: { merge: true },
         },
@@ -340,8 +372,25 @@ describe("backfillDatabase", () => {
           target: {
             chapter_count: 2,
             read_count: 1,
-            counter_schema_version: 1,
+            adaptation_count: 0,
+            event_count: 0,
+            counter_schema_version: 2,
           },
+          options: { merge: true },
+        },
+        {
+          path: "novels/n1/volumes/v1/chapters/c1",
+          target: { event_count: 0 },
+          options: { merge: true },
+        },
+        {
+          path: "novels/n1/volumes/v1/chapters/c2",
+          target: { event_count: 0 },
+          options: { merge: true },
+        },
+        {
+          path: "novels/n1/volumes/v1/chapters/p1",
+          target: { event_count: 0 },
           options: { merge: true },
         },
       ],
@@ -353,7 +402,7 @@ describe("backfillDatabase", () => {
 
     await expect(
       backfillDatabase(fixture.database, "apply", () => undefined),
-    ).resolves.toMatchObject({ mismatches: 2, writes: 2 });
+    ).resolves.toMatchObject({ mismatches: 5, writes: 5 });
     await expect(
       backfillDatabase(fixture.database, "verify", () => undefined),
     ).resolves.toMatchObject({ mismatches: 0, writes: 0 });

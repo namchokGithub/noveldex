@@ -1,12 +1,13 @@
 import {
-  addDoc,
   collection,
   collectionGroup,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
+  limit,
+  orderBy,
   query,
+  runTransaction,
   Timestamp,
   updateDoc,
   where,
@@ -29,6 +30,7 @@ import { parseEntityId } from "@/libs/entities/keys";
 import { reconcileReferenceOccurrences } from "@/libs/entities/reconcile";
 import type { ReferenceOccurrence } from "@/libs/entities/references";
 import { db } from "./app";
+import { applyNonNegativeCounterDeltas } from "./counters";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 
 interface AdaptationDoc {
@@ -48,6 +50,20 @@ interface AdaptationDoc {
   sort_order: number;
   created_at: Timestamp;
   updated_at: Timestamp;
+}
+
+function adaptationCounterDeltas(
+  novelId: string,
+  volumeId: string,
+  delta: number,
+) {
+  return [
+    {
+      reference: doc(db, "novels", novelId, "volumes", volumeId),
+      field: "adaptation_count" as const,
+      delta,
+    },
+  ];
 }
 
 interface AdaptationNoteDoc {
@@ -314,6 +330,23 @@ export async function getAdaptationsByVolume(
     .sort(compareAdaptations);
 }
 
+export async function getLatestAdaptationByVolume(
+  novelId: string,
+  volumeId: string,
+): Promise<Adaptation | null> {
+  const snapshot = await getDocs(
+    query(
+      adaptationsCol(novelId, volumeId),
+      orderBy("updated_at", "desc"),
+      limit(1),
+    ),
+  );
+  const latest = snapshot.docs[0];
+  return latest
+    ? toAdaptation(latest.id, latest.data() as AdaptationDoc)
+    : null;
+}
+
 export async function getAdaptationsByChapter(
   novelId: string,
   volumeId: string,
@@ -368,29 +401,34 @@ export async function createAdaptation(
           item.group_sort_order === validated.group_sort_order,
       )
       .reduce((max, item) => Math.max(max, item.sort_order), 0) + 1;
-  const ref = await addDoc(
-    adaptationsCol(novelId, volumeId),
-    withCreateTimestamps({
-      novel_id: novelId,
-      volume_id: volumeId,
-      medium: validated.medium,
-      group_label: validated.group_label,
-      group_sort_order: validated.group_sort_order,
-      entry_type: validated.entry_type,
-      entry_number: validated.entry_number,
-      title: validated.title,
-      source_url: validated.source_url ?? null,
-      source_img_url: validated.source_img_url ?? null,
-      description: validated.description ?? "",
-      notes: [],
-      adapted_chapter_ids: await validateChapterIds(
-        novelId,
-        volumeId,
-        payload.adapted_chapter_ids ?? [],
-      ),
-      sort_order,
-    }),
-  );
+  const ref = doc(adaptationsCol(novelId, volumeId));
+  const adaptation = withCreateTimestamps({
+    novel_id: novelId,
+    volume_id: volumeId,
+    medium: validated.medium,
+    group_label: validated.group_label,
+    group_sort_order: validated.group_sort_order,
+    entry_type: validated.entry_type,
+    entry_number: validated.entry_number,
+    title: validated.title,
+    source_url: validated.source_url ?? null,
+    source_img_url: validated.source_img_url ?? null,
+    description: validated.description ?? "",
+    notes: [],
+    adapted_chapter_ids: await validateChapterIds(
+      novelId,
+      volumeId,
+      payload.adapted_chapter_ids ?? [],
+    ),
+    sort_order,
+  });
+  await runTransaction(db, async (transaction) => {
+    await applyNonNegativeCounterDeltas(
+      transaction,
+      adaptationCounterDeltas(novelId, volumeId, 1),
+    );
+    transaction.set(ref, adaptation);
+  });
   const snapshot = await getDoc(ref);
   return toAdaptation(snapshot.id, snapshot.data() as AdaptationDoc);
 }
@@ -435,7 +473,16 @@ export async function deleteAdaptation(
   volumeId: string,
   adaptationId: string,
 ): Promise<void> {
-  await deleteDoc(adaptationRef(novelId, volumeId, adaptationId));
+  const ref = adaptationRef(novelId, volumeId, adaptationId);
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists()) return;
+    await applyNonNegativeCounterDeltas(
+      transaction,
+      adaptationCounterDeltas(novelId, volumeId, -1),
+    );
+    transaction.delete(ref);
+  });
 }
 
 export async function reorderAdaptations(
