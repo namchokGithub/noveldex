@@ -56,6 +56,7 @@ interface ChapterDoc {
   description?: string;
   notes?: ChapterNoteDoc[];
   read_at: Timestamp | null;
+  event_count?: number;
   novel_id: string;
   volume_id: string;
   tag_ids: string[];
@@ -196,6 +197,7 @@ function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
     description: data.description ?? "",
     notes,
     read_at: data.read_at ? tsToIso(data.read_at) : null,
+    event_count: data.event_count ?? 0,
     tags,
     created_at: tsToIso(data.created_at),
     updated_at: tsToIso(data.updated_at),
@@ -607,6 +609,7 @@ export async function createChapter(
         description: payload.description ?? "",
         notes: notesToDoc(notes),
         read_at: readAt,
+        event_count: 0,
         novel_id: novelId,
         volume_id: volumeId,
         tag_ids: [],

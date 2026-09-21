@@ -1,4 +1,10 @@
-import { doc, setDoc, Timestamp, updateDoc } from "firebase/firestore/lite";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  Timestamp,
+  updateDoc,
+} from "firebase/firestore/lite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./app";
 import {
@@ -29,6 +35,17 @@ async function seedChapter(
   title: string,
 ) {
   await setDoc(
+    doc(db, "novels", novelId, "volumes", volumeId),
+    {
+      number: 1,
+      chapter_count: 0,
+      read_count: 0,
+      adaptation_count: 0,
+      event_count: 0,
+    },
+    { merge: true },
+  );
+  await setDoc(
     doc(db, "novels", novelId, "volumes", volumeId, "chapters", chapterId),
     {
       number,
@@ -39,6 +56,7 @@ async function seedChapter(
       volume_id: volumeId,
       tag_ids: [],
       character_ids: [],
+      event_count: 0,
     },
   );
 }
@@ -93,6 +111,16 @@ describe("events", () => {
     expect(event.chapter_volume_id).toBe("vol-1");
     expect(event.chapter_title).toBe("The Duel");
     expect(event.chapter_number).toBe(3);
+    expect(
+      (await getDoc(doc(db, "novels", "novel-1", "volumes", "vol-1"))).data(),
+    ).toMatchObject({ event_count: 1 });
+    expect(
+      (
+        await getDoc(
+          doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "ch-1"),
+        )
+      ).data(),
+    ).toMatchObject({ event_count: 1 });
   });
 
   it("updating chapter_id re-denormalizes chapter fields, and clearing it nulls them", async () => {
@@ -113,6 +141,20 @@ describe("events", () => {
     });
     expect(moved.chapter_title).toBe("Second");
     expect(moved.chapter_number).toBe(2);
+    expect(
+      (
+        await getDoc(
+          doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "ch-1"),
+        )
+      ).data(),
+    ).toMatchObject({ event_count: 0 });
+    expect(
+      (
+        await getDoc(
+          doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "ch-2"),
+        )
+      ).data(),
+    ).toMatchObject({ event_count: 1 });
 
     const cleared = await updateEvent("novel-1", event.id, {
       chapter_id: null,
@@ -121,6 +163,9 @@ describe("events", () => {
     expect(cleared.chapter_volume_id).toBeNull();
     expect(cleared.chapter_title).toBeNull();
     expect(cleared.chapter_number).toBeNull();
+    expect(
+      (await getDoc(doc(db, "novels", "novel-1", "volumes", "vol-1"))).data(),
+    ).toMatchObject({ event_count: 0 });
   });
 
   it("lists events for a novel ordered by sort_order", async () => {
@@ -237,18 +282,38 @@ describe("events", () => {
     expect(updated.character_names).toEqual(["Bob"]);
   });
 
-  it("deletes an event", async () => {
+  it("deletes a linked event and clamps counters at zero", async () => {
+    await seedChapter("novel-1", "vol-1", "ch-1", 1, "First");
     const event = await createEvent("novel-1", {
       title: "Gone",
       description: "",
       story_date: "",
       sort_order: 0,
-      chapter_id: null,
+      chapter_id: "ch-1",
+      chapter_volume_id: "vol-1",
     });
+
+    await updateDoc(doc(db, "novels", "novel-1", "volumes", "vol-1"), {
+      event_count: 0,
+    });
+    await updateDoc(
+      doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "ch-1"),
+      { event_count: 0 },
+    );
 
     await deleteEvent("novel-1", event.id);
 
     const remaining = await getEvents("novel-1");
     expect(remaining.find((e) => e.id === event.id)).toBeUndefined();
+    expect(
+      (await getDoc(doc(db, "novels", "novel-1", "volumes", "vol-1"))).data(),
+    ).toMatchObject({ event_count: 0 });
+    expect(
+      (
+        await getDoc(
+          doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "ch-1"),
+        )
+      ).data(),
+    ).toMatchObject({ event_count: 0 });
   });
 });

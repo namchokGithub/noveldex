@@ -125,14 +125,17 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 | Owner document | Stored fields | Source of truth |
 | --- | --- | --- |
 | `novels/{novelId}` | `volume_count`, `chapter_count`, `read_count` | Descendant Volume documents and regular Chapter documents in the Novel. |
-| `novels/{novelId}/volumes/{volumeId}` | `chapter_count`, `read_count` | Regular Chapter documents directly beneath that Volume. |
+| `novels/{novelId}/volumes/{volumeId}` | `chapter_count`, `read_count`, `adaptation_count`, `event_count` | Regular Chapter documents, all direct Adaptation documents, and Events linked to an existing Chapter beneath that Volume. |
+| `novels/{novelId}/volumes/{volumeId}/chapters/{chapterId}` | `event_count` | Events linked to that Chapter. |
 
 A Chapter counts only when `kind === "chapter"`. A regular unread Chapter contributes `{ chapter_count: 1, read_count: 0 }`; a regular read Chapter contributes `{ chapter_count: 1, read_count: 1 }`. Every special entry — including `prologue`, `epilogue`, `interlude`, and `other` — contributes zero to both counters regardless of `read_at`. Therefore, changing a special entry's Date Read never changes `read_count`; changing a regular Chapter from unread to read adds one, and changing its read date while it remains read adds zero.
 
 Stored counters are derived data and never the source of truth. Chapter and Volume mutations maintain them alongside source writes; a Firebase Admin backfill recomputes absolute totals from source documents and is used to reconcile existing data before readers switch to counters.
 
+Adaptation counters change only when an Adaptation is created or deleted; editing one does not alter its volume ownership. Event counters change only when an Event is created/deleted with a linked Chapter, or when its chapter link is added, removed, or moved. Updating event content, date, page, or order does not alter any counter. The event/adaptation source mutation and all affected counters are written in one Firestore transaction. Counter decrements clamp to zero so stale legacy values cannot become negative. The reconciliation utility writes `counter_schema_version: 2` and recomputes `adaptation_count` and `event_count` even though no reader displays them yet.
+
 **Rollout:** (1) deploy counter-writing mutations while readers retain current queries, (2) block authenticated client writes for maintenance, (3) dry-run/apply/verify the Admin backfill, (4) deploy counter readers and cursor UI, (5) restore writes, then (6) verify after a create/read/unread/delete Chapter smoke sequence.
 
 **Trade-offs:** This adds write maintenance and a temporary production write pause, but keeps Firebase Lite and avoids unavailable aggregation APIs. Counter drift is recoverable by rerunning the source-of-truth backfill.
 
-Event and adaptation counts are intentionally not denormalized. The volume detail page does not show an aggregate overview; it avoids an events query entirely and fetches at most one adaptation for its latest-item preview. Add counters only if a future UX requires displaying those totals without reading their source collections.
+The volume detail page still does not display these counters: it avoids an events query entirely and fetches at most one adaptation for its latest-item preview. The counters are maintained ahead of the future aggregate UI so enabling that UI will not require a source-collection scan.
