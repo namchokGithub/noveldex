@@ -213,8 +213,8 @@ async function tagsForChapter(
   tagIds: string[],
 ): Promise<Tag[]> {
   if (tagIds.length === 0) return [];
-  const allTags = await getTags(novelId);
-  return resolveTags(tagIds, new Map(allTags.map((t) => [t.id, t])));
+  const tags = await getTagsByIds(novelId, tagIds);
+  return resolveTags(tagIds, new Map(tags.map((tag) => [tag.id, tag])));
 }
 
 async function hydrateNoteReferences(

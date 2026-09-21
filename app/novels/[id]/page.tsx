@@ -215,6 +215,8 @@ export default async function NovelPage({
                   source_img_url: volume.source_img_url,
                   chapter_count: volume.chapter_count,
                   read_count: volume.read_count,
+                  adaptation_count: volume.adaptation_count,
+                  event_count: volume.event_count,
                   created_at: volume.created_at,
                   updated_at: volume.updated_at,
                   chapterCount: volume.chapter_count,
