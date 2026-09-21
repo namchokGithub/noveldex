@@ -482,6 +482,7 @@ export async function getChapter(
   novelId: string,
   volumeId: string,
   chapterId: string,
+  includeCharacters = true,
 ): Promise<ChapterWithCharacters> {
   const snapshot = await getDoc(chapterRef(novelId, volumeId, chapterId));
   if (!snapshot.exists()) {
@@ -506,12 +507,17 @@ export async function getChapter(
     ]),
   ];
   const characters =
-    (data.character_ids ?? []).length === 0
+    !includeCharacters || (data.character_ids ?? []).length === 0
       ? []
       : await getCharactersByIds(novelId, data.character_ids ?? []).catch(
           () => [],
         );
-  return { ...chapter, characters, mentioned_character_names };
+  return {
+    ...chapter,
+    character_ids: data.character_ids ?? [],
+    characters,
+    mentioned_character_names,
+  };
 }
 
 export interface ChapterCreatePayload {

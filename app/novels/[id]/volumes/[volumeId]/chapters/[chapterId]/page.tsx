@@ -22,6 +22,7 @@ import {
   getEventsByChapter,
 } from "@/libs/api";
 import { buildEntityId } from "@/libs/entities/keys";
+import { charactersByIds } from "@/libs/charactersByIds";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { formatChapterPrefix } from "@/libs/chapterLabel";
 
@@ -40,7 +41,7 @@ export async function generateMetadata({
   const { id, volumeId, chapterId } = await params;
 
   try {
-    const chapter = await getChapterCached(id, volumeId, chapterId);
+    const chapter = await getChapterCached(id, volumeId, chapterId, false);
 
     return {
       title: chapter.title_en || chapter.title,
@@ -71,13 +72,16 @@ export default async function ChapterPage({
 
   try {
     const [loadedChapter, loadedEvents, loadedAdaptations, characters, genericEntities] = await Promise.all([
-      getChapterCached(id, volumeId, chapterId),
+      getChapterCached(id, volumeId, chapterId, false),
       getEventsByChapter(id, chapterId),
       getAdaptationsByChapter(id, volumeId, chapterId),
       getAllCharacters(id),
       getEntities(id),
     ]);
-    chapter = loadedChapter;
+    chapter = {
+      ...loadedChapter,
+      characters: charactersByIds(characters, loadedChapter.character_ids),
+    };
     events = loadedEvents;
     adaptations = loadedAdaptations;
     noteCharacters = characters;

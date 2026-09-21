@@ -199,6 +199,7 @@ export interface Character {
 }
 
 export interface ChapterWithCharacters extends Chapter {
+  character_ids: string[];
   characters: Character[];
   mentioned_character_names: string[];
 }
