@@ -26,13 +26,18 @@ async function loadNovel(
   novelId: string,
   labels: ChapterKindLabels,
 ): Promise<{ documents: SearchDocument[]; entities: Entity[] }> {
+  const charactersPromise = getAllCharacters(novelId);
+  const characterNameById = charactersPromise.then(
+    (characters) =>
+      new Map(characters.map((character) => [character.id, character.name])),
+  );
   const [volumes, chapters, characters, genericEntities, events, adaptations] =
     await Promise.all([
       getVolumesFlat(novelId),
       getChaptersFlatDetailed(novelId),
-      getAllCharacters(novelId),
+      charactersPromise,
       getEntities(novelId),
-      getEvents(novelId),
+      getEvents(novelId, characterNameById),
       getAdaptationsForNovel(novelId),
     ]);
   const entities: Entity[] = [
