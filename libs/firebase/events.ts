@@ -21,6 +21,7 @@ import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getAllCharacters } from "./characters";
 import { applyNonNegativeCounterDeltas } from "./counters";
+import { chapterEventOrder } from "@/libs/timelineOrder";
 
 interface EventDoc {
   title: string;
@@ -314,10 +315,7 @@ export async function getEventsByChapter(
     .map((item) =>
       toEvent(novelId, item.id, item.data() as EventDoc, new Map()),
     )
-    .sort(
-      (left, right) =>
-        left.sort_order - right.sort_order || left.id.localeCompare(right.id),
-    );
+    .sort(chapterEventOrder);
 }
 
 export async function getEventsByVolume(

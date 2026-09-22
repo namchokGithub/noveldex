@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { eventOrder, nextEventPosition } from "./timelineOrder";
+import {
+  chapterEventOrder,
+  eventOrder,
+  nextEventPosition,
+} from "./timelineOrder";
 import type { NovelEvent } from "@/app/types";
 
 function event(
@@ -48,6 +52,30 @@ describe("eventOrder", () => {
         volumes,
       ),
     ).toBeLessThan(0);
+  });
+});
+
+describe("chapterEventOrder", () => {
+  it("orders a chapter's events by story page, then position, then id", () => {
+    expect(
+      [
+        event("last-page", "c", null, 0),
+        event("page-two-later", "c", 2, 2),
+        event("page-one", "c", 1, 10),
+        event("page-two-first", "c", 2, 1),
+        event("page-two-same-position-b", "c", 2, 3),
+        event("page-two-same-position-a", "c", 2, 3),
+      ]
+        .sort(chapterEventOrder)
+        .map((item) => item.id),
+    ).toEqual([
+      "page-one",
+      "page-two-first",
+      "page-two-later",
+      "page-two-same-position-a",
+      "page-two-same-position-b",
+      "last-page",
+    ]);
   });
 });
 

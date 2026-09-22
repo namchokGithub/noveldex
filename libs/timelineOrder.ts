@@ -51,3 +51,16 @@ export function eventOrder(
     ].find((value) => value !== 0) ?? 0
   );
 }
+
+export function chapterEventOrder(
+  a: Pick<NovelEvent, "id" | "page_number" | "sort_order">,
+  b: Pick<NovelEvent, "id" | "page_number" | "sort_order">,
+): number {
+  return (
+    [
+      (a.page_number ?? UNKNOWN) - (b.page_number ?? UNKNOWN),
+      a.sort_order - b.sort_order,
+      a.id.localeCompare(b.id),
+    ].find((value) => value !== 0) ?? 0
+  );
+}
