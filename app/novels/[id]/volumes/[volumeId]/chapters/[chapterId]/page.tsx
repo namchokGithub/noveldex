@@ -25,6 +25,7 @@ import { buildEntityId } from "@/libs/entities/keys";
 import { charactersByIds } from "@/libs/charactersByIds";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { formatChapterPrefix } from "@/libs/chapterLabel";
+import type { ChapterWithCharacters } from "@/app/types";
 
 // Next.js calls generateMetadata and the page body separately for the same
 // request; cache() dedupes their getChapter() calls into a single Firestore read.
@@ -64,14 +65,20 @@ export default async function ChapterPage({
   const { id, volumeId, chapterId } = await params;
   const { find = "", note = "" } = await searchParams;
 
-  let chapter;
+  let chapter: ChapterWithCharacters;
   let events;
   let adaptations;
   let noteEntities;
   let noteCharacters;
 
   try {
-    const [loadedChapter, loadedEvents, loadedAdaptations, characters, genericEntities] = await Promise.all([
+    const [
+      loadedChapter,
+      loadedEvents,
+      loadedAdaptations,
+      characters,
+      genericEntities,
+    ] = await Promise.all([
       getChapterCached(id, volumeId, chapterId, false),
       getEventsByChapter(id, chapterId),
       getAdaptationsByChapter(id, volumeId, chapterId),
@@ -86,7 +93,14 @@ export default async function ChapterPage({
     adaptations = loadedAdaptations;
     noteCharacters = characters;
     noteEntities = [
-      ...characters.map((character) => ({ id: buildEntityId(id, "character", character.id), novelId: id, type: "character" as const, name: character.name, aliases: character.aliases, description: character.description })),
+      ...characters.map((character) => ({
+        id: buildEntityId(id, "character", character.id),
+        novelId: id,
+        type: "character" as const,
+        name: character.name,
+        aliases: character.aliases,
+        description: character.description,
+      })),
       ...genericEntities,
     ];
   } catch (error) {

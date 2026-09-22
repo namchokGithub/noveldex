@@ -65,11 +65,15 @@ export { getCharacterRoles } from "@/libs/firebase/characterRoles";
 // Characters domain via Firestore
 export {
   getCharacters,
+  getCharactersPage,
   getAllCharacters,
   getCharacter,
   createCharacter,
   updateCharacter,
   deleteCharacter,
+  decodeCharacterCursor,
+  encodeCharacterCursor,
+  resolveCharacterCursorSearch,
 } from "@/libs/firebase/characters";
 export type {
   CharacterCreatePayload,

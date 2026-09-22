@@ -389,9 +389,41 @@ const en = {
 
   "characters.eyebrow": "Characters",
   "characters.directoryTitle": "Cast directory",
-  "characters.directoryDescription":
-    "Browse tracked cast, role labels, and chapter appearance counts.",
+  "characters.directoryDescription": "Browse tracked cast and role labels.",
   "characters.noCharacters": "No characters yet.",
+  "characters.roleFilter": "Role",
+  "characters.roleGuide": "Role definitions",
+  "characters.roleGuideIntro":
+    "A quick reference for how each role functions in a story.",
+  "characters.roleGuideFooter":
+    "Roles describe narrative function, not morality.",
+  "characters.role.main.name": "Main",
+  "characters.role.main.summary": "The prominent central cast",
+  "characters.role.main.description":
+    "A central character of the story or arc with a prominent role and ongoing involvement in important events, such as Rimuru in Tensura.",
+  "characters.role.protagonist.name": "Protagonist",
+  "characters.role.protagonist.summary": "The story's driving perspective",
+  "characters.role.protagonist.description":
+    "The character who drives the main story or serves as the center of its conflict. This can overlap with Main, but describes a story function rather than prominence alone.",
+  "characters.role.antagonist.name": "Antagonist",
+  "characters.role.antagonist.summary": "The central opposing force",
+  "characters.role.antagonist.description":
+    "A character whose goals oppose the protagonist or who provides the story's main resistance. They do not have to be evil.",
+  "characters.role.supporting.name": "Supporting",
+  "characters.role.supporting.summary": "A meaningful supporting presence",
+  "characters.role.supporting.description":
+    "A clearly involved supporting character who helps move the story forward, supports the main cast, or has a subplot without being the story's center.",
+  "characters.role.minor.name": "Minor",
+  "characters.role.minor.summary": "A limited or occasional presence",
+  "characters.role.minor.description":
+    "A character with a small or occasional part, usually serving a specific scene or event without much impact on the overall story.",
+  "character.deleteConfirmTitle": "Delete {name}?",
+  "character.deleteConfirmBody": "This character will be deleted.",
+  "character.appearance": "Appearance",
+  "character.personality": "Personality",
+  "character.trivia": "Trivia",
+  "character.showMore": "Show more",
+  "character.showLess": "Show less",
   "characters.chapter.one": "{count} chapter",
   "characters.chapter.other": "{count} chapters",
 

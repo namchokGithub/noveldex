@@ -30,6 +30,7 @@ describe("novels", () => {
     expect(novel.author).toBe("Test Author");
     expect(novel.status).toBe("reading");
     expect(novel.volume_count).toBe(0);
+    expect(novel.character_count).toBe(0);
     expect(novel.chapter_count).toBe(0);
     expect(novel.read_count).toBe(0);
     expect(() => new Date(novel.created_at).toISOString()).not.toThrow();

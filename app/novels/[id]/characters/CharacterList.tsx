@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import type { Character, PaginationMeta } from "@/app/types";
+import type { Character, CharacterRole, PaginationMeta } from "@/app/types";
 import {
   emptyStateClassName,
   listClassName,
@@ -14,33 +14,48 @@ import {
 } from "../../ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { useRouter } from "next/navigation";
-import { canNavigatePage } from "@/libs/pagination";
+import { buildCursorPageSearch, canNavigatePage } from "@/libs/pagination";
 import { Select } from "@/components/ui/Select";
+import LocalizedDate from "@/components/i18n/LocalizedDate";
 
 export default function CharacterList({
   novelId,
   characters,
   pagination,
+  previousCursor,
+  nextCursor,
+  roles,
+  roleId,
 }: {
   novelId: string;
   characters: Character[];
   pagination: PaginationMeta;
+  previousCursor: string | null;
+  nextCursor: string | null;
+  roles: CharacterRole[];
+  roleId: string | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  function buildPageHref(page: number, perPage = pagination.per_page) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(page));
-    params.set("per_page", String(perPage));
-    return `${pathname}?${params.toString()}`;
+  function handlePerPageChange(nextPerPage: number) {
+    router.push(
+      `${pathname}?${buildCursorPageSearch(searchParams.toString(), {
+        page: 1,
+        perPage: nextPerPage,
+        cursor: null,
+      })}`,
+    );
   }
 
-  function handlePerPageChange(nextPerPage: number) {
+  function handleRoleChange(nextRoleId: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", "1");
-    params.set("per_page", String(nextPerPage));
+    params.delete("after");
+    params.delete("before");
+    if (nextRoleId) params.set("role", nextRoleId);
+    else params.delete("role");
     router.push(`${pathname}?${params.toString()}`);
   }
 
@@ -57,20 +72,16 @@ export default function CharacterList({
     pagination.page * pagination.per_page,
     pagination.total_items,
   );
-  const canGoPrevious = canNavigatePage(
-    pagination.page,
-    pagination.total_pages,
-    "previous",
-  );
-  const canGoNext = canNavigatePage(
-    pagination.page,
-    pagination.total_pages,
-    "next",
-  );
+  const canGoPrevious =
+    previousCursor !== null &&
+    canNavigatePage(pagination.page, pagination.total_pages, "previous");
+  const canGoNext =
+    nextCursor !== null &&
+    canNavigatePage(pagination.page, pagination.total_pages, "next");
 
   return (
-    <div className={listClassName}>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
+    <div className={`${listClassName} overflow-visible!`}>
+      <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
           <T
             k="common.showing"
@@ -82,13 +93,16 @@ export default function CharacterList({
           />
         </p>
         <label className="flex items-center gap-2 text-sm text-stone-500">
-          <T k="common.perPage" />
+          <T k="characters.roleFilter" />
           <Select
-            value={String(pagination.per_page)}
-            onValueChange={(value) => handlePerPageChange(Number(value))}
-            wrapperClassName="min-w-20"
+            value={roleId ?? ""}
+            onValueChange={handleRoleChange}
+            wrapperClassName="min-w-36"
             className="py-2"
-            options={[5, 10, 20, 50].map((size) => ({ value: String(size), label: String(size) }))}
+            options={[
+              { value: "", label: "All" },
+              ...roles.map((role) => ({ value: role.id, label: role.name })),
+            ]}
           />
         </label>
       </div>
@@ -110,22 +124,16 @@ export default function CharacterList({
                       {char.aliases.join(", ")}
                     </span>
                   ) : null}
+                  <span className="mt-1 block truncate text-xs text-stone-400">
+                    <T k="common.updated" />:{" "}
+                    <LocalizedDate value={char.updated_at} />
+                  </span>
                 </div>
               </div>
               <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
                 <span
                   className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${roleColorClassNames[char.role] ?? roleColorClassNames.minor}`}>
                   {char.role_name ?? char.role}
-                </span>
-                <span className="text-xs text-stone-500">
-                  <T
-                    k={
-                      char.chapter_count === 1
-                        ? "characters.chapter.one"
-                        : "characters.chapter.other"
-                    }
-                    values={{ count: char.chapter_count }}
-                  />
                 </span>
               </div>
             </Link>
@@ -140,26 +148,49 @@ export default function CharacterList({
             values={{ page: pagination.page, total: pagination.total_pages }}
           />
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <label className="flex items-center gap-2 text-sm text-stone-500">
+            <T k="common.perPage" />
+            <Select
+              value={String(pagination.per_page)}
+              onValueChange={(value) => handlePerPageChange(Number(value))}
+              wrapperClassName="min-w-20"
+              className="py-2"
+              options={[5, 10, 20, 50].map((size) => ({
+                value: String(size),
+                label: String(size),
+              }))}
+            />
+          </label>
           <button
             type="button"
             disabled={!canGoPrevious}
-            onClick={() =>
-              router.push(buildPageHref(Math.max(1, pagination.page - 1)))
-            }
+            onClick={() => {
+              if (!previousCursor) return;
+              router.push(
+                `${pathname}?${buildCursorPageSearch(searchParams.toString(), {
+                  page: Math.max(1, pagination.page - 1),
+                  perPage: pagination.per_page,
+                  cursor: { name: "before", value: previousCursor },
+                })}`,
+              );
+            }}
             className={secondaryButtonClassName}>
             <T k="common.previous" />
           </button>
           <button
             type="button"
             disabled={!canGoNext}
-            onClick={() =>
+            onClick={() => {
+              if (!nextCursor) return;
               router.push(
-                buildPageHref(
-                  Math.min(pagination.total_pages, pagination.page + 1),
-                ),
-              )
-            }
+                `${pathname}?${buildCursorPageSearch(searchParams.toString(), {
+                  page: Math.min(pagination.total_pages, pagination.page + 1),
+                  perPage: pagination.per_page,
+                  cursor: { name: "after", value: nextCursor },
+                })}`,
+              );
+            }}
             className={secondaryButtonClassName}>
             <T k="common.next" />
           </button>

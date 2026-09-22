@@ -36,6 +36,12 @@ beforeEach(async () => {
     name: "Minor",
     is_active: true,
   });
+  await setDoc(doc(db, "novels", "novel-1"), {
+    character_count: 0,
+    volume_count: 0,
+    chapter_count: 0,
+    read_count: 0,
+  });
 });
 
 describe("getChaptersByVolume legacy references", () => {

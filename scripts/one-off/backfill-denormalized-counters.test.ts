@@ -54,10 +54,16 @@ describe("counterTargets", () => {
         { chapter_id: "missing", chapter_volume_id: "volume-1" },
       ],
       [{ volume_id: "volume-1" }],
+      [{ id: "character-1" }, { id: "character-2" }],
     );
 
     expect(targets).toEqual({
-      novel: { volume_count: 2, chapter_count: 3, read_count: 1 },
+      novel: {
+        volume_count: 2,
+        character_count: 2,
+        chapter_count: 3,
+        read_count: 1,
+      },
       volumes: {
         "volume-1": {
           chapter_count: 2,
@@ -80,6 +86,10 @@ describe("counterTargets", () => {
           legacy: { event_count: 0 },
         },
         "volume-2": { c3: { event_count: 0 } },
+      },
+      characters: {
+        "character-1": { chapter_count: 0 },
+        "character-2": { chapter_count: 0 },
       },
     });
   });
@@ -283,6 +293,9 @@ describe("backfillDatabase", () => {
               Object.assign(documentToUpdate.data(), target);
               return Promise.resolve();
             },
+            flush: async () => {
+              await Promise.resolve();
+            },
             close: async () => {
               writerCloses += 1;
             },
@@ -361,6 +374,7 @@ describe("backfillDatabase", () => {
           path: "novels/n1",
           target: {
             volume_count: 1,
+            character_count: 0,
             chapter_count: 2,
             read_count: 1,
             counter_schema_version: 2,

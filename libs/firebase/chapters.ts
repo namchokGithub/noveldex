@@ -38,6 +38,7 @@ import { getTags, getTagsByIds } from "./tags";
 import { notesForEntity } from "@/libs/entityCrossReferences";
 import type { EntityId } from "@/libs/entities/types";
 import {
+  applyCharacterChapterCountDeltas,
   applyChapterCounterDelta,
   chapterCounterContribution,
   chapterCounterDelta,
@@ -175,6 +176,19 @@ function markerRef(novelId: string, volumeId: string, number: number) {
     "chapterNumbers",
     String(number),
   );
+}
+
+function characterIdDelta(before: readonly string[], after: readonly string[]) {
+  const beforeIds = new Set(before);
+  const afterIds = new Set(after);
+  return [
+    ...[...afterIds]
+      .filter((id) => !beforeIds.has(id))
+      .map((characterId) => ({ characterId, delta: 1 })),
+    ...[...beforeIds]
+      .filter((id) => !afterIds.has(id))
+      .map((characterId) => ({ characterId, delta: -1 })),
+  ];
 }
 
 function toChapter(id: string, data: ChapterDoc, tags: Tag[]): Chapter {
@@ -593,13 +607,19 @@ export async function createChapter(
     ) {
       throw new Error("Volume is being deleted.");
     }
+    let marker: ReturnType<typeof markerRef> | null = null;
     if (number !== null) {
-      const marker = markerRef(novelId, volumeId, number);
+      marker = markerRef(novelId, volumeId, number);
       const existing = await tx.get(marker);
       if (existing.exists())
         throw new Error("chapter number already exists in this volume");
-      tx.set(marker, { chapter_id: chapterRefNew.id });
     }
+    await applyCharacterChapterCountDeltas(
+      tx,
+      novelId,
+      [...counts.keys()].map((characterId) => ({ characterId, delta: 1 })),
+    );
+    if (marker !== null) tx.set(marker, { chapter_id: chapterRefNew.id });
     tx.set(
       chapterRefNew,
       withCreateTimestamps({
@@ -705,6 +725,7 @@ export async function updateChapter(
   }
 
   const changesCountedState =
+    payload.notes !== undefined ||
     payload.read_at !== undefined ||
     payload.kind !== undefined ||
     payload.number !== undefined ||
@@ -741,6 +762,15 @@ export async function updateChapter(
         if (existing.exists() && existing.data().chapter_id !== chapterId)
           throw new Error("chapter number already exists in this volume");
       }
+
+      const nextCharacterIds = Array.isArray(update.character_ids)
+        ? (update.character_ids as string[])
+        : (current.character_ids ?? []);
+      await applyCharacterChapterCountDeltas(
+        tx,
+        novelId,
+        characterIdDelta(current.character_ids ?? [], nextCharacterIds),
+      );
 
       if (current.number !== number) {
         if (current.number !== null)
@@ -790,6 +820,14 @@ export async function deleteChapter(
     if (!snapshot.exists()) return;
     const current = snapshot.data() as ChapterDoc;
     const { number } = current;
+    await applyCharacterChapterCountDeltas(
+      tx,
+      novelId,
+      (current.character_ids ?? []).map((characterId) => ({
+        characterId,
+        delta: -1,
+      })),
+    );
     tx.delete(ref);
     if (number !== null) tx.delete(markerRef(novelId, volumeId, number));
     const contribution = chapterCounterContribution({

@@ -389,9 +389,41 @@ const th = {
 
   "characters.eyebrow": "ตัวละคร",
   "characters.directoryTitle": "สารบบตัวละคร",
-  "characters.directoryDescription":
-    "ดูรายชื่อตัวละคร บทบาท และจำนวนตอนที่ปรากฏ",
+  "characters.directoryDescription": "ดูรายชื่อตัวละครและบทบาท",
   "characters.noCharacters": "ยังไม่มีตัวละคร",
+  "characters.roleFilter": "บทบาท",
+  "characters.roleGuide": "คำอธิบายบทบาท",
+  "characters.roleGuideIntro":
+    "สรุปสั้น ๆ ว่าแต่ละบทบาททำหน้าที่อย่างไรในเรื่อง",
+  "characters.roleGuideFooter":
+    "บทบาทอธิบายหน้าที่ในโครงเรื่อง ไม่ได้ตัดสินศีลธรรม",
+  "characters.role.main.name": "Main",
+  "characters.role.main.summary": "ตัวละครหลักที่โดดเด่น",
+  "characters.role.main.description":
+    "ตัวละครหลักของเรื่องหรือของ arc นั้น ๆ มีบทเด่นมากและเกี่ยวข้องกับเหตุการณ์สำคัญต่อเนื่อง เช่น Rimuru ใน Tensura",
+  "characters.role.protagonist.name": "Protagonist",
+  "characters.role.protagonist.summary": "ตัวละครหลักหรือผู้ดำเนินเรื่องหลัก",
+  "characters.role.protagonist.description":
+    "ตัวละครที่เป็นฝ่ายดำเนินเรื่องหลักหรือจุดศูนย์กลางของ conflict อาจซ้ำกับ Main ได้ แต่เน้นบทบาทในโครงเรื่องมากกว่าความเด่น",
+  "characters.role.antagonist.name": "Antagonist",
+  "characters.role.antagonist.summary": "ตัวละครฝ่ายตรงข้าม",
+  "characters.role.antagonist.description":
+    "ตัวละครที่มีเป้าหมายขัดกับตัวละครหลักหรือเป็นตัวละครฝ่ายตรงข้าม ไม่จำเป็นต้องเป็นตัวร้าย",
+  "characters.role.supporting.name": "Supporting",
+  "characters.role.supporting.summary": "ตัวละครสมทบที่มีบทบาทสำคัญ",
+  "characters.role.supporting.description":
+    "ตัวละครสมทบที่มีบทบาทชัด ช่วยขับเคลื่อนเรื่อง ช่วยตัวละครหลัก หรือมี sub plot ของตัวเอง แต่ไม่ใช่ศูนย์กลางของเรื่อง",
+  "characters.role.minor.name": "Minor",
+  "characters.role.minor.summary": "ตัวละครที่มีบทจำกัดหรือปรากฏเป็นช่วง ๆ",
+  "characters.role.minor.description":
+    "ตัวละครรองที่มีบทน้อย ปรากฏเป็นช่วง ๆ มีหน้าที่เฉพาะฉากหรือเหตุการณ์ และมีผลต่อภาพรวมของเรื่องไม่มาก",
+  "character.deleteConfirmTitle": "ลบ {name} หรือไม่?",
+  "character.deleteConfirmBody": "ตัวละครนี้จะถูกลบออก",
+  "character.appearance": "รูปลักษณ์",
+  "character.personality": "บุคลิก",
+  "character.trivia": "เกร็ดน่ารู้",
+  "character.showMore": "แสดงเพิ่มเติม",
+  "character.showLess": "แสดงน้อยลง",
   "characters.chapter.one": "{count} ตอน",
   "characters.chapter.other": "{count} ตอน",
 

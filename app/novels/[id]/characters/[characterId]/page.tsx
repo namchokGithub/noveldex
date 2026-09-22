@@ -40,7 +40,7 @@ export default async function CharacterPage({
   }
 
   return (
-    <DashboardPage maxWidth="max-w-4xl">
+    <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
         <Link href={`/novels/${id}/characters`} className={backLinkClassName}>
           ← <T k="nav.characters" />

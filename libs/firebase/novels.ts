@@ -20,6 +20,7 @@ interface NovelDoc {
   description: string;
   cover_url: string;
   volume_count?: number;
+  character_count?: number;
   chapter_count?: number;
   read_count?: number;
   created_at: Timestamp;
@@ -39,6 +40,7 @@ function toNovel(id: string, data: NovelDoc): Novel {
     description: data.description,
     cover_url: data.cover_url,
     volume_count: data.volume_count ?? 0,
+    character_count: data.character_count ?? 0,
     chapter_count: data.chapter_count ?? 0,
     read_count: data.read_count ?? 0,
     created_at: tsToIso(data.created_at),
@@ -75,6 +77,7 @@ export async function createNovel(payload: NovelCreatePayload): Promise<Novel> {
     withCreateTimestamps({
       ...payload,
       volume_count: 0,
+      character_count: 0,
       chapter_count: 0,
       read_count: 0,
     }),

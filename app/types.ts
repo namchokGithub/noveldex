@@ -9,6 +9,7 @@ export interface Novel {
   description: string;
   cover_url: string;
   volume_count: number;
+  character_count: number;
   chapter_count: number;
   read_count: number;
   created_at: string;
@@ -191,6 +192,12 @@ export interface Character {
   role_name: string;
   profile_image_url: string | null;
   description: string;
+  appearance: string;
+  personality: string;
+  trivia: string;
+  appearance_content_json?: RichNoteDocument;
+  personality_content_json?: RichNoteDocument;
+  trivia_content_json?: RichNoteDocument;
   first_appearance_chapter_id: string | null;
   chapter_count: number;
   chapters?: ChapterSummary[];
@@ -206,6 +213,19 @@ export interface ChapterWithCharacters extends Chapter {
 
 export interface CharacterListSummary {
   total_characters: number;
+}
+
+export interface CharacterCursor {
+  name: string;
+  id: string;
+}
+
+export interface CharacterPage {
+  novel: Novel;
+  items: Character[];
+  pagination: PaginationMeta;
+  previousCursor: CharacterCursor | null;
+  nextCursor: CharacterCursor | null;
 }
 
 export interface PaginatedCharacters {

@@ -67,6 +67,99 @@ async function expectParentCounters(
 }
 
 describe("chapters", () => {
+  it("maintains distinct character chapter counts across create, note replacement, and delete", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await setDoc(doc(db, "novels", "novel-1", "characters", "alice"), {
+      name: "Alice",
+      aliases: [],
+      role_id: "role-minor",
+      role: "minor",
+      role_name: "Minor",
+      chapter_count: 0,
+    });
+    await setDoc(doc(db, "novels", "novel-1", "characters", "bob"), {
+      name: "Bob",
+      aliases: [],
+      role_id: "role-minor",
+      role: "minor",
+      role_name: "Minor",
+      chapter_count: 0,
+    });
+
+    const chapter = await createChapter("novel-1", "vol-1", {
+      number: 1,
+      title_en: "One",
+      notes: [
+        {
+          id: "one",
+          content: "[[Alice]] and [[Alice]]",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ],
+    });
+    expect(
+      (await getDoc(doc(db, "novels", "novel-1", "characters", "alice"))).data()
+        ?.chapter_count,
+    ).toBe(1);
+
+    await updateChapter("novel-1", "vol-1", chapter.id, {
+      notes: [
+        {
+          id: "one",
+          content: "[[Bob]]",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ],
+    });
+    expect(
+      (await getDoc(doc(db, "novels", "novel-1", "characters", "alice"))).data()
+        ?.chapter_count,
+    ).toBe(0);
+    expect(
+      (await getDoc(doc(db, "novels", "novel-1", "characters", "bob"))).data()
+        ?.chapter_count,
+    ).toBe(1);
+
+    await deleteChapter("novel-1", "vol-1", chapter.id);
+    expect(
+      (await getDoc(doc(db, "novels", "novel-1", "characters", "bob"))).data()
+        ?.chapter_count,
+    ).toBe(0);
+  });
+
+  it("does not create a Character document for a stale chapter reference", async () => {
+    await seedVolume("novel-1", "vol-1");
+    await setDoc(
+      doc(db, "novels", "novel-1", "volumes", "vol-1", "chapters", "legacy"),
+      {
+        number: 1,
+        title: "Legacy",
+        title_en: "Legacy",
+        summary: "",
+        notes: [],
+        read_at: null,
+        novel_id: "novel-1",
+        volume_id: "vol-1",
+        tag_ids: [],
+        character_ids: ["deleted-character"],
+        created_at: Timestamp.now(),
+        updated_at: Timestamp.now(),
+      },
+    );
+
+    await deleteChapter("novel-1", "vol-1", "legacy");
+
+    expect(
+      (
+        await getDoc(
+          doc(db, "novels", "novel-1", "characters", "deleted-character"),
+        )
+      ).exists(),
+    ).toBe(false);
+  });
+
   it("creates a chapter, sets a volume-scoped chapterNumbers marker, and denormalizes novel_id/volume_id", async () => {
     await seedVolume("novel-1", "vol-1");
 
