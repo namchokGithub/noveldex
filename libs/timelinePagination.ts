@@ -1,5 +1,5 @@
 export const STORY_PAGES_PER_VIEW = 10;
-export const STORY_SEQUENCES_PER_VIEW = 20;
+export const STORY_SEQUENCES_PER_VIEW = 10;
 
 export interface TimelinePagination<T> {
   current: number;

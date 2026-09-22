@@ -30,21 +30,21 @@ describe("paginateStoryPages", () => {
 });
 
 describe("paginateStorySequences", () => {
-  it("keeps a numbered story page's events in story order and limits each sequence view to twenty", () => {
+  it("keeps a numbered story page's events in story order and limits each sequence view to ten", () => {
     const events = Array.from(
-      { length: 23 },
+      { length: 11 },
       (_, index) => `event-${index + 1}`,
     );
 
     expect(paginateStorySequences(events, 1)).toEqual({
       current: 1,
       total: 2,
-      items: Array.from({ length: 20 }, (_, index) => `event-${index + 1}`),
+      items: Array.from({ length: 10 }, (_, index) => `event-${index + 1}`),
     });
     expect(paginateStorySequences(events, 2)).toEqual({
       current: 2,
       total: 2,
-      items: ["event-21", "event-22", "event-23"],
+      items: ["event-11"],
     });
   });
 });
