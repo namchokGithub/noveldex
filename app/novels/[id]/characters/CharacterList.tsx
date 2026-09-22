@@ -116,16 +116,6 @@ export default function CharacterList({
                   className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${roleColorClassNames[char.role] ?? roleColorClassNames.minor}`}>
                   {char.role_name ?? char.role}
                 </span>
-                <span className="text-xs text-stone-500">
-                  <T
-                    k={
-                      char.chapter_count === 1
-                        ? "characters.chapter.one"
-                        : "characters.chapter.other"
-                    }
-                    values={{ count: char.chapter_count }}
-                  />
-                </span>
               </div>
             </Link>
           </li>

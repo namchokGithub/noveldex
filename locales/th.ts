@@ -390,8 +390,10 @@ const th = {
   "characters.eyebrow": "ตัวละคร",
   "characters.directoryTitle": "สารบบตัวละคร",
   "characters.directoryDescription":
-    "ดูรายชื่อตัวละคร บทบาท และจำนวนตอนที่ปรากฏ",
+    "ดูรายชื่อตัวละครและบทบาท",
   "characters.noCharacters": "ยังไม่มีตัวละคร",
+  "character.deleteConfirmTitle": "ลบ {name} หรือไม่?",
+  "character.deleteConfirmBody": "ตัวละครนี้จะถูกลบออก",
   "characters.chapter.one": "{count} ตอน",
   "characters.chapter.other": "{count} ตอน",
 

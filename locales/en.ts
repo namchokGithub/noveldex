@@ -390,8 +390,10 @@ const en = {
   "characters.eyebrow": "Characters",
   "characters.directoryTitle": "Cast directory",
   "characters.directoryDescription":
-    "Browse tracked cast, role labels, and chapter appearance counts.",
+    "Browse tracked cast and role labels.",
   "characters.noCharacters": "No characters yet.",
+  "character.deleteConfirmTitle": "Delete {name}?",
+  "character.deleteConfirmBody": "This character will be deleted.",
   "characters.chapter.one": "{count} chapter",
   "characters.chapter.other": "{count} chapters",
 

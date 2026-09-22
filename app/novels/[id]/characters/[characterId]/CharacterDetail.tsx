@@ -11,6 +11,7 @@ import type {
 } from "../../../../types";
 import {
   cardClassName,
+  FormError,
   ghostButtonClassName,
   inputClassName,
   listClassName,
@@ -21,9 +22,10 @@ import {
   secondaryButtonClassName,
   smallLabelClassName,
 } from "../../../ui";
+import ConfirmDialog from "../../../ConfirmDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { ChapterLabel } from "@/components/chapters/ChapterLabel";
-import { updateCharacter } from "@/libs/api";
+import { deleteCharacter, updateCharacter } from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
@@ -32,6 +34,7 @@ import { dependentRefreshes } from "@/libs/search/refresh";
 import { buildEntityId } from "@/libs/entities/keys";
 import { relatedNotesForCharacter } from "@/libs/characterRelatedNotes";
 import { crossReferencePreview } from "@/libs/crossReferencePreview";
+import { userErrorMessage } from "@/libs/userErrorMessage";
 import { Select } from "@/components/ui/Select";
 import CharacterProfileImageModal from "./CharacterProfileImageModal";
 
@@ -49,11 +52,13 @@ export default function CharacterDetail({
   adaptations: Adaptation[];
 }) {
   const { t } = useI18n();
-  const { documents, dependents, entityMap, upsertMany } = useSearchIndex();
+  const { documents, dependents, entityMap, upsertMany, discardMany } =
+    useSearchIndex();
   const { isAdmin } = useAuth();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     tone: "success" | "error";
@@ -109,8 +114,30 @@ export default function CharacterDetail({
       setEditing(false);
       setSnackbar({ tone: "success", message: t("character.saveSuccess") });
       router.refresh();
-    } catch {
-      const message = t("common.networkError");
+    } catch (cause) {
+      const message = userErrorMessage(cause, t);
+      setError(message);
+      setSnackbar({ tone: "error", message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove() {
+    setSaving(true);
+    setError(null);
+    try {
+      await deleteCharacter(novelId, character.id);
+      const entityId = buildEntityId(novelId, "character", character.id);
+      const nextEntities = new Map(entityMap);
+      nextEntities.delete(entityId);
+      discardMany([entityId]);
+      upsertMany(
+        dependentRefreshes(entityId, dependents, documents, nextEntities),
+      );
+      router.push(`/novels/${novelId}/characters`);
+    } catch (cause) {
+      const message = userErrorMessage(cause, t);
       setError(message);
       setSnackbar({ tone: "error", message });
     } finally {
@@ -165,6 +192,13 @@ export default function CharacterDetail({
           {editing ? (
             <div className="flex gap-2">
               <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                disabled={saving}
+                className={`${secondaryButtonClassName} border-rose-200 text-rose-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus-visible:ring-rose-200`}>
+                {t("common.delete")}
+              </button>
+              <button
                 onClick={cancel}
                 disabled={saving}
                 className={ghostButtonClassName}>
@@ -187,7 +221,7 @@ export default function CharacterDetail({
         </div>
       </div>
 
-      {error && <p className="text-sm text-rose-600">{error}</p>}
+      {error && <FormError>{error}</FormError>}
 
       <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className={cardClassName}>
@@ -403,6 +437,18 @@ export default function CharacterDetail({
         message={snackbar?.message}
         onClose={() => setSnackbar(null)}
         closeLabel={t("common.ok")}
+      />
+      <ConfirmDialog
+        open={confirmingDelete}
+        eyebrow={t("characters.eyebrow")}
+        title={t("character.deleteConfirmTitle", { name: character.name })}
+        description={t("character.deleteConfirmBody")}
+        confirmLabel={saving ? t("common.deleting") : t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        onConfirm={() => void remove()}
+        onCancel={() => setConfirmingDelete(false)}
+        busy={saving}
+        danger
       />
     </div>
   );
