@@ -28,8 +28,10 @@ function event(
 }
 describe("eventOrder", () => {
   it("orders placement, page, sort order, then id", () => {
-    const chapters = [{ id: "c", volume_id: "v", sort_order: 1 }],
-      volumes = [{ id: "v", number: 1 }];
+    const chapters = new Map([
+        ["c", { id: "c", volume_id: "v", sort_order: 1 }],
+      ]),
+      volumes = new Map([["v", { id: "v", number: 1 }]]);
     expect(
       eventOrder(
         event("placed", "c", 1),

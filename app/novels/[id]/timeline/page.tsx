@@ -193,23 +193,36 @@ export default function TimelinePage({
         filterChars.some((id) => event.character_ids.includes(id)),
       )
     : events;
+  const chapterById = useMemo(
+    () => new Map(chapters.map((chapter) => [chapter.id, chapter])),
+    [chapters],
+  );
+  const volumeById = useMemo(
+    () => new Map(volumes.map((volume) => [volume.id, volume])),
+    [volumes],
+  );
+  const characterById = useMemo(
+    () => new Map(characters.map((character) => [character.id, character])),
+    [characters],
+  );
   const groups = useMemo<TimelineGroup[]>(() => {
     const result = new Map<string, TimelineGroup>();
     for (const event of [...displayed].sort((a, b) =>
-      eventOrder(a, b, chapters, volumes),
+      eventOrder(a, b, chapterById, volumeById),
     )) {
-      const chapter = chapters.find((x) => x.id === event.chapter_id) ?? null;
+      const chapter =
+        (event.chapter_id ? chapterById.get(event.chapter_id) : undefined) ??
+        null;
       const volume =
-        volumes.find(
-          (x) => x.id === (event.chapter_volume_id ?? chapter?.volume_id),
-        ) ?? null;
+        volumeById.get(event.chapter_volume_id ?? chapter?.volume_id ?? "") ??
+        null;
       const key = chapter && volume ? `${volume.id}:${chapter.id}` : "unplaced";
       const group = result.get(key);
       if (group) group.events.push(event);
       else result.set(key, { key, volume, chapter, events: [event] });
     }
     return [...result.values()];
-  }, [chapters, displayed, volumes]);
+  }, [chapterById, displayed, volumeById]);
   const visibleGroups = selectedVolumeId
     ? groups.filter((group) => group.volume?.id === selectedVolumeId)
     : groups;
@@ -488,7 +501,7 @@ export default function TimelinePage({
                 <PaginatedTimelineEvents
                   events={group.events}
                   novelId={novelId}
-                  characters={characters}
+                  characterById={characterById}
                   isAdmin={isAdmin}
                   editingId={editingId}
                   editForm={editForm}
@@ -548,7 +561,7 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 type TimelineEventListProps = {
   events: NovelEvent[];
   novelId: string;
-  characters: CharacterOption[];
+  characterById: ReadonlyMap<string, CharacterOption>;
   isAdmin: boolean;
   editingId: string | null;
   editForm: FormState;
@@ -684,7 +697,7 @@ function TimelineEventItem({
   event,
   events,
   novelId,
-  characters,
+  characterById,
   isAdmin,
   editingId,
   editForm,
@@ -713,7 +726,7 @@ function TimelineEventItem({
             events={events}
             chapters={chapters}
             volumes={volumes}
-            characters={characters}
+            characters={[...characterById.values()]}
             roles={roles}
             onAddCharacter={onAddCharacter}
           />
@@ -740,7 +753,7 @@ function TimelineEventItem({
         <EventCard
           event={event}
           novelId={novelId}
-          characters={characters}
+          characterById={characterById}
           onEdit={onEdit}
           onDelete={onDelete}
           deleting={deletingId === event.id}
@@ -756,7 +769,7 @@ function TimelineEventItem({
 function EventCard({
   event,
   novelId,
-  characters,
+  characterById,
   onEdit,
   onDelete,
   deleting,
@@ -765,7 +778,7 @@ function EventCard({
 }: {
   event: NovelEvent;
   novelId: string;
-  characters: CharacterOption[];
+  characterById: ReadonlyMap<string, CharacterOption>;
   onEdit: (event: NovelEvent) => void;
   onDelete: (event: NovelEvent) => void;
   deleting: boolean;
@@ -795,7 +808,7 @@ function EventCard({
       {event.character_ids.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {event.character_ids.map((id) => {
-            const character = characters.find((x) => x.id === id);
+            const character = characterById.get(id);
             return character ? (
               <Link
                 key={id}
