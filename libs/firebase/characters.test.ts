@@ -146,9 +146,21 @@ describe("characters", () => {
       before: second.previousCursor,
     });
 
-    expect(first.items.map((item) => item.id)).toEqual(["a", "b", "c", "d", "e"]);
+    expect(first.items.map((item) => item.id)).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+    ]);
     expect(second.items.map((item) => item.id)).toEqual(["f"]);
-    expect(previous.items.map((item) => item.id)).toEqual(["a", "b", "c", "d", "e"]);
+    expect(previous.items.map((item) => item.id)).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+    ]);
     expect(first.pagination.total_items).toBe(6);
   });
 
@@ -201,6 +213,41 @@ describe("characters", () => {
     expect(character.role_name).toBe("Protagonist");
     expect(character.aliases).toEqual([]);
     expect(character.chapter_count).toBe(0);
+  });
+
+  it("persists appearance, personality, and trivia through create and update", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Alice",
+      role: "minor",
+      description: "A careful observer.",
+      aliases: [],
+      appearance: "Silver hair",
+      personality: "Thoughtful and reserved",
+      trivia: "Collects old maps",
+    });
+
+    expect(character).toMatchObject({
+      appearance: "Silver hair",
+      personality: "Thoughtful and reserved",
+      trivia: "Collects old maps",
+    });
+
+    const updated = await updateCharacter("novel-1", character.id, {
+      appearance: "Short silver hair",
+      personality: "Thoughtful but bold",
+      trivia: "Can read three scripts",
+    });
+
+    expect(updated).toMatchObject({
+      appearance: "Short silver hair",
+      personality: "Thoughtful but bold",
+      trivia: "Can read three scripts",
+    });
+    await expect(getCharacter("novel-1", character.id)).resolves.toMatchObject({
+      appearance: "Short silver hair",
+      personality: "Thoughtful but bold",
+      trivia: "Can read three scripts",
+    });
   });
 
   it("creates a character resolving a role code to role_id/role_name", async () => {
@@ -304,7 +351,7 @@ describe("characters", () => {
       name: "Grace",
       description: "",
       aliases: [],
-    })
+    });
 
     expect(character.role_id).toBe("role-minor");
     expect(character.role).toBe("minor");
@@ -356,7 +403,7 @@ describe("characters", () => {
 
   it("getCharacters paginates with a summary", async () => {
     for (let i = 0; i < 3; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
+
       await createCharacter("novel-1", {
         name: `Char ${i}`,
         role: "minor",

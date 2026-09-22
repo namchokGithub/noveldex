@@ -467,7 +467,9 @@ export function RichNoteContent({
     anchor: HTMLAnchorElement,
     relatedTarget: EventTarget | null,
   ) {
-    return relatedTarget instanceof globalThis.Node && anchor.contains(relatedTarget);
+    return (
+      relatedTarget instanceof globalThis.Node && anchor.contains(relatedTarget)
+    );
   }
   return editor ? (
     <div
@@ -540,11 +542,13 @@ export function RichNoteEditor({
   initialContent,
   initialContentJson,
   entities,
+  enableEntityReferences = true,
   onChange,
 }: {
   initialContent: string;
   initialContentJson?: RichNoteDocument;
   entities: Entity[];
+  enableEntityReferences?: boolean;
   onChange: (value: { content: string; contentJson: RichNoteDocument }) => void;
 }) {
   const [extensions] = useState(() => editorExtensions(entities));
@@ -715,113 +719,115 @@ export function RichNoteEditor({
           )}
         </div>
       </div>
-      <div className="relative border-b border-stone-200 p-2">
-        <button
-          type="button"
-          aria-expanded={entityPickerOpen}
-          aria-controls="entity-reference-picker"
-          onClick={() => setEntityPickerOpen((open) => !open)}
-          className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 shadow-sm transition hover:border-stone-300 hover:bg-stone-50">
-          [[ Entity reference ]]
-        </button>
-        {entityPickerOpen ? (
-          <div
-            id="entity-reference-picker"
-            className="absolute left-2 top-full z-30 mt-1 w-[min(30rem,calc(100vw-3rem))] rounded-xl border border-stone-200 bg-white p-3 shadow-xl">
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
-              <input
-                autoFocus
-                value={entityQuery}
-                onChange={(event) => {
-                  setEntityQuery(event.target.value);
-                  setEntityPage(1);
-                }}
-                placeholder="Search name or alias"
-                className="w-full rounded-lg border border-stone-200 py-2 pl-8 pr-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-stone-400"
-              />
-            </label>
+      {enableEntityReferences ? (
+        <div className="relative border-b border-stone-200 p-2">
+          <button
+            type="button"
+            aria-expanded={entityPickerOpen}
+            aria-controls="entity-reference-picker"
+            onClick={() => setEntityPickerOpen((open) => !open)}
+            className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 shadow-sm transition hover:border-stone-300 hover:bg-stone-50">
+            [[ Entity reference ]]
+          </button>
+          {entityPickerOpen ? (
             <div
-              className="mt-3 flex flex-wrap gap-1.5"
-              aria-label="Filter entity type">
-              {(
-                ["all", ...ENTITY_REFERENCE_TYPES] as EntityReferenceFilter[]
-              ).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => {
-                    setEntityFilter(type);
+              id="entity-reference-picker"
+              className="absolute left-2 top-full z-30 mt-1 w-[min(30rem,calc(100vw-3rem))] rounded-xl border border-stone-200 bg-white p-3 shadow-xl">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+                <input
+                  autoFocus
+                  value={entityQuery}
+                  onChange={(event) => {
+                    setEntityQuery(event.target.value);
                     setEntityPage(1);
                   }}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize transition ${entityFilter === type ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
-                  {type}
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 max-h-72 overflow-y-auto rounded-lg border border-stone-100">
-              {entityResults.items.length ? (
-                entityResults.items.map((entity) => (
+                  placeholder="Search name or alias"
+                  className="w-full rounded-lg border border-stone-200 py-2 pl-8 pr-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-stone-400"
+                />
+              </label>
+              <div
+                className="mt-3 flex flex-wrap gap-1.5"
+                aria-label="Filter entity type">
+                {(
+                  ["all", ...ENTITY_REFERENCE_TYPES] as EntityReferenceFilter[]
+                ).map((type) => (
                   <button
-                    key={entity.id}
+                    key={type}
                     type="button"
-                    onClick={() => chooseEntity(entity)}
-                    className="flex w-full items-start justify-between gap-3 border-b border-stone-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-stone-50">
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-stone-900">
-                        {entity.name}
-                      </span>
-                      {entity.aliases.length ? (
-                        <span className="block truncate text-xs text-stone-500">
-                          {entity.aliases.join(", ")}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span
-                      className="shrink-0 text-xs font-medium capitalize"
-                      style={{ color: TAG_COLORS[entity.type].color }}>
-                      {entity.type}
-                    </span>
+                    onClick={() => {
+                      setEntityFilter(type);
+                      setEntityPage(1);
+                    }}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize transition ${entityFilter === type ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
+                    {type}
                   </button>
-                ))
-              ) : (
-                <p className="px-3 py-8 text-center text-sm text-stone-500">
-                  No matching entities
-                </p>
-              )}
-            </div>
-            <div className="mt-3 flex items-center justify-between text-xs text-stone-500">
-              <span>
-                {filteredEntities.length} result
-                {filteredEntities.length === 1 ? "" : "s"}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label="Previous entity page"
-                  onClick={() => setEntityPage((page) => page - 1)}
-                  disabled={entityResults.currentPage === 1}
-                  className="grid size-7 place-items-center rounded border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40">
-                  <ChevronLeft className="size-4" />
-                </button>
+                ))}
+              </div>
+              <div className="mt-3 max-h-72 overflow-y-auto rounded-lg border border-stone-100">
+                {entityResults.items.length ? (
+                  entityResults.items.map((entity) => (
+                    <button
+                      key={entity.id}
+                      type="button"
+                      onClick={() => chooseEntity(entity)}
+                      className="flex w-full items-start justify-between gap-3 border-b border-stone-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-stone-50">
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-stone-900">
+                          {entity.name}
+                        </span>
+                        {entity.aliases.length ? (
+                          <span className="block truncate text-xs text-stone-500">
+                            {entity.aliases.join(", ")}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span
+                        className="shrink-0 text-xs font-medium capitalize"
+                        style={{ color: TAG_COLORS[entity.type].color }}>
+                        {entity.type}
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-3 py-8 text-center text-sm text-stone-500">
+                    No matching entities
+                  </p>
+                )}
+              </div>
+              <div className="mt-3 flex items-center justify-between text-xs text-stone-500">
                 <span>
-                  {entityResults.currentPage} / {entityResults.totalPages}
+                  {filteredEntities.length} result
+                  {filteredEntities.length === 1 ? "" : "s"}
                 </span>
-                <button
-                  type="button"
-                  aria-label="Next entity page"
-                  onClick={() => setEntityPage((page) => page + 1)}
-                  disabled={
-                    entityResults.currentPage === entityResults.totalPages
-                  }
-                  className="grid size-7 place-items-center rounded border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40">
-                  <ChevronRight className="size-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous entity page"
+                    onClick={() => setEntityPage((page) => page - 1)}
+                    disabled={entityResults.currentPage === 1}
+                    className="grid size-7 place-items-center rounded border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40">
+                    <ChevronLeft className="size-4" />
+                  </button>
+                  <span>
+                    {entityResults.currentPage} / {entityResults.totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next entity page"
+                    onClick={() => setEntityPage((page) => page + 1)}
+                    disabled={
+                      entityResults.currentPage === entityResults.totalPages
+                    }
+                    className="grid size-7 place-items-center rounded border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40">
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      ) : null}
       <EditorContent editor={editor} />
       <ModalDialog
         open={linkDialogOpen}
@@ -869,4 +875,35 @@ export function RichNoteEditor({
       </ModalDialog>
     </div>
   );
+}
+
+export function RichNotePreview({
+  content,
+  contentJson,
+}: {
+  content: string;
+  contentJson?: RichNoteDocument;
+}) {
+  const [extensions] = useState(() => [
+    StarterKit.configure({ heading: { levels: [3] }, link: false }),
+    Highlight,
+    Link.configure({ openOnClick: true }),
+  ]);
+  const editor = useEditor(
+    {
+      immediatelyRender: false,
+      editable: false,
+      extensions,
+      content: contentJson ?? createRichNoteDocument(content),
+      editorProps: {
+        attributes: {
+          class: `outline-none ${richNoteContentClassName}`,
+        },
+      },
+    },
+    [extensions, content, contentJson],
+  );
+
+  if (!editor) return null;
+  return <EditorContent editor={editor} />;
 }

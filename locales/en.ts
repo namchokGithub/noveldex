@@ -419,6 +419,11 @@ const en = {
     "A character with a small or occasional part, usually serving a specific scene or event without much impact on the overall story.",
   "character.deleteConfirmTitle": "Delete {name}?",
   "character.deleteConfirmBody": "This character will be deleted.",
+  "character.appearance": "Appearance",
+  "character.personality": "Personality",
+  "character.trivia": "Trivia",
+  "character.showMore": "Show more",
+  "character.showLess": "Show less",
   "characters.chapter.one": "{count} chapter",
   "characters.chapter.other": "{count} chapters",
 

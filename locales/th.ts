@@ -419,6 +419,11 @@ const th = {
     "ตัวละครรองที่มีบทน้อย ปรากฏเป็นช่วง ๆ มีหน้าที่เฉพาะฉากหรือเหตุการณ์ และมีผลต่อภาพรวมของเรื่องไม่มาก",
   "character.deleteConfirmTitle": "ลบ {name} หรือไม่?",
   "character.deleteConfirmBody": "ตัวละครนี้จะถูกลบออก",
+  "character.appearance": "รูปลักษณ์",
+  "character.personality": "บุคลิก",
+  "character.trivia": "เกร็ดน่ารู้",
+  "character.showMore": "แสดงเพิ่มเติม",
+  "character.showLess": "แสดงน้อยลง",
   "characters.chapter.one": "{count} ตอน",
   "characters.chapter.other": "{count} ตอน",
 

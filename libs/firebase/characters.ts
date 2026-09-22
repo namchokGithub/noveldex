@@ -23,6 +23,7 @@ import type {
   ChapterSummary,
   PaginatedCharacters,
 } from "@/app/types";
+import type { RichNoteDocument } from "@/libs/richNotes/document";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
@@ -38,6 +39,12 @@ interface CharacterDoc {
   role_name: string;
   profile_image_url: string | null;
   description: string;
+  appearance?: string;
+  personality?: string;
+  trivia?: string;
+  appearance_content_json?: RichNoteDocument;
+  personality_content_json?: RichNoteDocument;
+  trivia_content_json?: RichNoteDocument;
   chapter_count?: number;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -135,6 +142,12 @@ async function toCharacter(
     role_name: data.role_name,
     profile_image_url: data.profile_image_url,
     description: data.description,
+    appearance: data.appearance ?? "",
+    personality: data.personality ?? "",
+    trivia: data.trivia ?? "",
+    appearance_content_json: data.appearance_content_json,
+    personality_content_json: data.personality_content_json,
+    trivia_content_json: data.trivia_content_json,
     first_appearance_chapter_id: null,
     chapter_count: hydrate
       ? chapterCount
@@ -186,6 +199,12 @@ export interface CharacterCreatePayload {
   role_id?: string;
   role?: string;
   description: string;
+  appearance?: string;
+  personality?: string;
+  trivia?: string;
+  appearance_content_json?: RichNoteDocument;
+  personality_content_json?: RichNoteDocument;
+  trivia_content_json?: RichNoteDocument;
   aliases: string[];
   profile_image_url?: string | null;
 }
@@ -207,6 +226,18 @@ export async function createCharacter(
         name: payload.name,
         aliases: payload.aliases,
         description: payload.description,
+        appearance: payload.appearance ?? "",
+        personality: payload.personality ?? "",
+        trivia: payload.trivia ?? "",
+        ...(payload.appearance_content_json
+          ? { appearance_content_json: payload.appearance_content_json }
+          : {}),
+        ...(payload.personality_content_json
+          ? { personality_content_json: payload.personality_content_json }
+          : {}),
+        ...(payload.trivia_content_json
+          ? { trivia_content_json: payload.trivia_content_json }
+          : {}),
         profile_image_url: payload.profile_image_url ?? null,
         chapter_count: 0,
         ...resolvedRole,
@@ -233,6 +264,12 @@ export interface CharacterUpdatePayload {
   role_id?: string;
   role?: string;
   description?: string;
+  appearance?: string;
+  personality?: string;
+  trivia?: string;
+  appearance_content_json?: RichNoteDocument;
+  personality_content_json?: RichNoteDocument;
+  trivia_content_json?: RichNoteDocument;
   aliases?: string[];
   profile_image_url?: string | null;
 }
@@ -246,6 +283,16 @@ export async function updateCharacter(
   if (payload.name !== undefined) update.name = payload.name;
   if (payload.description !== undefined)
     update.description = payload.description;
+  if (payload.appearance !== undefined) update.appearance = payload.appearance;
+  if (payload.personality !== undefined)
+    update.personality = payload.personality;
+  if (payload.trivia !== undefined) update.trivia = payload.trivia;
+  if (payload.appearance_content_json !== undefined)
+    update.appearance_content_json = payload.appearance_content_json;
+  if (payload.personality_content_json !== undefined)
+    update.personality_content_json = payload.personality_content_json;
+  if (payload.trivia_content_json !== undefined)
+    update.trivia_content_json = payload.trivia_content_json;
   if (payload.aliases !== undefined) update.aliases = payload.aliases;
   if (payload.profile_image_url !== undefined) {
     update.profile_image_url = payload.profile_image_url;

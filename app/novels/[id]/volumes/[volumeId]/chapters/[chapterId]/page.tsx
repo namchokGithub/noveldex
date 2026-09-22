@@ -72,7 +72,13 @@ export default async function ChapterPage({
   let noteCharacters;
 
   try {
-    const [loadedChapter, loadedEvents, loadedAdaptations, characters, genericEntities] = await Promise.all([
+    const [
+      loadedChapter,
+      loadedEvents,
+      loadedAdaptations,
+      characters,
+      genericEntities,
+    ] = await Promise.all([
       getChapterCached(id, volumeId, chapterId, false),
       getEventsByChapter(id, chapterId),
       getAdaptationsByChapter(id, volumeId, chapterId),
@@ -87,7 +93,14 @@ export default async function ChapterPage({
     adaptations = loadedAdaptations;
     noteCharacters = characters;
     noteEntities = [
-      ...characters.map((character) => ({ id: buildEntityId(id, "character", character.id), novelId: id, type: "character" as const, name: character.name, aliases: character.aliases, description: character.description })),
+      ...characters.map((character) => ({
+        id: buildEntityId(id, "character", character.id),
+        novelId: id,
+        type: "character" as const,
+        name: character.name,
+        aliases: character.aliases,
+        description: character.description,
+      })),
       ...genericEntities,
     ];
   } catch (error) {

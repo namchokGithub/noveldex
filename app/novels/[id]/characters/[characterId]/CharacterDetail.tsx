@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Brain, Lightbulb, UserRound, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type {
@@ -9,6 +10,7 @@ import type {
   CharacterRole,
   NovelEvent,
 } from "../../../../types";
+import type { RichNoteDocument } from "@/libs/richNotes/document";
 import {
   cardClassName,
   FormError,
@@ -38,6 +40,10 @@ import { crossReferencePreview } from "@/libs/crossReferencePreview";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { Select } from "@/components/ui/Select";
 import CharacterProfileImageModal from "./CharacterProfileImageModal";
+import {
+  RichNoteEditor,
+  RichNoteContent,
+} from "@/components/notes/RichNoteEditor";
 
 export default function CharacterDetail({
   character,
@@ -72,6 +78,18 @@ export default function CharacterDetail({
     character.profile_image_url ?? "",
   );
   const [description, setDescription] = useState(character.description);
+  const [appearance, setAppearance] = useState(character.appearance ?? "");
+  const [personality, setPersonality] = useState(character.personality ?? "");
+  const [trivia, setTrivia] = useState(character.trivia ?? "");
+  const [appearanceJson, setAppearanceJson] = useState<
+    RichNoteDocument | undefined
+  >(character.appearance_content_json);
+  const [personalityJson, setPersonalityJson] = useState<
+    RichNoteDocument | undefined
+  >(character.personality_content_json);
+  const [triviaJson, setTriviaJson] = useState<RichNoteDocument | undefined>(
+    character.trivia_content_json,
+  );
   const [aliases, setAliases] = useState(character.aliases.join(", "));
 
   useResetOnSignOut(isAdmin, cancel);
@@ -97,6 +115,12 @@ export default function CharacterDetail({
               .map((s) => s.trim())
               .filter(Boolean)
           : [],
+        appearance,
+        personality,
+        trivia,
+        appearance_content_json: appearanceJson,
+        personality_content_json: personalityJson,
+        trivia_content_json: triviaJson,
       });
       const entity = {
         id: buildEntityId(novelId, "character", updated.id),
@@ -152,6 +176,12 @@ export default function CharacterDetail({
     setProfileImageUrl(character.profile_image_url ?? "");
     setDescription(character.description);
     setAliases(character.aliases.join(", "));
+    setAppearance(character.appearance ?? "");
+    setPersonality(character.personality ?? "");
+    setTrivia(character.trivia ?? "");
+    setAppearanceJson(character.appearance_content_json);
+    setPersonalityJson(character.personality_content_json);
+    setTriviaJson(character.trivia_content_json);
     setEditing(false);
     setError(null);
   }
@@ -228,8 +258,8 @@ export default function CharacterDetail({
 
       {error && <FormError>{error}</FormError>}
 
-      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className={cardClassName}>
+      <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <div className={`${cardClassName} h-fit`}>
           <p className={smallLabelClassName}>{t("character.role")}</p>
           {editing ? (
             <Select
@@ -257,9 +287,9 @@ export default function CharacterDetail({
           </div>
         </div>
 
-        <div className={`${cardClassName} space-y-5`}>
+        <div className="space-y-4">
           {editing && (
-            <div>
+            <div className={cardClassName}>
               <label className={smallLabelClassName}>
                 {t("addCharacter.profileImageUrl")}
               </label>
@@ -273,7 +303,7 @@ export default function CharacterDetail({
             </div>
           )}
 
-          <div>
+          <div className={`${cardClassName} space-y-4`}>
             <p className={smallLabelClassName}>{t("character.aliases")}</p>
             {editing ? (
               <input
@@ -310,7 +340,7 @@ export default function CharacterDetail({
             )}
           </div>
 
-          <div>
+          <div className={`${cardClassName} space-y-4`}>
             <p className={smallLabelClassName}>{t("common.description")}</p>
             {editing ? (
               <textarea
@@ -330,6 +360,34 @@ export default function CharacterDetail({
               </p>
             )}
           </div>
+
+          <CharacterRichField
+            label={t("character.appearance")}
+            icon={UserRound}
+            value={appearance}
+            editing={editing}
+            onChange={setAppearance}
+            initialContentJson={appearanceJson}
+            onContentJsonChange={setAppearanceJson}
+          />
+          <CharacterRichField
+            label={t("character.personality")}
+            icon={Brain}
+            value={personality}
+            editing={editing}
+            onChange={setPersonality}
+            initialContentJson={personalityJson}
+            onContentJsonChange={setPersonalityJson}
+          />
+          <CharacterRichField
+            label={t("character.trivia")}
+            icon={Lightbulb}
+            value={trivia}
+            editing={editing}
+            onChange={setTrivia}
+            initialContentJson={triviaJson}
+            onContentJsonChange={setTriviaJson}
+          />
         </div>
       </div>
 
@@ -349,7 +407,7 @@ export default function CharacterDetail({
                   </span>
                   {ch.read_at && (
                     <span className="shrink-0 text-xs text-stone-500">
-                      {ch.read_at}
+                      <LocalizedDate value={ch.read_at} />
                     </span>
                   )}
                 </Link>
@@ -475,6 +533,92 @@ export default function CharacterDetail({
         busy={saving}
         danger
       />
+    </div>
+  );
+}
+
+function CharacterRichField({
+  label,
+  icon: Icon,
+  value,
+  editing,
+  onChange,
+  initialContentJson,
+  onContentJsonChange,
+}: {
+  label: string;
+  icon: LucideIcon;
+  value: string;
+  editing: boolean;
+  onChange: (value: string) => void;
+  initialContentJson?: RichNoteDocument;
+  onContentJsonChange: (value: RichNoteDocument) => void;
+}) {
+  const { t } = useI18n();
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+
+  useEffect(() => {
+    const element = previewRef.current;
+    if (!element) return;
+    if (expanded) return;
+    const updateOverflow = () =>
+      setCanExpand(element.scrollHeight > element.clientHeight + 1);
+    const frame = requestAnimationFrame(updateOverflow);
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(element);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [value, initialContentJson, expanded]);
+
+  return (
+    <div className={`${cardClassName} space-y-3`}>
+      <div
+        title={label}
+        className="flex items-center gap-2 border-b border-stone-200/60 pb-3">
+        <Icon
+          aria-hidden="true"
+          size={15}
+          strokeWidth={1.7}
+          className="text-stone-400"
+        />
+        <p className={`${smallLabelClassName} mb-0!`}>{label}</p>
+      </div>
+      {editing ? (
+        <RichNoteEditor
+          initialContent={value}
+          entities={[]}
+          enableEntityReferences={false}
+          initialContentJson={initialContentJson}
+          onChange={({ content, contentJson }) => {
+            onChange(content);
+            onContentJsonChange(contentJson);
+          }}
+        />
+      ) : value ? (
+        <>
+          <div
+            ref={previewRef}
+            className={expanded ? undefined : "line-clamp-3 overflow-hidden"}>
+            <RichNoteContent content={value} contentJson={initialContentJson} />
+          </div>
+          {canExpand ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setExpanded((current) => !current)}
+                className="text-sm font-medium text-stone-500 underline decoration-stone-300 underline-offset-4 hover:text-stone-900">
+                {expanded ? t("character.showLess") : t("character.showMore")}
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <p className="text-sm leading-7 text-stone-400">—</p>
+      )}
     </div>
   );
 }

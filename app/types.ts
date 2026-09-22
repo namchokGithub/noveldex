@@ -192,6 +192,12 @@ export interface Character {
   role_name: string;
   profile_image_url: string | null;
   description: string;
+  appearance: string;
+  personality: string;
+  trivia: string;
+  appearance_content_json?: RichNoteDocument;
+  personality_content_json?: RichNoteDocument;
+  trivia_content_json?: RichNoteDocument;
   first_appearance_chapter_id: string | null;
   chapter_count: number;
   chapters?: ChapterSummary[];
