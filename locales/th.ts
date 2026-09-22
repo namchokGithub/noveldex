@@ -475,7 +475,7 @@ const th = {
   "timeline.field.selectChapter": "— เลือกบท —",
   "timeline.field.page": "หน้า",
   "timeline.field.pagePlaceholder": "เช่น 12",
-  "timeline.field.sortOrder": "ลำดับเรียง *",
+  "timeline.field.sortOrder": "ลำดับเรียง",
   "timeline.field.characters": "ตัวละคร",
   "timeline.quickCharacter": "เพิ่มตัวละครใหม่และเลือกให้เหตุการณ์นี้",
   "timeline.quickCharacterName": "ชื่อตัวละคร",

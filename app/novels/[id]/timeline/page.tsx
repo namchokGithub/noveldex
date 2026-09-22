@@ -8,12 +8,15 @@ import { formatChapterLabel } from "@/libs/chapterLabel";
 import { localizedVolumeTitle } from "@/libs/volumeTitle";
 import { localizedChapterTitle } from "@/libs/chapterTitle";
 import { eventOrder, nextEventPosition } from "@/libs/timelineOrder";
+import {
+  paginateStoryPages,
+  paginateStorySequences,
+} from "@/libs/timelinePagination";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
 import {
   backLinkClassName,
   cardClassName,
   DashboardPage,
-  iconButtonClassName,
   inputClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
@@ -41,6 +44,7 @@ import {
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { normalizeEvent } from "@/libs/search/normalize";
+import { TimelineEventActions } from "./TimelineEventActions";
 
 interface ChapterOption {
   id: string;
@@ -97,6 +101,7 @@ export default function TimelinePage({
     [loading, setLoading] = useState(true);
   const [filterChars, setFilterChars] = useState<string[]>([]),
     [filterOpen, setFilterOpen] = useState(false);
+  const [selectedVolumeId, setSelectedVolumeId] = useState("");
   const filterRef = useRef<HTMLDivElement>(null);
   const [showAddForm, setShowAddForm] = useState(false),
     [addForm, setAddForm] = useState<FormState>(EMPTY_FORM),
@@ -153,6 +158,11 @@ export default function TimelinePage({
         setChapters(ch);
         setCharacters(char.map(({ id, name }) => ({ id, name })));
         setVolumes(volumeItems);
+        setSelectedVolumeId((current) =>
+          volumeItems.some((volume) => volume.id === current)
+            ? current
+            : (volumeItems[0]?.id ?? ""),
+        );
         setRoles(role);
       } catch {
         setSnackbar({ tone: "error", message: t("common.networkError") });
@@ -200,6 +210,9 @@ export default function TimelinePage({
     }
     return [...result.values()];
   }, [chapters, displayed, volumes]);
+  const visibleGroups = selectedVolumeId
+    ? groups.filter((group) => group.volume?.id === selectedVolumeId)
+    : groups;
   const toPayload = (form: FormState) => ({
     title: form.title.trim(),
     description: form.description.trim(),
@@ -427,12 +440,27 @@ export default function TimelinePage({
             )}
           </div>
         )}
+        {volumes.length > 0 && (
+          <div className="max-w-sm">
+            <label className={smallLabelClassName}>
+              {t("timeline.volume")}
+            </label>
+            <Select
+              value={selectedVolumeId}
+              onValueChange={setSelectedVolumeId}
+              options={volumes.map((volume) => ({
+                value: volume.id,
+                label: `${t("timeline.volume")} ${volume.number} · ${localizedVolumeTitle(volume, language)}`,
+              }))}
+            />
+          </div>
+        )}
         {loading ? (
           <EmptyState>{t("common.loading")}</EmptyState>
-        ) : groups.length === 0 ? (
+        ) : visibleGroups.length === 0 ? (
           <EmptyState>{t("timeline.noEvents")}</EmptyState>
         ) : (
-          groups.map((group) => (
+          visibleGroups.map((group) => (
             <section key={group.key} className="space-y-3">
               {group.volume && group.chapter ? (
                 <div>
@@ -457,68 +485,26 @@ export default function TimelinePage({
               )}
               <div className="relative">
                 <div className={timelineRailClassName} />
-                <ul className="flex flex-col gap-5">
-                  {group.events.map((event) => (
-                    <li
-                      id={`event-${event.id}`}
-                      key={event.id}
-                      className="relative pl-8">
-                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
-                        {event.page_number === null
-                          ? t("timeline.pageUnspecified")
-                          : `${t("timeline.page")} ${event.page_number}`}
-                      </p>
-                      <span className={timelineDotClassName} />
-                      {editingId === event.id && isAdmin ? (
-                        <form onSubmit={handleEdit} className={cardClassName}>
-                          <EventFormFields
-                            form={editForm}
-                            onChange={setEditForm}
-                            events={events}
-                            chapters={chapters}
-                            volumes={volumes}
-                            characters={characters}
-                            roles={roles}
-                            onAddCharacter={addCharacter}
-                          />
-                          {editError && (
-                            <p className="mt-2 text-sm text-rose-600">
-                              {editError}
-                            </p>
-                          )}
-                          <div className="mt-4 flex flex-wrap justify-end gap-2">
-                            <button
-                              type="button"
-                              disabled={editSaving}
-                              onClick={() => setEditingId(null)}
-                              className={secondaryButtonClassName}>
-                              {t("common.cancel")}
-                            </button>
-                            <button
-                              type="submit"
-                              disabled={editSaving}
-                              className={primaryButtonClassName}>
-                              {editSaving
-                                ? t("common.saving")
-                                : t("common.save")}
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-                        <EventCard
-                          event={event}
-                          novelId={novelId}
-                          characters={characters}
-                          onEdit={startEdit}
-                          onDelete={setConfirmDeleteEvent}
-                          deleting={deletingId === event.id}
-                          isAdmin={isAdmin}
-                          t={t}
-                        />
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                <PaginatedTimelineEvents
+                  events={group.events}
+                  novelId={novelId}
+                  characters={characters}
+                  isAdmin={isAdmin}
+                  editingId={editingId}
+                  editForm={editForm}
+                  editError={editError}
+                  editSaving={editSaving}
+                  onEditFormChange={setEditForm}
+                  onEdit={startEdit}
+                  onEditSubmit={handleEdit}
+                  onEditCancel={() => setEditingId(null)}
+                  onDelete={setConfirmDeleteEvent}
+                  deletingId={deletingId}
+                  chapters={chapters}
+                  volumes={volumes}
+                  roles={roles}
+                  onAddCharacter={addCharacter}
+                />
               </div>
             </section>
           ))
@@ -558,6 +544,213 @@ function EmptyState({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+type TimelineEventListProps = {
+  events: NovelEvent[];
+  novelId: string;
+  characters: CharacterOption[];
+  isAdmin: boolean;
+  editingId: string | null;
+  editForm: FormState;
+  editError: string | null;
+  editSaving: boolean;
+  onEditFormChange: (form: FormState) => void;
+  onEdit: (event: NovelEvent) => void;
+  onEditSubmit: (event: React.FormEvent) => Promise<void>;
+  onEditCancel: () => void;
+  onDelete: (event: NovelEvent) => void;
+  deletingId: string | null;
+  chapters: ChapterOption[];
+  volumes: VolumeSearchSource[];
+  roles: CharacterRole[];
+  onAddCharacter: (name: string, roleId: string) => Promise<CharacterOption>;
+};
+
+function PaginatedTimelineEvents(props: TimelineEventListProps) {
+  const { t } = useI18n();
+  const [storyPageView, setStoryPageView] = useState(1);
+  const numberedPages = [
+    ...new Set(
+      props.events.flatMap((event) =>
+        event.page_number === null ? [] : [event.page_number],
+      ),
+    ),
+  ].sort((left, right) => left - right);
+  const pages = paginateStoryPages(numberedPages, storyPageView);
+  const unnumbered = props.events.filter((event) => event.page_number === null);
+
+  return (
+    <div className="space-y-5">
+      {pages.items.map((pageNumber) => (
+        <TimelineStoryPage
+          key={pageNumber}
+          label={`${t("timeline.page")} ${pageNumber}`}
+          {...props}
+          events={props.events.filter(
+            (event) => event.page_number === pageNumber,
+          )}
+        />
+      ))}
+      {pages.total > 1 && (
+        <PaginationControls
+          current={pages.current}
+          total={pages.total}
+          onPrevious={() => setStoryPageView(pages.current - 1)}
+          onNext={() => setStoryPageView(pages.current + 1)}
+        />
+      )}
+      {unnumbered.length > 0 && (
+        <TimelineStoryPage
+          label={t("timeline.pageUnspecified")}
+          {...props}
+          events={unnumbered}
+        />
+      )}
+    </div>
+  );
+}
+
+function TimelineStoryPage({
+  label,
+  events,
+  ...props
+}: TimelineEventListProps & { label: string }) {
+  const [sequenceView, setSequenceView] = useState(1);
+  const sequences = paginateStorySequences(events, sequenceView);
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+        {label}
+      </p>
+      <ul className="flex flex-col gap-5">
+        {sequences.items.map((event) => (
+          <TimelineEventItem
+            key={event.id}
+            {...props}
+            events={events}
+            event={event}
+          />
+        ))}
+      </ul>
+      {sequences.total > 1 && (
+        <PaginationControls
+          current={sequences.current}
+          total={sequences.total}
+          onPrevious={() => setSequenceView(sequences.current - 1)}
+          onNext={() => setSequenceView(sequences.current + 1)}
+        />
+      )}
+    </div>
+  );
+}
+
+function PaginationControls({
+  current,
+  total,
+  onPrevious,
+  onNext,
+}: {
+  current: number;
+  total: number;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <button
+        type="button"
+        disabled={current === 1}
+        onClick={onPrevious}
+        className={secondaryButtonClassName}>
+        {t("common.previous")}
+      </button>
+      <span className="text-sm text-stone-500">
+        {t("common.pageOf", { page: current, total })}
+      </span>
+      <button
+        type="button"
+        disabled={current === total}
+        onClick={onNext}
+        className={secondaryButtonClassName}>
+        {t("common.next")}
+      </button>
+    </div>
+  );
+}
+
+function TimelineEventItem({
+  event,
+  events,
+  novelId,
+  characters,
+  isAdmin,
+  editingId,
+  editForm,
+  editError,
+  editSaving,
+  onEditFormChange,
+  onEdit,
+  onEditSubmit,
+  onEditCancel,
+  onDelete,
+  deletingId,
+  chapters,
+  volumes,
+  roles,
+  onAddCharacter,
+}: TimelineEventListProps & { event: NovelEvent }) {
+  const { t } = useI18n();
+  return (
+    <li id={`event-${event.id}`} className="relative pl-8">
+      <span className={timelineDotClassName} />
+      {editingId === event.id && isAdmin ? (
+        <form onSubmit={onEditSubmit} className={cardClassName}>
+          <EventFormFields
+            form={editForm}
+            onChange={onEditFormChange}
+            events={events}
+            chapters={chapters}
+            volumes={volumes}
+            characters={characters}
+            roles={roles}
+            onAddCharacter={onAddCharacter}
+          />
+          {editError && (
+            <p className="mt-2 text-sm text-rose-600">{editError}</p>
+          )}
+          <div className="mt-4 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              disabled={editSaving}
+              onClick={onEditCancel}
+              className={secondaryButtonClassName}>
+              {t("common.cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={editSaving}
+              className={primaryButtonClassName}>
+              {editSaving ? t("common.saving") : t("common.save")}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <EventCard
+          event={event}
+          novelId={novelId}
+          characters={characters}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          deleting={deletingId === event.id}
+          isAdmin={isAdmin}
+          t={t}
+        />
+      )}
+    </li>
+  );
+}
 // The translation function is passed through to keep this presentational card independent of context.
 
 function EventCard({
@@ -585,23 +778,14 @@ function EventCard({
         <p className="text-[15px] font-semibold leading-snug text-stone-900">
           {event.title}
         </p>
-        {isAdmin && (
-          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              onClick={() => onEdit(event)}
-              className={iconButtonClassName}
-              aria-label={t("common.edit")}>
-              ✏
-            </button>
-            <button
-              onClick={() => onDelete(event)}
-              disabled={deleting}
-              className={`${iconButtonClassName} text-lg leading-none hover:text-rose-600`}
-              aria-label={t("common.delete")}>
-              ×
-            </button>
-          </div>
-        )}
+        <TimelineEventActions
+          isAdmin={isAdmin}
+          deleting={deleting}
+          editLabel={t("common.edit")}
+          deleteLabel={t("common.delete")}
+          onEdit={() => onEdit(event)}
+          onDelete={() => onDelete(event)}
+        />
       </div>
       {event.description && (
         <p className="mb-3 line-clamp-2 text-[13px] leading-relaxed text-stone-600">
@@ -765,7 +949,10 @@ function EventFormFields({
               ...available.map((chapter) => ({
                 value: chapter.id,
                 label: formatChapterLabel(
-                  { ...chapter, title: localizedChapterTitle(chapter, language) },
+                  {
+                    ...chapter,
+                    title: localizedChapterTitle(chapter, language),
+                  },
                   labels,
                 ),
               })),
