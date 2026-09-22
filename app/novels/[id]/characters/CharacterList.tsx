@@ -80,7 +80,7 @@ export default function CharacterList({
     canNavigatePage(pagination.page, pagination.total_pages, "next");
 
   return (
-    <div className={`${listClassName} !overflow-visible`}>
+    <div className={`${listClassName} overflow-visible!`}>
       <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
           <T
@@ -92,19 +92,6 @@ export default function CharacterList({
             }}
           />
         </p>
-        <label className="flex items-center gap-2 text-sm text-stone-500">
-          <T k="common.perPage" />
-          <Select
-            value={String(pagination.per_page)}
-            onValueChange={(value) => handlePerPageChange(Number(value))}
-            wrapperClassName="min-w-20"
-            className="py-2"
-            options={[5, 10, 20, 50].map((size) => ({
-              value: String(size),
-              label: String(size),
-            }))}
-          />
-        </label>
         <label className="flex items-center gap-2 text-sm text-stone-500">
           <T k="characters.roleFilter" />
           <Select
@@ -138,7 +125,8 @@ export default function CharacterList({
                     </span>
                   ) : null}
                   <span className="mt-1 block truncate text-xs text-stone-400">
-                    <T k="common.updated" />: <LocalizedDate value={char.updated_at} />
+                    <T k="common.updated" />:{" "}
+                    <LocalizedDate value={char.updated_at} />
                   </span>
                 </div>
               </div>
@@ -160,7 +148,20 @@ export default function CharacterList({
             values={{ page: pagination.page, total: pagination.total_pages }}
           />
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <label className="flex items-center gap-2 text-sm text-stone-500">
+            <T k="common.perPage" />
+            <Select
+              value={String(pagination.per_page)}
+              onValueChange={(value) => handlePerPageChange(Number(value))}
+              wrapperClassName="min-w-20"
+              className="py-2"
+              options={[5, 10, 20, 50].map((size) => ({
+                value: String(size),
+                label: String(size),
+              }))}
+            />
+          </label>
           <button
             type="button"
             disabled={!canGoPrevious}

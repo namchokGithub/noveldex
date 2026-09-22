@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { CharacterRole } from "@/app/types";
 import {
+  FormError,
   ghostButtonClassName,
   inputClassName,
   fullScreenModalBackdropClassName,
@@ -17,6 +18,7 @@ import { useI18n } from "@/components/i18n/I18nProvider";
 import { createCharacter } from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Select } from "@/components/ui/Select";
+import { userErrorMessage } from "@/libs/userErrorMessage";
 
 export default function AddCharacterForm({
   novelId,
@@ -77,8 +79,8 @@ export default function AddCharacterForm({
       setOpen(false);
       setSnackbar({ tone: "success", message: t("addCharacter.success") });
       router.refresh();
-    } catch {
-      const message = t("common.networkError");
+    } catch (cause) {
+      const message = userErrorMessage(cause, t);
       setError(message);
       setSnackbar({ tone: "error", message });
     } finally {
@@ -98,93 +100,96 @@ export default function AddCharacterForm({
         </button>
       ) : typeof document !== "undefined" ? (
         createPortal(
-        <div className={fullScreenModalBackdropClassName}>
-          <div className={modalPanelClassName}>
-            <div className="mb-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-                {t("addCharacter.eyebrow")}
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
-                {t("addCharacter.title")}
-              </h2>
+          <div className={fullScreenModalBackdropClassName}>
+            <div className={modalPanelClassName}>
+              <div className="mb-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                  {t("addCharacter.eyebrow")}
+                </p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-stone-950">
+                  {t("addCharacter.title")}
+                </h2>
+              </div>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("addCharacter.nameRequired")}
+                  </label>
+                  <input
+                    name="name"
+                    required
+                    className={inputClassName}
+                    placeholder={t("addCharacter.namePlaceholder")}
+                  />
+                </div>
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("addCharacter.role")}
+                  </label>
+                  <Select
+                    name="role_id"
+                    defaultValue={defaultRoleId}
+                    options={roles.map((role) => ({
+                      value: role.id,
+                      label: role.name,
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("addCharacter.aliases")}
+                  </label>
+                  <input
+                    name="aliases"
+                    className={inputClassName}
+                    placeholder={t("addCharacter.aliasesPlaceholder")}
+                  />
+                </div>
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("addCharacter.profileImageUrl")}
+                  </label>
+                  <input
+                    name="profile_image_url"
+                    type="url"
+                    className={inputClassName}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                <div>
+                  <label className={smallLabelClassName}>
+                    {t("common.description")}
+                  </label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    className={inputClassName}
+                    placeholder={t("addCharacter.descriptionPlaceholder")}
+                  />
+                </div>
+                {error && <FormError>{error}</FormError>}
+                <div className="mt-1 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => {
+                      setOpen(false);
+                      setError(null);
+                    }}
+                    className={ghostButtonClassName}>
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className={primaryButtonClassName}>
+                    {submitting ? t("common.saving") : t("common.save")}
+                  </button>
+                </div>
+              </form>
             </div>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-              <div>
-                <label className={smallLabelClassName}>
-                  {t("addCharacter.nameRequired")}
-                </label>
-                <input
-                  name="name"
-                  required
-                  className={inputClassName}
-                  placeholder={t("addCharacter.namePlaceholder")}
-                />
-              </div>
-              <div>
-                <label className={smallLabelClassName}>
-                  {t("addCharacter.role")}
-                </label>
-                <Select
-                  name="role_id"
-                  defaultValue={defaultRoleId}
-                  options={roles.map((role) => ({ value: role.id, label: role.name }))}
-                />
-              </div>
-              <div>
-                <label className={smallLabelClassName}>
-                  {t("addCharacter.aliases")}
-                </label>
-                <input
-                  name="aliases"
-                  className={inputClassName}
-                  placeholder={t("addCharacter.aliasesPlaceholder")}
-                />
-              </div>
-              <div>
-                <label className={smallLabelClassName}>
-                  {t("addCharacter.profileImageUrl")}
-                </label>
-                <input
-                  name="profile_image_url"
-                  type="url"
-                  className={inputClassName}
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-              <div>
-                <label className={smallLabelClassName}>
-                  {t("common.description")}
-                </label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  className={inputClassName}
-                  placeholder={t("addCharacter.descriptionPlaceholder")}
-                />
-              </div>
-              {error && <p className="text-sm text-rose-600">{error}</p>}
-              <div className="mt-1 flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => {
-                    setOpen(false);
-                    setError(null);
-                  }}
-                  className={ghostButtonClassName}>
-                  {t("common.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={primaryButtonClassName}>
-                  {submitting ? t("common.saving") : t("common.save")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body,
+          </div>,
+          document.body,
         )
       ) : null}
 

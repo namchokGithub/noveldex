@@ -476,7 +476,9 @@ export async function getCharactersPage(
       toCharacter(novelId, d.id, d.data() as CharacterDoc, false),
     ),
   );
-  const totalItems = roleId ? (countSnapshot?.size ?? 0) : novel.character_count;
+  const totalItems = roleId
+    ? (countSnapshot?.size ?? 0)
+    : novel.character_count;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
   const first = pageDocs[0];
   const last = pageDocs.at(-1);
