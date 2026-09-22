@@ -19,8 +19,9 @@ import { eventsForEntity } from "@/libs/entityCrossReferences";
 import type { EntityId } from "@/libs/entities/types";
 import { db } from "./app";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
-import { getAllCharacters } from "./characters";
+import { getAllCharacters, getCharactersByIds } from "./characters";
 import { applyNonNegativeCounterDeltas } from "./counters";
+import { chapterEventOrder } from "@/libs/timelineOrder";
 
 interface EventDoc {
   title: string;
@@ -285,21 +286,23 @@ export async function getEvents(
     | ReadonlyMap<string, string>
     | Promise<ReadonlyMap<string, string>>,
 ): Promise<NovelEvent[]> {
-  const [snapshot, nameById] = await Promise.all([
-    getDocs(query(eventsCol(novelId), orderBy("sort_order", "asc"))),
-    // Callers that already loaded characters (such as Timeline) can supply
-    // their lookup promise, so both queries remain parallel without a second
-    // complete character collection read.
-    characterNameById ??
-      getAllCharacters(novelId).then(
-        (characters) =>
-          new Map(
-            characters.map((character) => [character.id, character.name]),
-          ),
-      ),
-  ]);
-  return snapshot.docs.map((d) =>
-    toEvent(novelId, d.id, d.data() as EventDoc, nameById),
+  const snapshot = await getDocs(
+    query(eventsCol(novelId), orderBy("sort_order", "asc")),
+  );
+  const eventDocs = snapshot.docs.map((item) => ({
+    id: item.id,
+    data: item.data() as EventDoc,
+  }));
+  const nameById = await (characterNameById ??
+    getCharactersByIds(
+      novelId,
+      eventDocs.flatMap((event) => event.data.character_ids ?? []),
+    ).then(
+      (characters) =>
+        new Map(characters.map((character) => [character.id, character.name])),
+    ));
+  return eventDocs.map((event) =>
+    toEvent(novelId, event.id, event.data, nameById),
   );
 }
 
@@ -314,10 +317,7 @@ export async function getEventsByChapter(
     .map((item) =>
       toEvent(novelId, item.id, item.data() as EventDoc, new Map()),
     )
-    .sort(
-      (left, right) =>
-        left.sort_order - right.sort_order || left.id.localeCompare(right.id),
-    );
+    .sort(chapterEventOrder);
 }
 
 export async function getEventsByVolume(

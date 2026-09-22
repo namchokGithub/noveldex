@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { eventOrder, nextEventPosition } from "./timelineOrder";
+import {
+  chapterEventOrder,
+  eventOrder,
+  nextEventPosition,
+} from "./timelineOrder";
 import type { NovelEvent } from "@/app/types";
 
 function event(
@@ -28,8 +32,10 @@ function event(
 }
 describe("eventOrder", () => {
   it("orders placement, page, sort order, then id", () => {
-    const chapters = [{ id: "c", volume_id: "v", sort_order: 1 }],
-      volumes = [{ id: "v", number: 1 }];
+    const chapters = new Map([
+        ["c", { id: "c", volume_id: "v", sort_order: 1 }],
+      ]),
+      volumes = new Map([["v", { id: "v", number: 1 }]]);
     expect(
       eventOrder(
         event("placed", "c", 1),
@@ -46,6 +52,60 @@ describe("eventOrder", () => {
         volumes,
       ),
     ).toBeLessThan(0);
+  });
+
+  it("keeps duplicate-number volumes together before comparing chapter order", () => {
+    const chapters = new Map([
+        [
+          "chapter-a",
+          { id: "chapter-a", volume_id: "volume-a", sort_order: 2 },
+        ],
+        [
+          "chapter-b",
+          { id: "chapter-b", volume_id: "volume-b", sort_order: 1 },
+        ],
+      ]),
+      volumes = new Map([
+        ["volume-a", { id: "volume-a", number: 1 }],
+        ["volume-b", { id: "volume-b", number: 1 }],
+      ]);
+
+    const volumeAEvent = {
+      ...event("a", "chapter-a", 1),
+      chapter_volume_id: "volume-a",
+    };
+    const volumeBEvent = {
+      ...event("b", "chapter-b", 1),
+      chapter_volume_id: "volume-b",
+    };
+
+    expect(
+      eventOrder(volumeAEvent, volumeBEvent, chapters, volumes),
+    ).toBeLessThan(0);
+  });
+});
+
+describe("chapterEventOrder", () => {
+  it("orders a chapter's events by story page, then position, then id", () => {
+    expect(
+      [
+        event("last-page", "c", null, 0),
+        event("page-two-later", "c", 2, 2),
+        event("page-one", "c", 1, 10),
+        event("page-two-first", "c", 2, 1),
+        event("page-two-same-position-b", "c", 2, 3),
+        event("page-two-same-position-a", "c", 2, 3),
+      ]
+        .sort(chapterEventOrder)
+        .map((item) => item.id),
+    ).toEqual([
+      "page-one",
+      "page-two-first",
+      "page-two-later",
+      "page-two-same-position-a",
+      "page-two-same-position-b",
+      "last-page",
+    ]);
   });
 });
 

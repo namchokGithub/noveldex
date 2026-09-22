@@ -476,7 +476,7 @@ const en = {
   "timeline.field.selectChapter": "— select chapter —",
   "timeline.field.page": "Page",
   "timeline.field.pagePlaceholder": "e.g. 12",
-  "timeline.field.sortOrder": "Sort order *",
+  "timeline.field.sortOrder": "Sort order",
   "timeline.field.characters": "Characters",
   "timeline.quickCharacter": "Create and select a new character",
   "timeline.quickCharacterName": "Character name",
