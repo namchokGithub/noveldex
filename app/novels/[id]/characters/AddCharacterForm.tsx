@@ -143,6 +143,24 @@ export default function AddCharacterForm({
                     name="aliases"
                     className={inputClassName}
                     placeholder={t("addCharacter.aliasesPlaceholder")}
+                    onKeyDown={(event) => {
+                      if (event.key !== " " || event.nativeEvent.isComposing)
+                        return;
+                      const input = event.currentTarget;
+                      const start = input.selectionStart ?? input.value.length;
+                      const end = input.selectionEnd ?? start;
+                      const before = input.value.slice(0, start);
+                      const after = input.value.slice(end);
+                      if (!before.trim() || before.trimEnd().endsWith(","))
+                        return;
+                      event.preventDefault();
+                      const next = `${before.trimEnd()}, ${after.trimStart()}`;
+                      input.value = next;
+                      const cursor = before.trimEnd().length + 2;
+                      requestAnimationFrame(() =>
+                        input.setSelectionRange(cursor, cursor),
+                      );
+                    }}
                   />
                 </div>
                 <div>

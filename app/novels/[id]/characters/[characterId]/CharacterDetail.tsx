@@ -178,7 +178,8 @@ export default function CharacterDetail({
                 {t("character.profile")}
               </div>
               <p className="text-xs text-stone-500">
-                {t("common.updated")}: <LocalizedDate value={character.updated_at} />
+                {t("common.updated")}:{" "}
+                <LocalizedDate value={character.updated_at} />
               </p>
               {editing ? (
                 <input
@@ -234,7 +235,10 @@ export default function CharacterDetail({
             <Select
               value={roleId}
               onValueChange={setRoleId}
-              options={roles.map((role) => ({ value: role.id, label: role.name }))}
+              options={roles.map((role) => ({
+                value: role.id,
+                label: role.name,
+              }))}
             />
           ) : (
             <span
@@ -277,6 +281,23 @@ export default function CharacterDetail({
                 onChange={(e) => setAliases(e.target.value)}
                 placeholder={t("addCharacter.aliasesPlaceholder")}
                 className={inputClassName}
+                onKeyDown={(event) => {
+                  if (event.key !== " " || event.nativeEvent.isComposing)
+                    return;
+                  const input = event.currentTarget;
+                  const start = input.selectionStart ?? input.value.length;
+                  const end = input.selectionEnd ?? start;
+                  const before = input.value.slice(0, start);
+                  const after = input.value.slice(end);
+                  if (!before.trim() || before.trimEnd().endsWith(",")) return;
+                  event.preventDefault();
+                  const next = `${before.trimEnd()}, ${after.trimStart()}`;
+                  setAliases(next);
+                  const cursor = before.trimEnd().length + 2;
+                  requestAnimationFrame(() =>
+                    input.setSelectionRange(cursor, cursor),
+                  );
+                }}
               />
             ) : (
               <p className="text-sm leading-6 text-stone-600">
