@@ -16,6 +16,7 @@ import { T } from "@/components/i18n/I18nProvider";
 import { useRouter } from "next/navigation";
 import { buildCursorPageSearch, canNavigatePage } from "@/libs/pagination";
 import { Select } from "@/components/ui/Select";
+import LocalizedDate from "@/components/i18n/LocalizedDate";
 
 export default function CharacterList({
   novelId,
@@ -109,6 +110,9 @@ export default function CharacterList({
                       {char.aliases.join(", ")}
                     </span>
                   ) : null}
+                  <span className="mt-1 block truncate text-xs text-stone-400">
+                    <T k="common.updated" />: <LocalizedDate value={char.updated_at} />
+                  </span>
                 </div>
               </div>
               <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">

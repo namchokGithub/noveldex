@@ -24,6 +24,7 @@ import {
 } from "../../../ui";
 import ConfirmDialog from "../../../ConfirmDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
+import LocalizedDate from "@/components/i18n/LocalizedDate";
 import { ChapterLabel } from "@/components/chapters/ChapterLabel";
 import { deleteCharacter, updateCharacter } from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -176,6 +177,9 @@ export default function CharacterDetail({
               <div className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
                 {t("character.profile")}
               </div>
+              <p className="text-xs text-stone-500">
+                {t("common.updated")}: <LocalizedDate value={character.updated_at} />
+              </p>
               {editing ? (
                 <input
                   value={name}
