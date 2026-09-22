@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import type { Character, PaginationMeta } from "@/app/types";
+import type { Character, CharacterRole, PaginationMeta } from "@/app/types";
 import {
   emptyStateClassName,
   listClassName,
@@ -24,12 +24,16 @@ export default function CharacterList({
   pagination,
   previousCursor,
   nextCursor,
+  roles,
+  roleId,
 }: {
   novelId: string;
   characters: Character[];
   pagination: PaginationMeta;
   previousCursor: string | null;
   nextCursor: string | null;
+  roles: CharacterRole[];
+  roleId: string | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -43,6 +47,16 @@ export default function CharacterList({
         cursor: null,
       })}`,
     );
+  }
+
+  function handleRoleChange(nextRoleId: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+    params.delete("after");
+    params.delete("before");
+    if (nextRoleId) params.set("role", nextRoleId);
+    else params.delete("role");
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   if (characters.length === 0 && pagination.page === 1) {
@@ -66,8 +80,8 @@ export default function CharacterList({
     canNavigatePage(pagination.page, pagination.total_pages, "next");
 
   return (
-    <div className={listClassName}>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
+    <div className={`${listClassName} !overflow-visible`}>
+      <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         <p className="text-sm text-stone-500">
           <T
             k="common.showing"
@@ -89,6 +103,19 @@ export default function CharacterList({
               value: String(size),
               label: String(size),
             }))}
+          />
+        </label>
+        <label className="flex items-center gap-2 text-sm text-stone-500">
+          <T k="characters.roleFilter" />
+          <Select
+            value={roleId ?? ""}
+            onValueChange={handleRoleChange}
+            wrapperClassName="min-w-36"
+            className="py-2"
+            options={[
+              { value: "", label: "All" },
+              ...roles.map((role) => ({ value: role.id, label: role.name })),
+            ]}
           />
         </label>
       </div>

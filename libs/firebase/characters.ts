@@ -420,6 +420,7 @@ export async function getCharactersPage(
     perPage?: number;
     after?: CharacterCursor | null;
     before?: CharacterCursor | null;
+    roleId?: string | null;
   },
 ): Promise<CharacterPage> {
   const after = options?.after ?? null;
@@ -435,9 +436,12 @@ export async function getCharactersPage(
     ALLOWED_PER_PAGE.includes(options?.perPage as number)
       ? (options?.perPage as number)
       : 5;
+  const roleId = options?.roleId ?? null;
+  const roleConstraint = roleId ? [where("role_id", "==", roleId)] : [];
   const charactersQuery = before
     ? query(
         charactersCol(novelId),
+        ...roleConstraint,
         orderBy("name", "desc"),
         orderBy(documentId(), "desc"),
         startAfter(before.name, before.id),
@@ -446,6 +450,7 @@ export async function getCharactersPage(
     : after
       ? query(
           charactersCol(novelId),
+          ...roleConstraint,
           orderBy("name", "asc"),
           orderBy(documentId(), "asc"),
           startAfter(after.name, after.id),
@@ -453,13 +458,17 @@ export async function getCharactersPage(
         )
       : query(
           charactersCol(novelId),
+          ...roleConstraint,
           orderBy("name", "asc"),
           orderBy(documentId(), "asc"),
           limit(perPage),
         );
-  const [novel, snapshot] = await Promise.all([
+  const [novel, snapshot, countSnapshot] = await Promise.all([
     getNovel(novelId),
     getDocs(charactersQuery),
+    roleId
+      ? getDocs(query(charactersCol(novelId), ...roleConstraint))
+      : Promise.resolve(null),
   ]);
   const pageDocs = before ? [...snapshot.docs].reverse() : snapshot.docs;
   const items = await Promise.all(
@@ -467,7 +476,7 @@ export async function getCharactersPage(
       toCharacter(novelId, d.id, d.data() as CharacterDoc, false),
     ),
   );
-  const totalItems = novel.character_count;
+  const totalItems = roleId ? (countSnapshot?.size ?? 0) : novel.character_count;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
   const first = pageDocs[0];
   const last = pageDocs.at(-1);

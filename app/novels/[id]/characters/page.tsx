@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddCharacterForm from "./AddCharacterForm";
 import CharacterList from "./CharacterList";
+import RoleGuide from "./RoleGuide";
 import { T } from "@/components/i18n/I18nProvider";
 import { backLinkClassName, DashboardPage, SectionHeading } from "../../ui";
 import {
@@ -30,6 +31,7 @@ export default async function CharactersPage({
     per_page?: string;
     after?: string;
     before?: string;
+    role?: string;
   }>;
 }) {
   const { id } = await params;
@@ -39,6 +41,7 @@ export default async function CharactersPage({
     ? requestedPerPage
     : 10;
   const { after, before } = resolveCharacterCursorSearch(resolvedSearchParams);
+  const roleId = resolvedSearchParams.role?.trim() || null;
   const page = normalizeCursorPage(
     parsePositiveInt(resolvedSearchParams.page, 1),
     Boolean(after || before),
@@ -49,7 +52,7 @@ export default async function CharactersPage({
 
   try {
     [characters, roles] = await Promise.all([
-      getCharactersPage(id, { page, perPage, after, before }),
+      getCharactersPage(id, { page, perPage, after, before, roleId }),
       getCharacterRoles(),
     ]);
   } catch (error) {
@@ -66,7 +69,12 @@ export default async function CharactersPage({
 
         <SectionHeading
           eyebrow={<T k="characters.eyebrow" />}
-          title={<T k="characters.directoryTitle" />}
+          title={
+            <span className="inline-flex items-center gap-2">
+              <T k="characters.directoryTitle" />
+              <RoleGuide />
+            </span>
+          }
           description={<T k="characters.directoryDescription" />}
           action={<AddCharacterForm novelId={id} roles={roles} />}
         />
@@ -74,6 +82,8 @@ export default async function CharactersPage({
         <CharacterList
           novelId={id}
           characters={characters.items}
+          roles={roles}
+          roleId={roleId}
           pagination={characters.pagination}
           previousCursor={
             characters.previousCursor
