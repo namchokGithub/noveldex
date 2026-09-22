@@ -1,117 +1,152 @@
 # Novelndex
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.2.6-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.3.0-149ECA?logo=react&logoColor=white)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-11.10.0-DD2C00?logo=firebase&logoColor=white)](https://firebase.google.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Version](https://img.shields.io/badge/version-0.2.0--1789862400-6B7280)](package.json)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2.6-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/) [![React](https://img.shields.io/badge/React-19.3.0-149ECA?logo=react&logoColor=white)](https://react.dev/) [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Firebase](https://img.shields.io/badge/Firebase-11.10.0-DD2C00?logo=firebase&logoColor=white)](https://firebase.google.com/) [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/) [![Version](https://img.shields.io/badge/version-0.2.0--1789862400-6B7280)](package.json)
 
-Novelndex is a calm workspace for mapping a novel as you read or write it: volumes, chapters, notes, characters, story events, and adaptations live together in one searchable place.
+A personal knowledge workspace for novels — notes, characters, timelines, and adaptations, all in one searchable place.
 
-## What it supports
+**Live demo:** [noveldex.namchok.workers.dev/novels](https://noveldex.namchok.workers.dev/novels)
 
-- Volume-first chapter management with reading progress and special chapter entries
-- Notes, character/entity references, tags, and scoped command-palette search
-- Story timeline ordered by volume, chapter, page, and event position
-- Adaptation tracking for anime, manga, movies, and more — source links/images, notes, and mapped novel chapters
-- Public read-only guest mode with authenticated admin editing
+> **Naming note:** The project was originally named **Noveldex** and is now **Novelndex**. Some legacy URLs, deployment names, and internal references may still use the former name.
 
-## Stack
+Browse as guest, read-only. Sign in to edit.
 
-| Area | Technology |
-| --- | --- |
-| App | Next.js 16, React 19, TypeScript |
-| UI | Tailwind CSS 4 |
-| Data | Cloud Firestore via Firebase Web SDK Lite |
-| Authentication | Firebase Auth (email/password) |
-| Search | Client-side MiniSearch derived from Firestore data |
-| Testing | Vitest and Firebase emulator rules tests |
-| Optional edge target | Cloudflare Workers through Vinext |
+![1790053497261](docs/image/README/1790053497261.png)
 
-## Quick start
+## What it does
 
-### Requirements
+Novelndex organizes a novel's world as you read or write it:
 
-- Node.js 22 or newer
-- Corepack (included with supported Node.js releases)
+- Novels, volumes, and chapters
+- Timestamped notes with `[[entity]]` references
+- Characters, locations, skills, organizations, items, and concepts
+- Story-order timeline events
+- Anime/manga/movie adaptation tracking, mapped back to source chapters
+- Fast client-side search across all of it
 
-### Run locally
+## Preview
 
-The application runs from the repository root.
+preview-library
+![1790053391083](image/README/1790053391083.png)
 
-```powershell
+preview-chapter
+![1790053364721](image/README/1790053364721.png)
+
+## Features
+
+### Reading & Structure
+
+- Novels → volumes → chapters
+- Prologue, epilogue, side story, and custom chapter entries
+- Reading order independent from chapter numbering
+
+### Notes & References
+
+- Timestamped chapter notes
+- `[[Name]]` and `[[type:Name]]` entity references (character, location, skill, organization, item, concept)
+- Tags
+
+### Search
+
+- Client-side full-text search (MiniSearch), no server round trip
+- Global, novel, volume, and chapter scopes
+- Entity-aware: characters, locations, skills, organizations, items, concepts
+
+### Story Timeline
+
+- Story-order timeline (volume → chapter → page → event)
+- Character links on events
+
+### Adaptations
+
+- Anime, manga, movies, and other media
+- Adaptation notes and links back to source chapters
+
+### Access
+
+- Guest: read-only
+- Signed-in user: full editing
+
+## Tech Stack
+
+| Area           | Technology                       |
+| -------------- | -------------------------------- |
+| App            | Next.js 16, React 19, TypeScript |
+| UI             | Tailwind CSS 4                   |
+| Data           | Cloud Firestore                  |
+| Authentication | Firebase Auth                    |
+| Search         | MiniSearch (client-side)         |
+| Deployment     | Cloudflare Workers (via Vinext)  |
+| Testing        | Vitest                           |
+
+## Architecture
+
+Novelndex is a client-first application:
+
+```mermaid
+flowchart LR
+  UI[Next.js / React]
+  Auth[Firebase Auth]
+  DB[(Cloud Firestore<br/>Source of truth)]
+  Search[MiniSearch<br/>Disposable client index]
+
+  UI --> Auth
+  UI --> DB
+  DB -. builds .-> Search
+  UI --> Search
+```
+
+- Firestore is the source of truth
+- Search index is derived and disposable, rebuilt each session
+- No application API server in the active runtime path
+- PostgreSQL is retained only as legacy backup/recovery material, not a live datastore
+
+Full schema and rationale: [`docs/engineering/DECISIONS.md`](docs/engineering/DECISIONS.md).
+
+## Getting Started
+
+Requirements: Node.js 22+, Corepack.
+
+```bash
 corepack pnpm install
-Copy-Item .env.local.example .env.local
 corepack pnpm dev
+corepack pnpm lint
+corepack pnpm test
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Add Firebase browser configuration to `.env.local`. To use the local Firebase services, set:
+Copy `.env.local.example` to `.env.local` and set Firebase browser config. Set `NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1` to run against local Firestore/Auth emulators:
 
-```text
-NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1
-```
-
-Start Firestore and Auth emulators in a second terminal:
-
-```powershell
+```bash
 corepack pnpm emulators
 ```
 
-Create a local user in the Auth emulator UI at [http://127.0.0.1:4000/auth](http://127.0.0.1:4000/auth), then sign in from the header. Any authenticated user can edit; guests can read only.
+Create a user in the Auth emulator UI ([http://127.0.0.1:4000/auth](http://127.0.0.1:4000/auth)) to sign in and test editing.
 
-## Architecture
+## Project Status
 
-Novelndex talks directly to Firestore from the Next.js application. There is no application API server, SQL database, or server-side search service in the runtime path.
+Actively developed. Core notes, search, timeline, and auth features are live.
 
-```text
-novels/{novelId}
-├── volumes/{volumeId}
-│   ├── chapters/{chapterId}
-│   ├── chapterNumbers/{number}
-│   └── adaptations/{adaptationId}  # embedded notes[] and adapted_chapter_ids[]
-├── characters/{characterId}
-├── entities/{entityId}
-├── events/{eventId}
-├── tags/{tagId}
-
-character_roles/{roleId}
-```
-
-Adaptations duplicate `novel_id` and `volume_id` for collection-group reads and search routing; their parent volume path remains authoritative. Their embedded `notes[]` records story-reference occurrences, and `adapted_chapter_ids[]` can point only to chapters in that parent volume. Firestore rules and index configuration live in [`firestore.rules`](firestore.rules) and [`firestore.indexes.json`](firestore.indexes.json).
-
-### Reading and story order
-
-`Chapter.sort_order` is the reading position inside one volume. A regular `chapter` also has a positive number unique to that volume, with a matching `chapterNumbers/{number}` marker below the volume. Special entries (`prologue`, `epilogue`, `afterword`, `side_story`, and `other`) do not use a number; `other` requires `custom_label`.
-
-Timeline events sort by volume → chapter → page → event position. Adaptations sort inside a volume by medium, group, and `sort_order`.
-
-## Common commands
-
-| Command | Purpose |
-| --- | --- |
-| `corepack pnpm dev` | Run the Next.js app locally |
-| `corepack pnpm lint` | Run ESLint |
-| `corepack pnpm test` | Run the Vitest suite |
-| `corepack pnpm build` | Create a production build |
-| `corepack pnpm emulators` | Start Firestore and Auth emulators |
-| `corepack pnpm build:cloudflare` | Build the Cloudflare/Vinext target |
-| `corepack pnpm preview:cloudflare` | Preview the Cloudflare build locally |
-
-To deploy Firestore rule or index changes, use the Firebase CLI. For example:
-
-```powershell
-firebase deploy --only firestore:indexes
-```
-
-Legacy PostgreSQL-related `make` commands exist only for backup and recovery material; the application does not use PostgreSQL at runtime.
+- **Current focus:** cross-reference views, adaptation comparison (LN volume ↔ anime episode / manga chapter)
+- **Deferred:** import/export, backup tooling, reading/watching progress tracking
 
 ## Documentation
 
 - [Current project context](docs/ai/CONTEXT.md)
-- [Contributor guidance](docs/ai/CLAUDE.md)
 - [Architecture decisions](docs/engineering/DECISIONS.md)
 - [Progress and backlog](docs/engineering/PROGRESS.md)
 - [Cloudflare Workers deployment](docs/engineering/cloudflare-workers.md)
+
+## Contributors
+
+Novelndex is maintained by its human contributors with assistance from AI coding tools, including OpenAI Codex and Anthropic Claude.
+
+AI tools may support research, implementation, testing, and documentation. Human contributors review and approve changes and remain responsible for project decisions, code quality, and releases.
+
+## License
+
+[MIT](LICENSE)
+
+---
+
+© 2026 _Namchok Singhachai_. Novelndex is released under the MIT License.
