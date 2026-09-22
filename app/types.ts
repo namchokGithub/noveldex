@@ -9,6 +9,7 @@ export interface Novel {
   description: string;
   cover_url: string;
   volume_count: number;
+  character_count: number;
   chapter_count: number;
   read_count: number;
   created_at: string;
@@ -206,6 +207,19 @@ export interface ChapterWithCharacters extends Chapter {
 
 export interface CharacterListSummary {
   total_characters: number;
+}
+
+export interface CharacterCursor {
+  name: string;
+  id: string;
+}
+
+export interface CharacterPage {
+  novel: Novel;
+  items: Character[];
+  pagination: PaginationMeta;
+  previousCursor: CharacterCursor | null;
+  nextCursor: CharacterCursor | null;
 }
 
 export interface PaginatedCharacters {

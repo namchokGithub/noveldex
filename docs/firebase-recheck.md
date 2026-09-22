@@ -57,23 +57,31 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 
 #### Production counter migration record
 
-| Field | Record |
-| --- | --- |
-| Production migration date | 2026-09-20 (record prepared) |
-| Project identifier | Pending — do not record credentials |
-| Maintenance window | Pending approval |
-| Dry-run mismatches | Pending execution |
-| Apply writes | Pending execution |
-| Verify result | Pending execution |
-| Post-write smoke verification | Pending execution |
+| Field                         | Record                              |
+| ----------------------------- | ----------------------------------- |
+| Production migration date     | 2026-09-20 (record prepared)        |
+| Project identifier            | Pending — do not record credentials |
+| Maintenance window            | Pending approval                    |
+| Dry-run mismatches            | Pending execution                   |
+| Apply writes                  | Pending execution                   |
+| Verify result                 | Pending execution                   |
+| Post-write smoke verification | Pending execution                   |
 
 This record is intentionally pending: no production maintenance window, Firebase Admin backfill, deployment, or post-write smoke sequence has run yet. Fill the remaining fields only after `--dry-run`, `--apply`, and `--verify` complete inside the approved maintenance window.
 
-### H6 — `[ ]` Character list has the same pagination illusion
+### H6 — `[x]` Character list now reads a bounded cursor page
 
-**Page:** `app/novels/[id]/characters/page.tsx` → `getCharacters(novelId, { page, perPage })` (`libs/firebase/characters.ts:285-310`)
-**Current behavior:** identical shape to H5 — `chapterCountsByNovel()` (`characters.ts:140-151`) reads **every chapter in the novel** via `collectionGroup("chapters") where novel_id == X` just to compute each character's `chapter_count`, even though only `perPage` (default 10) characters are shown per page.
-**Next decision:** separately choose and maintain a Character counter strategy before changing this reader. Do not add a full-SDK import only for this list.
+**Fix:** `getCharactersPage()` orders the direct Character subcollection by
+`name` plus document ID and reads at most `per_page` documents using opaque
+`after`/`before` cursors. It reads `novels/{novelId}.character_count` for the
+total and each page item carries its maintained `chapter_count`; it no longer
+scans the novel's Chapters collection. Character and Chapter mutations maintain
+the counters, and `backfill:denormalized-counters` reconciles legacy data.
+
+**Impact:** a normal directory request is one Novel document plus at most
+`per_page` Character documents, with no Chapter collection read. Production
+backfill/apply/verify remains an explicit pending operator action; this code
+change does not write production data.
 
 ### H7 — `[x]` Defer the global search index until the command palette opens
 
@@ -142,21 +150,21 @@ This record is intentionally pending: no production maintenance window, Firebase
 
 ## Summary checklist
 
-| #   | Item                                                                            | Priority | Status                                           |
-| --- | ------------------------------------------------------------------------------- | -------- | ------------------------------------------------ |
-| H1  | Adaptation detail:`getVolume` → `getVolumeMetadata`                             | High     | ✅ Done                                          |
-| H2  | Chapter detail: dedupe`getChapter` via request-scoped `cache()`                 | High     | ✅ Done                                          |
-| H3  | Volume detail: share one`getTags()` read with `getChaptersByVolume`             | High     | ✅ Done                                          |
-| H4  | Memoize entity/character lookups inside`firestoreEntityLookup()`                | High     | ✅ Done                                          |
-| H5  | Volume list: bounded cursor page from stored counters                            | High     | ✅ Done                                          |
-| H6  | Character list: choose a separate maintained counter strategy                    | High     | ⬜ Open                                          |
-| H7  | Search index: lazy-start instead of eager root-layout load                      | High     | ✅ Done                                          |
-| M1  | Novel page: removed tracked-character count read                                | Medium   | ✅ Done                                          |
-| M2  | `getEventsForCharacter`/`getEventsForEntity` full-collection reads              | Medium   | ⬜ Open (fix requires schema change — see notes) |
-| M3  | Cache`getCharacterRoles()` (tiny, global, rarely changes)                       | Medium   | ⬜ Open                                          |
-| M4  | Time-based cache for`getNovels()` and similar reference reads                   | Medium   | ⬜ Open                                          |
-| M5  | `getAdaptationsForNovel` on character/entity detail pages                       | Medium   | ⬜ Open                                          |
-| M6  | Hoist entity lookup across chapters (follow-up to H4)                           | Medium   | ✅ Done                                          |
-| M7  | `validateChapterIds` avoids chapter hydration for membership checks             | Medium   | ✅ Done                                          |
+| #   | Item                                                                | Priority | Status                                           |
+| --- | ------------------------------------------------------------------- | -------- | ------------------------------------------------ |
+| H1  | Adaptation detail:`getVolume` → `getVolumeMetadata`                 | High     | ✅ Done                                          |
+| H2  | Chapter detail: dedupe`getChapter` via request-scoped `cache()`     | High     | ✅ Done                                          |
+| H3  | Volume detail: share one`getTags()` read with `getChaptersByVolume` | High     | ✅ Done                                          |
+| H4  | Memoize entity/character lookups inside`firestoreEntityLookup()`    | High     | ✅ Done                                          |
+| H5  | Volume list: bounded cursor page from stored counters               | High     | ✅ Done                                          |
+| H6  | Character list: choose a separate maintained counter strategy       | High     | ⬜ Open                                          |
+| H7  | Search index: lazy-start instead of eager root-layout load          | High     | ✅ Done                                          |
+| M1  | Novel page: removed tracked-character count read                    | Medium   | ✅ Done                                          |
+| M2  | `getEventsForCharacter`/`getEventsForEntity` full-collection reads  | Medium   | ⬜ Open (fix requires schema change — see notes) |
+| M3  | Cache`getCharacterRoles()` (tiny, global, rarely changes)           | Medium   | ⬜ Open                                          |
+| M4  | Time-based cache for`getNovels()` and similar reference reads       | Medium   | ⬜ Open                                          |
+| M5  | `getAdaptationsForNovel` on character/entity detail pages           | Medium   | ⬜ Open                                          |
+| M6  | Hoist entity lookup across chapters (follow-up to H4)               | Medium   | ✅ Done                                          |
+| M7  | `validateChapterIds` avoids chapter hydration for membership checks | Medium   | ✅ Done                                          |
 
 No schema changes were made or proposed as required. All "Done" items preserve existing ordering, filters, permissions, and output shape — verified with `tsc --noEmit`, `pnpm lint`, and the full test suite against the local emulator (same 4 pre-existing, unrelated failures before and after).

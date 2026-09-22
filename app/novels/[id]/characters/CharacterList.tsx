@@ -14,34 +14,34 @@ import {
 } from "../../ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { useRouter } from "next/navigation";
-import { canNavigatePage } from "@/libs/pagination";
+import { buildCursorPageSearch, canNavigatePage } from "@/libs/pagination";
 import { Select } from "@/components/ui/Select";
 
 export default function CharacterList({
   novelId,
   characters,
   pagination,
+  previousCursor,
+  nextCursor,
 }: {
   novelId: string;
   characters: Character[];
   pagination: PaginationMeta;
+  previousCursor: string | null;
+  nextCursor: string | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  function buildPageHref(page: number, perPage = pagination.per_page) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(page));
-    params.set("per_page", String(perPage));
-    return `${pathname}?${params.toString()}`;
-  }
-
   function handlePerPageChange(nextPerPage: number) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-    params.set("per_page", String(nextPerPage));
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(
+      `${pathname}?${buildCursorPageSearch(searchParams.toString(), {
+        page: 1,
+        perPage: nextPerPage,
+        cursor: null,
+      })}`,
+    );
   }
 
   if (characters.length === 0 && pagination.page === 1) {
@@ -57,16 +57,12 @@ export default function CharacterList({
     pagination.page * pagination.per_page,
     pagination.total_items,
   );
-  const canGoPrevious = canNavigatePage(
-    pagination.page,
-    pagination.total_pages,
-    "previous",
-  );
-  const canGoNext = canNavigatePage(
-    pagination.page,
-    pagination.total_pages,
-    "next",
-  );
+  const canGoPrevious =
+    previousCursor !== null &&
+    canNavigatePage(pagination.page, pagination.total_pages, "previous");
+  const canGoNext =
+    nextCursor !== null &&
+    canNavigatePage(pagination.page, pagination.total_pages, "next");
 
   return (
     <div className={listClassName}>
@@ -88,7 +84,10 @@ export default function CharacterList({
             onValueChange={(value) => handlePerPageChange(Number(value))}
             wrapperClassName="min-w-20"
             className="py-2"
-            options={[5, 10, 20, 50].map((size) => ({ value: String(size), label: String(size) }))}
+            options={[5, 10, 20, 50].map((size) => ({
+              value: String(size),
+              label: String(size),
+            }))}
           />
         </label>
       </div>
@@ -144,22 +143,32 @@ export default function CharacterList({
           <button
             type="button"
             disabled={!canGoPrevious}
-            onClick={() =>
-              router.push(buildPageHref(Math.max(1, pagination.page - 1)))
-            }
+            onClick={() => {
+              if (!previousCursor) return;
+              router.push(
+                `${pathname}?${buildCursorPageSearch(searchParams.toString(), {
+                  page: Math.max(1, pagination.page - 1),
+                  perPage: pagination.per_page,
+                  cursor: { name: "before", value: previousCursor },
+                })}`,
+              );
+            }}
             className={secondaryButtonClassName}>
             <T k="common.previous" />
           </button>
           <button
             type="button"
             disabled={!canGoNext}
-            onClick={() =>
+            onClick={() => {
+              if (!nextCursor) return;
               router.push(
-                buildPageHref(
-                  Math.min(pagination.total_pages, pagination.page + 1),
-                ),
-              )
-            }
+                `${pathname}?${buildCursorPageSearch(searchParams.toString(), {
+                  page: Math.min(pagination.total_pages, pagination.page + 1),
+                  perPage: pagination.per_page,
+                  cursor: { name: "after", value: nextCursor },
+                })}`,
+              );
+            }}
             className={secondaryButtonClassName}>
             <T k="common.next" />
           </button>

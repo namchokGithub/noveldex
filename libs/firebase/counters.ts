@@ -23,6 +23,52 @@ export type MaintainedCounterDelta = {
   delta: number;
 };
 
+export type CharacterChapterCountDelta = {
+  characterId: string;
+  delta: number;
+};
+
+/**
+ * Applies Chapter appearance counts to Character documents that still exist.
+ * Legacy chapters can retain references to deleted Characters, so a missing
+ * target is intentionally ignored instead of being created or failing the
+ * source mutation.
+ */
+export async function applyCharacterChapterCountDeltas(
+  transaction: Transaction,
+  novelId: string,
+  deltas: CharacterChapterCountDelta[],
+): Promise<void> {
+  const combined = new Map<string, number>();
+  for (const { characterId, delta } of deltas) {
+    if (!characterId || delta === 0) continue;
+    combined.set(characterId, (combined.get(characterId) ?? 0) + delta);
+  }
+
+  const nonZero = [...combined.entries()].filter(([, delta]) => delta !== 0);
+  const snapshots = await Promise.all(
+    nonZero.map(async ([characterId, delta]) => {
+      const reference = doc(db, "novels", novelId, "characters", characterId);
+      return {
+        characterId,
+        delta,
+        reference,
+        snapshot: await transaction.get(reference),
+      };
+    }),
+  );
+
+  for (const { delta, reference, snapshot } of snapshots) {
+    if (!snapshot.exists()) continue;
+    const current = snapshot.data()?.chapter_count;
+    const count =
+      typeof current === "number" && Number.isFinite(current) ? current : 0;
+    transaction.update(reference, {
+      chapter_count: Math.max(0, count + delta),
+    });
+  }
+}
+
 /**
  * Applies source-document counter changes within the caller's transaction.
  * Reads happen before writes, and bad or legacy values are treated as zero.

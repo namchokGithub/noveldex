@@ -4,8 +4,14 @@ import AddCharacterForm from "./AddCharacterForm";
 import CharacterList from "./CharacterList";
 import { T } from "@/components/i18n/I18nProvider";
 import { backLinkClassName, DashboardPage, SectionHeading } from "../../ui";
-import { getCharacters, getCharacterRoles, getNovel } from "@/libs/api";
+import {
+  encodeCharacterCursor,
+  getCharactersPage,
+  getCharacterRoles,
+  resolveCharacterCursorSearch,
+} from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
+import { normalizeCursorPage } from "@/libs/pagination";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
 
@@ -19,24 +25,31 @@ export default async function CharactersPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ page?: string; per_page?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    per_page?: string;
+    after?: string;
+    before?: string;
+  }>;
 }) {
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
-  const page = parsePositiveInt(resolvedSearchParams.page, 1);
   const requestedPerPage = parsePositiveInt(resolvedSearchParams.per_page, 10);
   const perPage = ALLOWED_PAGE_SIZES.has(requestedPerPage)
     ? requestedPerPage
     : 10;
+  const { after, before } = resolveCharacterCursorSearch(resolvedSearchParams);
+  const page = normalizeCursorPage(
+    parsePositiveInt(resolvedSearchParams.page, 1),
+    Boolean(after || before),
+  );
 
-  let novel: Awaited<ReturnType<typeof getNovel>>;
-  let characters: Awaited<ReturnType<typeof getCharacters>>;
+  let characters: Awaited<ReturnType<typeof getCharactersPage>>;
   let roles: Awaited<ReturnType<typeof getCharacterRoles>>;
 
   try {
-    [novel, characters, roles] = await Promise.all([
-      getNovel(id),
-      getCharacters(id, { page, perPage }),
+    [characters, roles] = await Promise.all([
+      getCharactersPage(id, { page, perPage, after, before }),
       getCharacterRoles(),
     ]);
   } catch (error) {
@@ -48,7 +61,7 @@ export default async function CharactersPage({
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
         <Link href={`/novels/${id}`} className={backLinkClassName}>
-          ← {novel.title}
+          ← {characters.novel.title}
         </Link>
 
         <SectionHeading
@@ -62,6 +75,16 @@ export default async function CharactersPage({
           novelId={id}
           characters={characters.items}
           pagination={characters.pagination}
+          previousCursor={
+            characters.previousCursor
+              ? encodeCharacterCursor(characters.previousCursor)
+              : null
+          }
+          nextCursor={
+            characters.nextCursor
+              ? encodeCharacterCursor(characters.nextCursor)
+              : null
+          }
         />
       </div>
     </DashboardPage>

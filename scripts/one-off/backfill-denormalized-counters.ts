@@ -15,8 +15,13 @@ export type ChapterCounterTarget = {
 
 export type NovelCounterTarget = {
   volume_count: number;
+  character_count: number;
   chapter_count: number;
   read_count: number;
+};
+
+export type CharacterCounterTarget = {
+  chapter_count: number;
 };
 
 export type BackfillMode = "dry-run" | "apply" | "verify";
@@ -50,6 +55,7 @@ type BackfillDatabase = {
       data: Record<string, number>,
       options: { merge: true },
     ): PromiseLike<unknown>;
+    flush(): Promise<void>;
     close(): Promise<void>;
   };
 };
@@ -65,6 +71,12 @@ type SourceChapter = {
   volume_id: string;
   kind?: unknown;
   read_at?: unknown;
+  character_ids?: unknown;
+};
+
+type SourceCharacter = {
+  id: string;
+  chapter_count?: unknown;
 };
 
 type SourceEvent = {
@@ -176,11 +188,20 @@ export async function backfillDatabase(
     volumeCount += volumeSnapshots.size;
     const sourceVolumes: SourceVolume[] = [];
     const sourceChapters: SourceChapter[] = [];
+    const sourceCharacters: SourceCharacter[] = [];
     const sourceChapterDocuments: Array<{
       document: SourceDocument;
       volumeId: string;
     }> = [];
     const sourceAdaptations: SourceAdaptation[] = [];
+
+    const characterSnapshots = await novel.ref.collection("characters").get();
+    sourceCharacters.push(
+      ...characterSnapshots.docs.map((character) => ({
+        ...character.data(),
+        id: character.id,
+      })),
+    );
 
     for (const volume of volumeSnapshots.docs) {
       const volumeData = volume.data();
@@ -218,6 +239,7 @@ export async function backfillDatabase(
       sourceChapters,
       sourceEvents,
       sourceAdaptations,
+      sourceCharacters,
     );
     documents.push({
       path: novel.ref.path,
@@ -225,6 +247,14 @@ export async function backfillDatabase(
       actual: novel.data(),
       target: { ...targets.novel, counter_schema_version: 2 },
     });
+    for (const character of characterSnapshots.docs) {
+      documents.push({
+        path: character.ref.path,
+        reference: character.ref,
+        actual: character.data(),
+        target: targets.characters[character.id],
+      });
+    }
     for (const volume of volumeSnapshots.docs) {
       documents.push({
         path: volume.ref.path,
@@ -288,6 +318,7 @@ export async function backfillDatabase(
       },
       report,
     );
+    await writer.flush();
     await Promise.all(writePromises);
   } finally {
     await writer.close();
@@ -301,10 +332,12 @@ export function counterTargets(
   chapters: SourceChapter[],
   events: SourceEvent[],
   adaptations: SourceAdaptation[],
+  characters: SourceCharacter[] = [],
 ): {
   novel: NovelCounterTarget;
   volumes: Record<string, VolumeCounterTarget>;
   chapters: Record<string, Record<string, ChapterCounterTarget>>;
+  characters: Record<string, CharacterCounterTarget>;
 } {
   const volumeTargets = Object.fromEntries(
     volumes.map((volume) => [
@@ -321,6 +354,9 @@ export function counterTargets(
     string,
     Record<string, ChapterCounterTarget>
   > = {};
+  const characterTargets = Object.fromEntries(
+    characters.map((character) => [character.id, { chapter_count: 0 }]),
+  ) as Record<string, CharacterCounterTarget>;
   for (const chapter of chapters) {
     if (!volumeTargets[chapter.volume_id]) continue;
     chapterTargets[chapter.volume_id] ??= {};
@@ -328,6 +364,16 @@ export function counterTargets(
   }
 
   for (const chapter of chapters) {
+    const characterIds = Array.isArray(chapter.character_ids)
+      ? chapter.character_ids.filter(
+          (id): id is string => typeof id === "string",
+        )
+      : [];
+    for (const characterId of new Set(characterIds)) {
+      if (characterTargets[characterId]) {
+        characterTargets[characterId].chapter_count += 1;
+      }
+    }
     if (chapter.kind !== "chapter") continue;
     const target = volumeTargets[chapter.volume_id];
     if (!target) continue;
@@ -357,13 +403,24 @@ export function counterTargets(
   const novel = Object.values(volumeTargets).reduce<NovelCounterTarget>(
     (target, volume) => ({
       volume_count: target.volume_count,
+      character_count: target.character_count,
       chapter_count: target.chapter_count + volume.chapter_count,
       read_count: target.read_count + volume.read_count,
     }),
-    { volume_count: volumes.length, chapter_count: 0, read_count: 0 },
+    {
+      volume_count: volumes.length,
+      character_count: characters.length,
+      chapter_count: 0,
+      read_count: 0,
+    },
   );
 
-  return { novel, volumes: volumeTargets, chapters: chapterTargets };
+  return {
+    novel,
+    volumes: volumeTargets,
+    chapters: chapterTargets,
+    characters: characterTargets,
+  };
 }
 
 async function main(): Promise<void> {

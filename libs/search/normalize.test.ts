@@ -56,6 +56,7 @@ describe("search normalizers", () => {
       description: "",
       cover_url: "",
       volume_count: 0,
+      character_count: 0,
       chapter_count: 0,
       read_count: 0,
       created_at: "",

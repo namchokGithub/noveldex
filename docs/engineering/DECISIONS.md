@@ -122,11 +122,11 @@ The former Go API, Redis cache, and PostgreSQL application database were retired
 
 **Decision:** Store maintained summary counters on each Novel and Volume document so readers can use bounded Volume pagination without scanning all descendant Chapters. The source-of-truth ownership is:
 
-| Owner document | Stored fields | Source of truth |
-| --- | --- | --- |
-| `novels/{novelId}` | `volume_count`, `chapter_count`, `read_count` | Descendant Volume documents and regular Chapter documents in the Novel. |
-| `novels/{novelId}/volumes/{volumeId}` | `chapter_count`, `read_count`, `adaptation_count`, `event_count` | Regular Chapter documents, all direct Adaptation documents, and Events linked to an existing Chapter beneath that Volume. |
-| `novels/{novelId}/volumes/{volumeId}/chapters/{chapterId}` | `event_count` | Events linked to that Chapter. |
+| Owner document                                             | Stored fields                                                    | Source of truth                                                                                                           |
+| ---------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `novels/{novelId}`                                         | `volume_count`, `chapter_count`, `read_count`                    | Descendant Volume documents and regular Chapter documents in the Novel.                                                   |
+| `novels/{novelId}/volumes/{volumeId}`                      | `chapter_count`, `read_count`, `adaptation_count`, `event_count` | Regular Chapter documents, all direct Adaptation documents, and Events linked to an existing Chapter beneath that Volume. |
+| `novels/{novelId}/volumes/{volumeId}/chapters/{chapterId}` | `event_count`                                                    | Events linked to that Chapter.                                                                                            |
 
 A Chapter counts only when `kind === "chapter"`. A regular unread Chapter contributes `{ chapter_count: 1, read_count: 0 }`; a regular read Chapter contributes `{ chapter_count: 1, read_count: 1 }`. Every special entry — including `prologue`, `epilogue`, `interlude`, and `other` — contributes zero to both counters regardless of `read_at`. Therefore, changing a special entry's Date Read never changes `read_count`; changing a regular Chapter from unread to read adds one, and changing its read date while it remains read adds zero.
 
@@ -139,3 +139,34 @@ Adaptation counters change only when an Adaptation is created or deleted; editin
 **Trade-offs:** This adds write maintenance and a temporary production write pause, but keeps Firebase Lite and avoids unavailable aggregation APIs. Counter drift is recoverable by rerunning the source-of-truth backfill.
 
 The volume detail page still does not display these counters: it avoids an events query entirely and fetches at most one adaptation for its latest-item preview. The counters are maintained ahead of the future aggregate UI so enabling that UI will not require a source-collection scan.
+
+---
+
+## ADR-014: Character directory cursor pagination and derived counters
+
+**Decision:** The Character directory uses a bounded Firestore query ordered by
+`name` and document ID, with opaque bidirectional cursors. It reads
+`novels/{novelId}.character_count` for total pagination metadata and
+`characters/{characterId}.chapter_count` for the list appearance badge.
+
+The source of truth remains direct Character documents and each Chapter's
+`character_ids`. Character create/delete mutations maintain the Novel
+`character_count` transactionally. Chapter create, note-reference replacement,
+and delete mutations maintain distinct Character `chapter_count` deltas in the
+same transaction; missing legacy Character references are skipped and do not
+create documents. The Admin `backfill:denormalized-counters` command
+reconciles both fields with absolute, idempotent targets before the cursor
+reader is enabled against existing data.
+
+**Why:** Firestore Lite does not expose an approved aggregate count for this
+runtime. The previous list query loaded every Character and every Chapter
+before slicing to one page. A per-character count query would replace that
+with N+1 reads. Stored derived counters keep the list bounded while preserving
+the existing total and appearance-count UI.
+
+**Trade-offs:** Counters add write maintenance and require a production
+maintenance window for backfill. They are derived data and may be repaired by
+rerunning the Admin reconciliation. Cursor navigation is stable for duplicate
+names because document ID is the deterministic tie-breaker; concurrent writes
+can still change page membership between navigations, as expected for cursor
+pagination.
