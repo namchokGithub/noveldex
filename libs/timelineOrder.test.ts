@@ -53,6 +53,36 @@ describe("eventOrder", () => {
       ),
     ).toBeLessThan(0);
   });
+
+  it("keeps duplicate-number volumes together before comparing chapter order", () => {
+    const chapters = new Map([
+        [
+          "chapter-a",
+          { id: "chapter-a", volume_id: "volume-a", sort_order: 2 },
+        ],
+        [
+          "chapter-b",
+          { id: "chapter-b", volume_id: "volume-b", sort_order: 1 },
+        ],
+      ]),
+      volumes = new Map([
+        ["volume-a", { id: "volume-a", number: 1 }],
+        ["volume-b", { id: "volume-b", number: 1 }],
+      ]);
+
+    const volumeAEvent = {
+      ...event("a", "chapter-a", 1),
+      chapter_volume_id: "volume-a",
+    };
+    const volumeBEvent = {
+      ...event("b", "chapter-b", 1),
+      chapter_volume_id: "volume-b",
+    };
+
+    expect(
+      eventOrder(volumeAEvent, volumeBEvent, chapters, volumes),
+    ).toBeLessThan(0);
+  });
 });
 
 describe("chapterEventOrder", () => {

@@ -44,6 +44,7 @@ export function eventOrder(
   return (
     [
       (volumeA?.number ?? UNKNOWN) - (volumeB?.number ?? UNKNOWN),
+      (volumeA?.id ?? "").localeCompare(volumeB?.id ?? ""),
       (chapterA?.sort_order ?? UNKNOWN) - (chapterB?.sort_order ?? UNKNOWN),
       (a.page_number ?? UNKNOWN) - (b.page_number ?? UNKNOWN),
       a.sort_order - b.sort_order,
