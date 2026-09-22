@@ -26,10 +26,10 @@ Novelndex organizes a novel's world as you read or write it:
 ## Preview
 
 preview-library
-![1790053391083](image/README/1790053391083.png)
+![1790053391083](docs/image/README/1790053391083.png)
 
 preview-chapter
-![1790053364721](image/README/1790053364721.png)
+![1790053364721](docs/image/README/1790053364721.png)
 
 ## Features
 
