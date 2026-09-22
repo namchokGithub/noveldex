@@ -45,6 +45,7 @@ import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { normalizeEvent } from "@/libs/search/normalize";
 import { TimelineEventActions } from "./TimelineEventActions";
+import { characterIdsInTimeline } from "@/libs/timelineParticipants";
 
 interface ChapterOption {
   id: string;
@@ -83,6 +84,20 @@ const EMPTY_FORM: FormState = {
   chapter_volume_id: "",
   character_ids: [],
 };
+
+function timelineCharacterOptions(events: NovelEvent[]): CharacterOption[] {
+  const byId = new Map<string, CharacterOption>();
+  for (const event of events) {
+    if (event.character_ids.length !== event.character_names.length) continue;
+    event.character_ids.forEach((id, index) => {
+      byId.set(id, { id, name: event.character_names[index] });
+    });
+  }
+  return [...byId.values()].sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
+}
+
 export default function TimelinePage({
   params,
 }: {
@@ -103,6 +118,7 @@ export default function TimelinePage({
     [filterOpen, setFilterOpen] = useState(false);
   const [selectedVolumeId, setSelectedVolumeId] = useState("");
   const filterRef = useRef<HTMLDivElement>(null);
+  const formCharactersNovelId = useRef<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false),
     [addForm, setAddForm] = useState<FormState>(EMPTY_FORM),
     [addError, setAddError] = useState<string | null>(null),
@@ -136,34 +152,35 @@ export default function TimelinePage({
       ),
     );
   }
+  async function loadFormCharacters() {
+    if (formCharactersNovelId.current === novelId) return;
+    const [allCharacters, allRoles] = await Promise.all([
+      getAllCharacters(novelId),
+      getCharacterRoles(),
+    ]);
+    formCharactersNovelId.current = novelId;
+    setCharacters(allCharacters.map(({ id, name }) => ({ id, name })));
+    setRoles(allRoles);
+  }
   useEffect(() => {
     async function init() {
       setLoading(true);
       try {
-        const charactersPromise = getAllCharacters(novelId);
-        const [ev, ch, char, volumeItems, role] = await Promise.all([
-          getEvents(
-            novelId,
-            charactersPromise.then(
-              (characters) =>
-                new Map(characters.map(({ id, name }) => [id, name])),
-            ),
-          ),
+        const [ev, ch, volumeItems] = await Promise.all([
+          getEvents(novelId),
           getChaptersFlat(novelId),
-          charactersPromise,
           getVolumesFlat(novelId),
-          getCharacterRoles(),
         ]);
         setEvents(ev);
         setChapters(ch);
-        setCharacters(char.map(({ id, name }) => ({ id, name })));
+        setCharacters(timelineCharacterOptions(ev));
         setVolumes(volumeItems);
         setSelectedVolumeId((current) =>
           volumeItems.some((volume) => volume.id === current)
             ? current
             : (volumeItems[0]?.id ?? ""),
         );
-        setRoles(role);
+        setRoles([]);
       } catch {
         setSnackbar({ tone: "error", message: t("common.networkError") });
       } finally {
@@ -193,6 +210,10 @@ export default function TimelinePage({
         filterChars.some((id) => event.character_ids.includes(id)),
       )
     : events;
+  const filterCharacters = useMemo(() => {
+    const ids = characterIdsInTimeline(events);
+    return characters.filter((character) => ids.has(character.id));
+  }, [characters, events]);
   const chapterById = useMemo(
     () => new Map(chapters.map((chapter) => [chapter.id, chapter])),
     [chapters],
@@ -255,10 +276,15 @@ export default function TimelinePage({
       setAddSaving(false);
     }
   }
-  function openAddForm() {
+  async function openAddForm() {
     setAddForm(EMPTY_FORM);
     setAddError(null);
     setShowAddForm(true);
+    try {
+      await loadFormCharacters();
+    } catch (error) {
+      setAddError(userErrorMessage(error, t));
+    }
   }
   function startEdit(event: NovelEvent) {
     setEditingId(event.id);
@@ -275,6 +301,9 @@ export default function TimelinePage({
       character_ids: event.character_ids,
     });
     setEditError(null);
+    void loadFormCharacters().catch((error) =>
+      setEditError(userErrorMessage(error, t)),
+    );
   }
   async function handleEdit(event: React.FormEvent) {
     event.preventDefault();
@@ -351,7 +380,7 @@ export default function TimelinePage({
                     setShowAddForm(false);
                     setAddForm(EMPTY_FORM);
                   } else {
-                    openAddForm();
+                    void openAddForm();
                   }
                 }}
                 className={
@@ -406,24 +435,24 @@ export default function TimelinePage({
             </div>
           </form>
         )}
-        {characters.length > 0 && (
+        {filterCharacters.length > 0 && (
           <div ref={filterRef} className="relative">
             <button
               onClick={() => setFilterOpen((x) => !x)}
-              className={secondaryButtonClassName}>
-              {t("timeline.filterByCharacter")}
+              className={`${secondaryButtonClassName} gap-2`}>
+              <span>{t("timeline.filterByCharacter")}</span>
               {filterChars.length > 0 && (
-                <span className="rounded-full bg-stone-900 px-2 py-0.5 text-xs text-stone-50">
+                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-stone-600 ring-1 ring-inset ring-stone-200">
                   {filterChars.length}
                 </span>
               )}
-              <span className="text-xs text-stone-400">
+              <span aria-hidden="true" className="text-xs text-stone-400">
                 {filterOpen ? "▲" : "▼"}
               </span>
             </button>
             {filterOpen && (
               <div className="absolute left-0 top-full z-10 mt-2 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-stone-200 bg-white py-1 shadow-lg">
-                {characters.map((character) => (
+                {filterCharacters.map((character) => (
                   <label
                     key={character.id}
                     className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50">
