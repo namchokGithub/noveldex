@@ -15,6 +15,7 @@ import { ResourceNotFoundError } from "@/libs/errors";
 import { DashboardPage, SectionHeading, backLinkClassName } from "../../ui";
 import EntityList from "./EntityList";
 import { T } from "@/components/i18n/I18nProvider";
+import { CircleChevronLeft } from "lucide-react";
 
 export default async function EntitiesPage({
   params,
@@ -68,7 +69,8 @@ export default async function EntitiesPage({
     <DashboardPage maxWidth="max-w-5xl">
       <div className="space-y-5">
         <Link href={`/novels/${id}`} className={backLinkClassName}>
-          ← {data.title}
+          <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+          {data.title}
         </Link>
         <SectionHeading
           eyebrow={<T k="entities.eyebrow" />}

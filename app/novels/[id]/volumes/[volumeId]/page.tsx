@@ -25,6 +25,7 @@ import {
 } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { volumeRecentPageLabel } from "@/libs/recentNovelPages";
+import { CircleChevronLeft } from "lucide-react";
 
 export default async function VolumePage({
   params,
@@ -73,7 +74,8 @@ export default async function VolumePage({
             id="volume-back-link"
             href={`/novels/${id}`}
             className={backLinkClassName}>
-            ← Back to {novel.title}
+            <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />{" "}
+            Back to {novel.title}
           </Link>
           <VolumeNavigation novelId={id} {...adjacentVolumes} />
         </div>

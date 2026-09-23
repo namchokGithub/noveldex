@@ -13,6 +13,7 @@ import {
 import { adaptationsForCharacter } from "@/libs/characterCrossReferences";
 import { ResourceNotFoundError } from "@/libs/errors";
 import BackToTopButton from "@/app/novels/BackToTopButton";
+import { CircleChevronLeft } from "lucide-react";
 
 export default async function CharacterPage({
   params,
@@ -47,7 +48,8 @@ export default async function CharacterPage({
           id="character-detail-back-link"
           href={`/novels/${id}/characters`}
           className={backLinkClassName}>
-          ← <T k="nav.characters" />
+          <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+          <T k="nav.characters" />
         </Link>
 
         <CharacterDetail

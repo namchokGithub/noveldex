@@ -14,6 +14,7 @@ import {
 import { ResourceNotFoundError } from "@/libs/errors";
 import { normalizeCursorPage } from "@/libs/pagination";
 import type { CharacterSort, SortDirection } from "@/app/types";
+import { CircleChevronLeft } from "lucide-react";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
 
@@ -48,7 +49,8 @@ export default async function CharactersPage({
   const roleId = resolvedSearchParams.role?.trim() || null;
   const search = resolvedSearchParams.q?.trim() || null;
   const sort: CharacterSort =
-    resolvedSearchParams.sort === "updated_at" || resolvedSearchParams.sort === "role"
+    resolvedSearchParams.sort === "updated_at" ||
+    resolvedSearchParams.sort === "role"
       ? resolvedSearchParams.sort
       : "name";
   const direction: SortDirection =
@@ -84,7 +86,8 @@ export default async function CharactersPage({
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
         <Link href={`/novels/${id}`} className={backLinkClassName}>
-          ← {characters.novel.title}
+          <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+          {characters.novel.title}
         </Link>
 
         <SectionHeading

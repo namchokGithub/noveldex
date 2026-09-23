@@ -48,6 +48,7 @@ import AdaptationNotesPreview from "./AdaptationNotesPreview";
 import { formatChapterLabel } from "@/libs/chapterLabel";
 import { chapterPreview } from "@/libs/adaptations/chapterPreview";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
+import { CircleChevronLeft } from "lucide-react";
 
 const emptyForm = (volumeId = "", sortOrder = "1"): AdaptationFormState => ({
   volume_id: volumeId,
@@ -289,7 +290,8 @@ export default function AdaptationTimeline({
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
         <Link href={`/novels/${novelId}`} className={backLinkClassName}>
-          ← {novelTitle}
+          <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+          {novelTitle}
         </Link>
         <SectionHeading
           eyebrow={t("adaptations.title")}
@@ -398,38 +400,49 @@ export default function AdaptationTimeline({
                                     {item.description}
                                   </p>
                                 ) : null}
-                                {item.adapted_chapter_ids.length > 0 ? (() => {
-                                  const { visibleId, hiddenIds } = chapterPreview(
-                                    item.adapted_chapter_ids,
-                                  );
-                                  const chapter = visibleId
-                                    ? chapterById.get(visibleId)
-                                    : undefined;
-                                  return (
-                                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                                      {chapter ? (
-                                        <Link
-                                          href={`/novels/${novelId}/volumes/${item.volume_id}/chapters/${chapter.id}`}
-                                          className="text-sky-700 hover:underline">
-                                          {formatChapterLabel(chapter, chapterLabels)} ·{" "}
-                                          {chapter.title}
-                                        </Link>
-                                      ) : null}
-                                      {hiddenIds.length > 0 ? (
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setChapterDialogAdaptation(item)
-                                          }
-                                          className="text-sky-700 hover:underline">
-                                          {t("adaptations.viewAllChapters", {
-                                            count: item.adapted_chapter_ids.length,
-                                          })}
-                                        </button>
-                                      ) : null}
-                                    </div>
-                                  );
-                                })() : null}
+                                {item.adapted_chapter_ids.length > 0
+                                  ? (() => {
+                                      const { visibleId, hiddenIds } =
+                                        chapterPreview(
+                                          item.adapted_chapter_ids,
+                                        );
+                                      const chapter = visibleId
+                                        ? chapterById.get(visibleId)
+                                        : undefined;
+                                      return (
+                                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                                          {chapter ? (
+                                            <Link
+                                              href={`/novels/${novelId}/volumes/${item.volume_id}/chapters/${chapter.id}`}
+                                              className="text-sky-700 hover:underline">
+                                              {formatChapterLabel(
+                                                chapter,
+                                                chapterLabels,
+                                              )}{" "}
+                                              · {chapter.title}
+                                            </Link>
+                                          ) : null}
+                                          {hiddenIds.length > 0 ? (
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setChapterDialogAdaptation(item)
+                                              }
+                                              className="text-sky-700 hover:underline">
+                                              {t(
+                                                "adaptations.viewAllChapters",
+                                                {
+                                                  count:
+                                                    item.adapted_chapter_ids
+                                                      .length,
+                                                },
+                                              )}
+                                            </button>
+                                          ) : null}
+                                        </div>
+                                      );
+                                    })()
+                                  : null}
                                 <AdaptationNotesPreview adaptation={item} />
                               </div>
                             </div>
@@ -560,7 +573,8 @@ export default function AdaptationTimeline({
                     href={`/novels/${novelId}/volumes/${chapterDialogAdaptation.volume_id}/chapters/${chapter.id}`}
                     onClick={() => setChapterDialogAdaptation(null)}
                     className="block rounded-xl bg-stone-50 px-3 py-2 text-sm text-sky-700 ring-1 ring-stone-200/70 hover:underline">
-                    {formatChapterLabel(chapter, chapterLabels)} · {chapter.title}
+                    {formatChapterLabel(chapter, chapterLabels)} ·{" "}
+                    {chapter.title}
                   </Link>
                 </li>
               ) : null;
