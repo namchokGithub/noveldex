@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   decodeEntityCursor,
   encodeEntityCursor,
+  getEntitiesPageByNamePrefix,
   getEntitiesPage,
   getNovel,
 } from "@/libs/api";
@@ -23,10 +24,11 @@ export default async function EntitiesPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ type?: string; after?: string }>;
+  searchParams: Promise<{ type?: string; after?: string; q?: string }>;
 }) {
   const { id } = await params;
-  const { type: rawType, after = "" } = await searchParams;
+  const { type: rawType, after = "", q: rawQuery = "" } = await searchParams;
+  const query = rawQuery.trim();
   const selectedType: GenericEntityType | null =
     rawType === "all"
       ? null
@@ -43,14 +45,18 @@ export default async function EntitiesPage({
   try {
     data = await getNovel(id);
     if (selectedType) {
-      const page = await getEntitiesPage(id, selectedType, cursor, 20);
+      const page = query
+        ? await getEntitiesPageByNamePrefix(id, selectedType, query, cursor, 20)
+        : await getEntitiesPage(id, selectedType, cursor, 20);
       entities = page.entities;
       if (page.nextCursor)
         nextCursorByType[selectedType] = encodeEntityCursor(page.nextCursor);
     } else {
       const previews = await Promise.all(
         GENERIC_ENTITY_TYPES.map(async (entityType) => {
-          const page = await getEntitiesPage(id, entityType, null, 5);
+          const page = query
+            ? await getEntitiesPageByNamePrefix(id, entityType, query, null, 5)
+            : await getEntitiesPage(id, entityType, null, 5);
           return [entityType, page] as const;
         }),
       );
@@ -81,10 +87,11 @@ export default async function EntitiesPage({
           action={<AddEntityForm novelId={id} />}
         />
         <EntityList
-          key={`${selectedType ?? "all"}:${cursorHistory.join(",")}`}
+          key={`${selectedType ?? "all"}:${query}:${cursorHistory.join(",")}`}
           novelId={id}
           entities={entities}
           selectedType={selectedType}
+          query={query}
           cursorHistory={cursorHistory}
           nextCursorByType={nextCursorByType}
         />

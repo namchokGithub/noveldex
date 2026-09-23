@@ -4,11 +4,13 @@ import {
   deleteDoc,
   doc,
   documentId,
+  endAt,
   getDoc,
   getDocs,
   limit,
   orderBy,
   query,
+  startAt,
   startAfter,
   Timestamp,
   updateDoc,
@@ -145,6 +147,48 @@ export async function getEntitiesPage(
         where("type", "==", type),
         orderBy("name"),
         orderBy(documentId()),
+        pageLimit,
+      );
+  const snapshot = await getDocs(entityQuery);
+  const pageDocs = snapshot.docs.slice(0, pageSize);
+  const last = pageDocs.at(-1);
+
+  return {
+    entities: pageDocs.map((entity) =>
+      toEntity(novelId, entity.id, entity.data() as EntityDoc),
+    ),
+    nextCursor:
+      snapshot.docs.length > pageSize && last
+        ? { name: (last.data() as EntityDoc).name, id: last.id }
+        : null,
+  };
+}
+
+export async function getEntitiesPageByNamePrefix(
+  novelId: string,
+  type: GenericEntityType,
+  prefix: string,
+  cursor: EntityCursor | null,
+  pageSize = 20,
+): Promise<EntityPage> {
+  const pageLimit = limit(pageSize + 1);
+  const entityQuery = cursor
+    ? query(
+        entitiesCol(novelId),
+        where("type", "==", type),
+        orderBy("name"),
+        orderBy(documentId()),
+        startAfter(cursor.name, cursor.id),
+        endAt(`${prefix}\uf8ff`),
+        pageLimit,
+      )
+    : query(
+        entitiesCol(novelId),
+        where("type", "==", type),
+        orderBy("name"),
+        orderBy(documentId()),
+        startAt(prefix),
+        endAt(`${prefix}\uf8ff`),
         pageLimit,
       );
   const snapshot = await getDocs(entityQuery);

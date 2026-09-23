@@ -116,6 +116,7 @@ export {
   encodeEntityCursor,
   getEntities,
   getEntitiesPage,
+  getEntitiesPageByNamePrefix,
   getEntity,
   updateEntity,
 } from "@/libs/firebase/entities";

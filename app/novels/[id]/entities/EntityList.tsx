@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Entity, GenericEntityType } from "@/libs/entities/types";
 import { type TranslationKey, useI18n } from "@/components/i18n/I18nProvider";
-import { emptyStateClassName, secondaryButtonClassName } from "../../ui";
+import {
+  emptyStateClassName,
+  inputClassName,
+  secondaryButtonClassName,
+} from "../../ui";
 import { entityTypeBadgeStyle } from "@/libs/richNotes/tagColors";
 import { Select } from "@/components/ui/Select";
 
@@ -20,12 +24,14 @@ export default function EntityList({
   novelId,
   entities: initial,
   selectedType,
+  query,
   cursorHistory,
   nextCursorByType,
 }: {
   novelId: string;
   entities: Entity[];
   selectedType: GenericEntityType | null;
+  query: string;
   cursorHistory: string[];
   nextCursorByType: Partial<Record<GenericEntityType, string>>;
 }) {
@@ -36,19 +42,25 @@ export default function EntityList({
   const entities = initial;
   function typeHref(entityType: GenericEntityType, cursors: string[] = []) {
     const params = new URLSearchParams({ type: entityType });
+    if (query) params.set("q", query);
     if (cursors.length) params.set("after", cursors.join(","));
     return `/novels/${novelId}/entities?${params.toString()}`;
   }
-  const allTypesHref = `/novels/${novelId}/entities?type=all`;
+  const allTypesHref = `/novels/${novelId}/entities?${new URLSearchParams({
+    type: "all",
+    ...(query ? { q: query } : {}),
+  }).toString()}`;
   const visibleTypes = selectedType ? [selectedType] : TYPES;
   const filterValue = selectedType ?? "all";
 
+  function entityListHref(type: string, nextQuery = query) {
+    const params = new URLSearchParams({ type });
+    if (nextQuery) params.set("q", nextQuery);
+    return `/novels/${novelId}/entities?${params.toString()}`;
+  }
+
   function changeFilter(value: string) {
-    router.push(
-      value === "all"
-        ? `/novels/${novelId}/entities?type=all`
-        : `/novels/${novelId}/entities?type=${value}`,
-    );
+    router.push(entityListHref(value));
   }
 
   return (
@@ -73,6 +85,22 @@ export default function EntityList({
           ]}
           aria-label={t("entities.filterType")}
         />
+        <form
+          className="flex min-w-56 flex-1 items-center gap-2 sm:max-w-xs"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const value = new FormData(event.currentTarget).get("q");
+            router.push(
+              entityListHref(filterValue, typeof value === "string" ? value.trim() : ""),
+            );
+          }}>
+          <input
+            name="q"
+            defaultValue={query}
+            className={inputClassName}
+            placeholder={t("entities.searchPlaceholder")}
+          />
+        </form>
       </div>
       {entities.length === 0 ? (
         <div className={emptyStateClassName}>{t("entities.empty")}</div>

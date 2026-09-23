@@ -3,6 +3,7 @@ import {
   createEntity,
   decodeEntityCursor,
   encodeEntityCursor,
+  getEntitiesPageByNamePrefix,
   getEntitiesPage,
 } from "./entities";
 import {
@@ -59,5 +60,37 @@ describe("getEntitiesPage", () => {
 
     expect(second.entities.map((entity) => entity.name)).toEqual(["Charlie"]);
     expect(second.nextCursor).toBeNull();
+  });
+});
+
+describe("getEntitiesPageByNamePrefix", () => {
+  it("returns only entities of the requested type whose names start with the prefix", async () => {
+    for (const name of ["Tempest", "Temple", "Jura"]) {
+      await createEntity("novel-1", {
+        type: "location",
+        name,
+        aliases: [],
+        description: "",
+      });
+    }
+    await createEntity("novel-1", {
+      type: "concept",
+      name: "Tempest theory",
+      aliases: [],
+      description: "",
+    });
+
+    const result = await getEntitiesPageByNamePrefix(
+      "novel-1",
+      "location",
+      "Tem",
+      null,
+      20,
+    );
+
+    expect(result.entities.map((entity) => entity.name)).toEqual([
+      "Tempest",
+      "Temple",
+    ]);
   });
 });

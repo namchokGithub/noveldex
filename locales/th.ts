@@ -459,6 +459,7 @@ const th = {
   "entities.title": "เอนทิตีในเรื่อง",
   "entities.description": "จัดการสถานที่ สกิล องค์กร ไอเท็ม และแนวคิด",
   "entities.filterType": "กรองตามประเภท",
+  "entities.searchPlaceholder": "ค้นหาชื่อเอนทิตี…",
   "entities.addEyebrow": "เอนทิตีในเรื่อง",
   "entities.addTitle": "เพิ่มเอนทิตี",
   "entities.type": "ประเภท",
