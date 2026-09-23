@@ -7,7 +7,7 @@ import type { EntityId } from "@/libs/entities/types";
 import {
   getEntityReferencePage,
   getAdaptationsForChapterIds,
-  type EntityReference,
+  type EntityReferenceIndexEntry,
   type EntityReferenceCursor,
 } from "@/libs/api";
 import { useI18n } from "@/components/i18n/I18nProvider";
@@ -16,7 +16,7 @@ import { FormError, cardClassName, secondaryButtonClassName } from "../../../ui"
 
 export default function EntityCrossReferences({ novelId, entityId }: { novelId: string; entityId: EntityId }) {
   const { t } = useI18n();
-  const [items, setItems] = useState<EntityReference[] | null>(null);
+  const [items, setItems] = useState<EntityReferenceIndexEntry[] | null>(null);
   const [nextCursor, setNextCursor] = useState<EntityReferenceCursor | null>(null);
   const [linkedAdaptations, setLinkedAdaptations] = useState<Adaptation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ export default function EntityCrossReferences({ novelId, entityId }: { novelId: 
       );
       setNextCursor(page.nextCursor);
     } catch (cause) {
-      setError(userErrorMessage(cause));
+      setError(userErrorMessage(cause, t));
     } finally {
       setLoading(false);
     }

@@ -97,7 +97,7 @@ export {
   getEntityReferencePage,
 } from "@/libs/firebase/entityReferences";
 export type {
-  EntityReference,
+  EntityReference as EntityReferenceIndexEntry,
   EntityReferenceCursor,
   EntityReferencePage,
 } from "@/libs/firebase/entityReferences";
