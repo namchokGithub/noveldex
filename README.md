@@ -45,6 +45,12 @@ preview-chapter
 - `[[Name]]` and `[[type:Name]]` entity references (character, location, skill, organization, item, concept)
 - Tags
 
+### Characters
+
+- Role-filtered directory with prefix search and sortable profiles
+- Rich appearance, personality, trivia, and grouped character facts
+- Visual galleries with external image sources, categories, and ordering
+
 ### Search
 
 - Client-side full-text search (MiniSearch), no server round trip

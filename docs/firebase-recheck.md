@@ -9,7 +9,7 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 ## Baseline facts (apply to the whole app)
 
 - **No `onSnapshot` anywhere** (`grep -rn onSnapshot app components libs` → 0 hits). The app uses `firebase/firestore/lite`, which doesn't even expose realtime listeners. There is nothing to trim on that axis, and nothing should be added — realtime behavior isn't part of the current design (guest users only read).
-- **Firestore-level pagination:** `getTagsPage` (`libs/firebase/tags.ts:42`) and `getVolumesPage` (`libs/firebase/volumes.ts`) use bounded cursor queries. The Character list remains an in-memory pagination concern (H6).
+- **Firestore-level pagination:** `getTagsPage` (`libs/firebase/tags.ts:42`), `getVolumesPage` (`libs/firebase/volumes.ts`), and the normal (non-prefix-search) `getCharactersPage` path use bounded cursor queries. Character prefix search is intentionally handled separately in H6 because it reads all prefix matches before client-side sorting and slicing.
 - **Firebase Lite 11.10 aggregation constraint:** the installed public `firebase/firestore/lite` entry point does **not** export `getCountFromServer` or `getAggregateFromServer`. This was verified by TypeScript compilation. Current Firebase documentation describes aggregation APIs for newer SDK surfaces, but this audit must plan against the pinned `firebase ^11.10.0` runtime. Do not add full-SDK aggregation imports to work around this: Cloudflare Workers depend on Lite modules.
 - **Global search is one eager client-side MiniSearch index** (`libs/search/SearchIndexProvider.tsx`, mounted once in `app/layout.tsx`), built by `loadSearchDataset()` (`libs/search/loader.ts`), which walks **every novel → every volume/chapter/note/character/entity/event/adaptation** on first page load. This is the intentional Phase 3 architecture (`docs/ai/AGENTS.md`: "one derived client-side MiniSearch index... do not add Firestore full-text queries, an HTTP search endpoint, or a second authoritative datastore"), so it is **not** being redesigned here, but it is the single largest read-cost driver in the app and is called out explicitly below.
 - Tests were run against the local Firestore/Auth emulator (`corepack pnpm run emulators`) before and after this session's edits. Baseline had 4 pre-existing failures in `libs/firebase/chapters.test.ts` (mention auto-link / legacy-notes assertions) unrelated to Firestore reads; they fail identically with and without this session's changes, so they're not a regression. Everything else (164 tests) passes; `tsc --noEmit` and `pnpm lint` are clean.
@@ -71,17 +71,26 @@ This record is intentionally pending: no production maintenance window, Firebase
 
 ### H6 — `[x]` Character list now reads a bounded cursor page
 
-**Fix:** `getCharactersPage()` orders the direct Character subcollection by
-`name` plus document ID and reads at most `per_page` documents using opaque
-`after`/`before` cursors. It reads `novels/{novelId}.character_count` for the
-total and each page item carries its maintained `chapter_count`; it no longer
-scans the novel's Chapters collection. Character and Chapter mutations maintain
-the counters, and `backfill:denormalized-counters` reconciles legacy data.
+**Fix:** The normal `getCharactersPage()` path orders the direct Character
+subcollection by the selected name, update-time, or role sort plus document ID
+and reads at most `per_page` documents using opaque `after`/`before` cursors.
+It reads `novels/{novelId}.character_count` for the unfiltered total and each
+page item carries its maintained `chapter_count`; it no longer scans the
+novel's Chapters collection. Character and Chapter mutations maintain the
+counters, and `backfill:denormalized-counters` reconciles legacy data.
+
+**Prefix search trade-off:** `name_search` is a trimmed lowercase derived field.
+The prefix query reads all matching Character documents before client-side sort
+and cursor slicing, because users can choose name, updated-at, or role ordering.
+Deploy the matching Character indexes and run
+`backfill:character-name-search` before enabling the feature against legacy
+data.
 
 **Impact:** a normal directory request is one Novel document plus at most
-`per_page` Character documents, with no Chapter collection read. Production
-backfill/apply/verify remains an explicit pending operator action; this code
-change does not write production data.
+`per_page` Character documents, with no Chapter collection read. A prefix
+search reads one query result per matching Character, but still performs no
+Chapter collection read. Production backfill/apply/verify remains an explicit
+pending operator action; this code change does not write production data.
 
 ### H7 — `[x]` Defer the global search index until the command palette opens
 
@@ -157,7 +166,7 @@ change does not write production data.
 | H3  | Volume detail: share one`getTags()` read with `getChaptersByVolume` | High     | ✅ Done                                          |
 | H4  | Memoize entity/character lookups inside`firestoreEntityLookup()`    | High     | ✅ Done                                          |
 | H5  | Volume list: bounded cursor page from stored counters               | High     | ✅ Done                                          |
-| H6  | Character list: choose a separate maintained counter strategy       | High     | ⬜ Open                                          |
+| H6  | Character list: bounded cursor page and maintained counters         | High     | ✅ Done                                          |
 | H7  | Search index: lazy-start instead of eager root-layout load          | High     | ✅ Done                                          |
 | M1  | Novel page: removed tracked-character count read                    | Medium   | ✅ Done                                          |
 | M2  | `getEventsForCharacter`/`getEventsForEntity` full-collection reads  | Medium   | ⬜ Open (fix requires schema change — see notes) |
