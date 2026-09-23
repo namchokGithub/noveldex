@@ -16,6 +16,7 @@
     "backfill:chapter-entry-order": "tsx --env-file=.env.local scripts/one-off/backfill-chapter-entry-order.ts",
     "backfill:volume-chapter-numbers": "tsx --env-file=.env.local scripts/one-off/backfill-volume-chapter-numbers.ts",
     "backfill:entity-references": "tsx --env-file=.env.local scripts/one-off/backfill-entity-references.ts",
+    "backfill:entity-reference-index": "tsx --env-file=.env.local scripts/one-off/backfill-entity-reference-index.ts",
     "backfill:denormalized-counters": "tsx --env-file=.env.local scripts/one-off/backfill-denormalized-counters.ts",
     "backfill:character-name-search": "tsx --env-file=.env.local scripts/one-off/backfill-character-name-search.ts",
     "benchmark:search": "node --expose-gc --import tsx scripts/one-off/benchmark-search-index.ts",
