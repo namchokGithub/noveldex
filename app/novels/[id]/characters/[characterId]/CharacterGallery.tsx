@@ -461,7 +461,7 @@ function GalleryImagePreviewModal({
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageFailed(true)}
             unoptimized
-            className={`h-[70dvh] max-h-[calc(100dvh-9rem)] max-w-[calc(100dvw-4rem)] rounded-2xl object-contain transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+            className={`h-[70dvh] w-auto max-h-[calc(100dvh-9rem)] max-w-[calc(100dvw-4rem)] rounded-2xl object-contain transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
           />
         )}
       </div>
