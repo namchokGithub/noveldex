@@ -110,12 +110,13 @@ pending operator action; this code change does not write production data.
 **Fix:** Done: the Explore card displays static navigation help; `/novels/:id` no longer reads the characters collection.
 **Impact:** This concern is closed independently of the Volume counter strategy; no character counter is needed for the Novel detail page.
 
-### M2 — `[ ]` `getEventsForCharacter` / `getEventsForEntity` read the full events collection
+### M2 — `[ ]` `getEventsForCharacter` reads the full events collection
 
-**File:** `libs/firebase/events.ts:296-322`, used by `characters/[characterId]/page.tsx` and `entities/[entityId]/page.tsx`
-**Current:** both read every event in the novel, then filter in memory via `eventsForCharacter`/`eventsForEntity`.
+**File:** `libs/firebase/events.ts:296-322`, used by `characters/[characterId]/page.tsx`
+**Current:** the Character detail flow reads every Event in the Novel, then filters in memory via `eventsForCharacter`.
 **Investigated fix (rejected — see below):** an `array-contains` query on `character_ids` looked promising since chapters already use that pattern (`characterChapters` in `characters.ts`), but `eventsForCharacter` matches on **`character_ids` OR a resolved `[[mention]]` in `description_references`** (`libs/characterCrossReferences.ts:26-34`). A server-side `array-contains` query would silently drop events that only match via the description-mention path — a real behavior change, not just an optimization. Not safe without also maintaining a denormalized "resolved character ids" array that includes mention-derived ids, which is a schema change.
-**Status:** left as-is; events collections are typically small (curated timeline), so priority is Medium rather than High. If this becomes expensive, the right fix is denormalizing resolved mention ids into `character_ids` at write time (schema change, needs its own ADR), not a query-shape change.
+**Entity status:** closed separately. Entity detail now reads the cursor-bounded `entityReferences` inverse index lazily, including Event-description entries, rather than calling `getEventsForEntity` or scanning the Events collection.
+**Status:** Character flow is left as-is; events collections are typically small (curated timeline), so priority is Medium rather than High. If this becomes expensive, the right fix is denormalizing resolved mention ids into `character_ids` at write time (schema change, needs its own ADR), not a query-shape change.
 
 ### M3 — `[ ]` `getCharacterRoles()` re-reads a tiny global collection on every character-related page
 
@@ -129,11 +130,12 @@ pending operator action; this code change does not write production data.
 **Current:** every request re-reads the full novels collection. Since Firestore SDK calls aren't tracked by Next's `fetch` cache, this is already effectively dynamic on every other page too (the `force-dynamic` export here doesn't change anything relative to pages without it) — so there is no existing caching layer to lean on anywhere in the app.
 **Proposed:** wrap `getNovels()` (and similar rarely-changing reads) in `unstable_cache` with a short revalidate window (e.g. 30–60s). Same idea as M3, broader scope. Needs a decision on acceptable staleness since guest and authenticated users share the same public read path (ADR-012).
 
-### M5 — `[ ]` Adaptation lookups on character/entity detail pages are novel-wide
+### M5 — `[ ]` Adaptation lookups on Character detail pages are novel-wide
 
-**Pages:** `characters/[characterId]/page.tsx`, `entities/[entityId]/page.tsx`
-**Current:** both call `getAdaptationsForNovel(id)` (a `collectionGroup("adaptations")` scan of the whole novel) then filter client-side to the one character/entity via `adaptationsForCharacter`/`adaptationsForEntity`.
-**Assessment:** same shape as M2, but adaptation collections are usually the smallest in the data model (episodes/movies, not chapters). Documented for completeness; not worth the risk/effort unless a novel has an unusually large adaptation list.
+**Page:** `characters/[characterId]/page.tsx`
+**Current:** Character detail calls `getAdaptationsForNovel(id)` (a `collectionGroup("adaptations")` scan of the whole Novel), then filters client-side via `adaptationsForCharacter`.
+**Entity status:** closed separately. Entity detail does not call `getAdaptationsForNovel`; its lazy index panel reads direct Adaptation-note references and fetches Chapter-linked Adaptations in bounded `array-contains-any` queries, chunked to at most 30 Chapter IDs.
+**Assessment:** the remaining Character path has the same shape as M2, but Adaptation collections are usually the smallest in the data model (episodes/movies, not chapters). Documented for completeness; not worth the risk/effort unless a Novel has an unusually large Adaptation list.
 
 ### M6 — `[x]` Cross-chapter entity-lookup memoization (follow-up to H4)
 
@@ -169,11 +171,11 @@ pending operator action; this code change does not write production data.
 | H6  | Character list: bounded cursor page and maintained counters         | High     | ✅ Done                                          |
 | H7  | Search index: lazy-start instead of eager root-layout load          | High     | ✅ Done                                          |
 | M1  | Novel page: removed tracked-character count read                    | Medium   | ✅ Done                                          |
-| M2  | `getEventsForCharacter`/`getEventsForEntity` full-collection reads  | Medium   | ⬜ Open (fix requires schema change — see notes) |
+| M2  | `getEventsForCharacter` full-collection read                        | Medium   | ⬜ Open (fix requires schema change — see notes) |
 | M3  | Cache`getCharacterRoles()` (tiny, global, rarely changes)           | Medium   | ⬜ Open                                          |
 | M4  | Time-based cache for`getNovels()` and similar reference reads       | Medium   | ⬜ Open                                          |
-| M5  | `getAdaptationsForNovel` on character/entity detail pages           | Medium   | ⬜ Open                                          |
+| M5  | `getAdaptationsForNovel` on Character detail                        | Medium   | ⬜ Open                                          |
 | M6  | Hoist entity lookup across chapters (follow-up to H4)               | Medium   | ✅ Done                                          |
 | M7  | `validateChapterIds` avoids chapter hydration for membership checks | Medium   | ✅ Done                                          |
 
-No schema changes were made or proposed as required. All "Done" items preserve existing ordering, filters, permissions, and output shape — verified with `tsc --noEmit`, `pnpm lint`, and the full test suite against the local emulator (same 4 pre-existing, unrelated failures before and after).
+The Entity-detail optimization adds the derived `entityReferences` collection and its required Firestore index; source records remain authoritative and the Admin reconciliation repairs drift. All other "Done" items preserve existing ordering, filters, permissions, and output shape — verified with `tsc --noEmit`, `pnpm lint`, and the full test suite against the local emulator (same 4 pre-existing, unrelated failures before and after).

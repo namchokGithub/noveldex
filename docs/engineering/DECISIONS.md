@@ -180,3 +180,35 @@ writes can still change page membership between navigations, as expected for
 cursor pagination. Prefix search is deliberately not bounded by `per_page`: it
 trades reads proportional to the matched prefix for consistent client-side
 sorting across the directory's sort options.
+
+---
+
+## ADR-015: Derived Entity cross-reference index
+
+**Decision:** Maintain a derived inverse-reference collection at
+`novels/{novelId}/entityReferences`. It records resolved entity occurrences in
+Chapter notes, Event descriptions, and Adaptation notes. The source document is
+always authoritative; source mutations replace or remove their deterministic
+index entries in the same write workflow.
+
+Entity detail reads its Entity document first. Its cross-reference panel then
+loads an index page only when expanded, using a cursor ordered by update time
+and document ID. Direct Adaptation-note references come from the index; related
+Adaptations for referenced Chapters are fetched by Chapter ID in
+`array-contains-any` batches of at most 30 and deduplicated by Adaptation ID.
+
+**Why:** The previous detail route read all Chapters, Events, and Adaptations
+in a Novel and filtered them in memory. The index changes the normal read path
+from work proportional to the entire Novel to one bounded, on-demand query plus
+only the linked Adaptation queries.
+
+**Operations:** Deploy the `entityReferences` Firestore index first. For
+existing data, reconcile reference occurrences, then reconcile the inverse
+index using dry-run, apply, and verify modes of
+`backfill:entity-reference-index` during an approved maintenance window.
+Re-running the reconciliation repairs drift.
+
+**Trade-offs:** Every relevant source mutation performs extra derived-data
+writes, and the index can drift after legacy or out-of-band writes. The
+backfill is the recovery mechanism. The panel intentionally trades immediate
+cross-reference visibility for lower initial detail-page latency and read cost.
