@@ -1,23 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Entity, GenericEntityType } from "@/libs/entities/types";
-import { createEntity } from "@/libs/api";
-import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   emptyStateClassName,
-  FormError,
-  inputClassName,
-  primaryButtonClassName,
   secondaryButtonClassName,
-  Snackbar,
 } from "../../ui";
-import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
-import { normalizeEntity } from "@/libs/search/normalize";
 import { entityTypeBadgeStyle } from "@/libs/richNotes/tagColors";
-import { userErrorMessage } from "@/libs/userErrorMessage";
 import { Select } from "@/components/ui/Select";
 
 const TYPES: GenericEntityType[] = [
@@ -42,82 +33,49 @@ export default function EntityList({
   nextCursorByType: Partial<Record<GenericEntityType, string>>;
 }) {
   const { t } = useI18n();
-  const { upsert } = useSearchMutations();
-  const { isAdmin } = useAuth();
-  const [entities, setEntities] = useState(initial);
-  const [type, setType] = useState<GenericEntityType>("location");
-  const [name, setName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<{
-    tone: "success" | "error";
-    message: string;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!snackbar) return;
-    const timeoutId = window.setTimeout(() => setSnackbar(null), 3000);
-    return () => window.clearTimeout(timeoutId);
-  }, [snackbar]);
-
-  async function add() {
-    if (!name.trim()) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const entity = await createEntity(novelId, {
-        type,
-        name: name.trim(),
-        aliases: [],
-        description: "",
-      });
-      upsert(normalizeEntity(entity));
-      if (!selectedType || selectedType === entity.type)
-        setEntities((all) =>
-          [...all, entity].sort((a, b) => a.name.localeCompare(b.name)),
-        );
-      setName("");
-      setSnackbar({ tone: "success", message: t("entities.addSuccess") });
-    } catch (cause) {
-      const message = userErrorMessage(cause, t);
-      setError(message);
-      setSnackbar({ tone: "error", message });
-    } finally {
-      setSaving(false);
-    }
-  }
+  const router = useRouter();
+  const entities = initial;
   function typeHref(entityType: GenericEntityType, cursors: string[] = []) {
     const params = new URLSearchParams({ type: entityType });
     if (cursors.length) params.set("after", cursors.join(","));
     return `/novels/${novelId}/entities?${params.toString()}`;
   }
-  const allTypesHref = `/novels/${novelId}/entities`;
+  const allTypesHref = `/novels/${novelId}/entities?type=all`;
   const visibleTypes = selectedType ? [selectedType] : TYPES;
+  const filterValue = selectedType ?? "all";
+
+  function changeFilter(value: string) {
+    router.push(
+      value === "all"
+        ? `/novels/${novelId}/entities?type=all`
+        : `/novels/${novelId}/entities?type=${value}`,
+    );
+  }
 
   return (
     <div className="space-y-5">
-      {isAdmin && (
-        <div className="flex flex-wrap gap-2 rounded-2xl border border-stone-200 bg-white p-4">
-          <Select
-            value={type}
-            onValueChange={(value) => setType(value as GenericEntityType)}
-            options={TYPES.map((value) => ({ value, label: value }))}
-          />
-          <input
-            className={inputClassName}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t("entities.name")}
-          />
-          <button
-            className={primaryButtonClassName}
-            onClick={() => void add()}
-            disabled={saving || !name.trim()}>
-            {saving ? t("common.saving") : t("entities.add")}
-          </button>
-          {error ? <FormError>{error}</FormError> : null}
-        </div>
-      )}
+      <div className="relative z-30 flex flex-wrap items-center gap-3 overflow-visible rounded-2xl border border-stone-200 bg-white p-4">
+        <label
+          htmlFor="entity-type-filter"
+          className="text-sm font-medium text-stone-700">
+          {t("entities.filterType")}
+        </label>
+        <Select
+          value={filterValue}
+          onValueChange={changeFilter}
+          id="entity-type-filter"
+          wrapperClassName="w-56"
+          options={[
+            { value: "all", label: t("entities.allTypes") },
+            { value: "location", label: "location" },
+            { value: "skill", label: "skill" },
+            { value: "organization", label: "organization" },
+            { value: "item", label: "item" },
+            { value: "concept", label: "concept" },
+          ]}
+          aria-label={t("entities.filterType")}
+        />
+      </div>
       {entities.length === 0 ? (
         <div className={emptyStateClassName}>{t("entities.empty")}</div>
       ) : (
@@ -201,13 +159,6 @@ export default function EntityList({
           );
         })
       )}
-      <Snackbar
-        open={Boolean(snackbar)}
-        tone={snackbar?.tone}
-        message={snackbar?.message}
-        onClose={() => setSnackbar(null)}
-        closeLabel={t("common.ok")}
-      />
     </div>
   );
 }

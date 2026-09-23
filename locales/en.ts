@@ -459,6 +459,10 @@ const en = {
   "entities.title": "Story entities",
   "entities.description":
     "Manage locations, skills, organizations, items, and concepts.",
+  "entities.filterType": "Filter by type",
+  "entities.addEyebrow": "Story entity",
+  "entities.addTitle": "Add entity",
+  "entities.type": "Type",
   "entities.add": "Add entity",
   "entities.addSuccess": "Entity added successfully.",
   "entities.empty": "No entities yet.",

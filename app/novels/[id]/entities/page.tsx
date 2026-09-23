@@ -14,6 +14,7 @@ import {
 import { ResourceNotFoundError } from "@/libs/errors";
 import { DashboardPage, SectionHeading, backLinkClassName } from "../../ui";
 import EntityList from "./EntityList";
+import AddEntityForm from "./AddEntityForm";
 import { T } from "@/components/i18n/I18nProvider";
 import { CircleChevronLeft } from "lucide-react";
 
@@ -26,11 +27,12 @@ export default async function EntitiesPage({
 }) {
   const { id } = await params;
   const { type: rawType, after = "" } = await searchParams;
-  const selectedType = GENERIC_ENTITY_TYPES.includes(
-    rawType as GenericEntityType,
-  )
-    ? (rawType as GenericEntityType)
-    : null;
+  const selectedType: GenericEntityType | null =
+    rawType === "all"
+      ? null
+      : GENERIC_ENTITY_TYPES.includes(rawType as GenericEntityType)
+        ? (rawType as GenericEntityType)
+        : "location";
   const cursorHistory = after
     .split(",")
     .filter((value) => decodeEntityCursor(value) !== null);
@@ -76,6 +78,7 @@ export default async function EntitiesPage({
           eyebrow={<T k="entities.eyebrow" />}
           title={<T k="entities.title" />}
           description={<T k="entities.description" />}
+          action={<AddEntityForm novelId={id} />}
         />
         <EntityList
           key={`${selectedType ?? "all"}:${cursorHistory.join(",")}`}
