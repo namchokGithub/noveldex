@@ -18,7 +18,6 @@ import {
 import { useI18n } from "@/components/i18n/I18nProvider";
 import {
   cardClassName,
-  inputClassName,
   primaryButtonClassName,
   secondaryButtonClassName,
   smallLabelClassName,
@@ -28,8 +27,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
-import { nextListIndex } from "@/libs/keyboardList";
-import { shouldCancelInlineEdit } from "@/libs/inlineEditKeyboard";
 import { normalizeChapter, normalizeNote } from "@/libs/search/normalize";
 import { diffNotes } from "@/libs/search/diffNotes";
 import { useChapterKindLabels } from "@/components/chapters/ChapterLabel";
@@ -538,8 +535,6 @@ function NoteForm({
   contentJson,
   onChange,
   entities,
-  inputRef,
-  suggestionsFor,
   onSave,
   onCancel,
   saving,
@@ -548,15 +543,11 @@ function NoteForm({
   contentJson?: RichNoteDocument;
   onChange: (value: { content: string; contentJson: RichNoteDocument }) => void;
   entities: import("@/libs/entities/types").Entity[];
-  inputRef?: (node: HTMLTextAreaElement | null) => void;
-  suggestionsFor?: (value: string, cursor: number) => string[];
   onSave: () => void;
   onCancel: () => void;
   saving: boolean;
 }) {
   const { t } = useI18n();
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
   return (
     <div>
@@ -585,58 +576,4 @@ function NoteForm({
       </div>
     </div>
   );
-
-  function resize(node: HTMLTextAreaElement | null) {
-    if (!node) return;
-    node.style.height = "auto";
-    node.style.height = `${node.scrollHeight}px`;
-  }
-  function refreshSuggestions(nextValue: string, cursor: number) {
-    setSuggestions(suggestionsFor?.(nextValue, cursor) ?? []);
-    setActiveSuggestionIndex(-1);
-  }
-  function update(event: React.ChangeEvent<HTMLTextAreaElement>) {
-    onChange({
-      content: event.target.value,
-      contentJson: contentJson ?? { type: "doc", content: [] },
-    });
-    refreshSuggestions(
-      event.target.value,
-      event.target.selectionStart ?? event.target.value.length,
-    );
-    resize(event.target);
-  }
-  function selectSuggestion(name: string) {
-    void name;
-    onChange({
-      content: value,
-      contentJson: contentJson ?? { type: "doc", content: [] },
-    });
-    setSuggestions([]);
-    setActiveSuggestionIndex(-1);
-  }
-  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      if (!suggestions.length) return;
-      event.preventDefault();
-      setActiveSuggestionIndex((current) =>
-        nextListIndex(current, suggestions.length, event.key),
-      );
-      return;
-    }
-    if (event.key === "Enter" && activeSuggestionIndex >= 0) {
-      event.preventDefault();
-      selectSuggestion(suggestions[activeSuggestionIndex]);
-      return;
-    }
-    if (event.key === "Escape") {
-      event.preventDefault();
-      if (suggestions.length) {
-        setSuggestions([]);
-        setActiveSuggestionIndex(-1);
-        return;
-      }
-      if (shouldCancelInlineEdit(event.key, saving)) onCancel();
-    }
-  }
 }
