@@ -70,6 +70,7 @@ export {
   getCharacter,
   createCharacter,
   updateCharacter,
+  updateCharacterGallery,
   deleteCharacter,
   decodeCharacterCursor,
   encodeCharacterCursor,

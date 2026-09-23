@@ -14,6 +14,7 @@ import type {
   Adaptation,
   Character,
   CharacterData,
+  GalleryImage,
   CharacterRole,
   NovelEvent,
 } from "../../../../types";
@@ -35,7 +36,11 @@ import ConfirmDialog from "../../../ConfirmDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import LocalizedDate from "@/components/i18n/LocalizedDate";
 import { ChapterLabel } from "@/components/chapters/ChapterLabel";
-import { deleteCharacter, updateCharacter } from "@/libs/api";
+import {
+  deleteCharacter,
+  updateCharacter,
+  updateCharacterGallery,
+} from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
@@ -47,6 +52,7 @@ import { crossReferencePreview } from "@/libs/crossReferencePreview";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { Select } from "@/components/ui/Select";
 import CharacterProfileImageModal from "./CharacterProfileImageModal";
+import CharacterGallery from "./CharacterGallery";
 import {
   RichNoteEditor,
   RichNoteContent,
@@ -100,6 +106,9 @@ export default function CharacterDetail({
   const [aliases, setAliases] = useState(character.aliases.join(", "));
   const [designData, setDesignData] = useState<CharacterData>(
     character.data ?? {},
+  );
+  const [gallery, setGallery] = useState<GalleryImage[]>(
+    character.gallery ?? [],
   );
 
   useResetOnSignOut(isAdmin, cancel);
@@ -159,6 +168,21 @@ export default function CharacterDetail({
     }
   }
 
+  async function saveGallery(nextGallery: GalleryImage[]) {
+    setError(null);
+    try {
+      await updateCharacterGallery(novelId, character.id, nextGallery);
+      setGallery(nextGallery);
+      setSnackbar({ tone: "success", message: t("character.saveSuccess") });
+      router.refresh();
+    } catch (cause) {
+      const message = userErrorMessage(cause, t);
+      setError(message);
+      setSnackbar({ tone: "error", message });
+      throw cause;
+    }
+  }
+
   async function remove() {
     setSaving(true);
     setError(null);
@@ -194,6 +218,7 @@ export default function CharacterDetail({
     setPersonalityJson(character.personality_content_json);
     setTriviaJson(character.trivia_content_json);
     setDesignData(character.data ?? {});
+    setGallery(character.gallery ?? []);
     setEditing(false);
     setError(null);
   }
@@ -410,6 +435,12 @@ export default function CharacterDetail({
           />
         </div>
       </div>
+
+      <CharacterGallery
+        gallery={gallery}
+        canEdit={isAdmin}
+        onSave={saveGallery}
+      />
 
       {character.chapters && character.chapters.length > 0 && (
         <div className={cardClassName}>

@@ -13,6 +13,10 @@ const editorSource = readFileSync(
   ),
   "utf8",
 );
+const gallerySource = readFileSync(
+  resolve(import.meta.dirname, "CharacterGallery.tsx"),
+  "utf8",
+);
 
 describe("character profile rich sections", () => {
   it("renders and saves appearance, personality, and trivia on the detail page", () => {
@@ -34,5 +38,31 @@ describe("character profile rich sections", () => {
     expect(detailSource).toContain('label: "Social"');
     expect(detailSource).toContain('label: "Debut"');
     expect(detailSource).toContain("data: designData");
+  });
+
+  it("renders and saves the character gallery separately from profile data", () => {
+    expect(detailSource).toContain("CharacterGallery");
+    expect(detailSource).toContain("gallery={gallery}");
+    expect(detailSource).toContain("canEdit={isAdmin}");
+    expect(detailSource).toContain("updateCharacterGallery");
+  });
+
+  it("keeps image edits separate while batching only gallery rearrangement", () => {
+    expect(gallerySource).toContain("Save image");
+    expect(gallerySource).toContain("Save order");
+    expect(gallerySource).toContain("Add image");
+  });
+
+  it("centers the selected gallery image and provides carousel controls", () => {
+    expect(gallerySource).toContain("activeImageId");
+    expect(gallerySource).toContain("ChevronLeft");
+    expect(gallerySource).toContain("Previous image");
+    expect(gallerySource).toContain("Next image");
+  });
+
+  it("opens gallery images in an accessible preview modal", () => {
+    expect(gallerySource).toContain("GalleryImagePreviewModal");
+    expect(gallerySource).toContain("View full image");
+    expect(gallerySource).toContain("onClose");
   });
 });

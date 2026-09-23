@@ -19,6 +19,7 @@ import type {
   Character,
   CharacterData,
   CharacterCursor,
+  GalleryImage,
   CharacterPage,
   CharacterSort,
   ChapterKind,
@@ -50,6 +51,7 @@ interface CharacterDoc {
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
   data?: CharacterData;
+  gallery?: GalleryImage[];
   chapter_count?: number;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -67,6 +69,27 @@ function characterRef(novelId: string, characterId: string) {
 
 function normalizeCharacterName(value: string) {
   return value.trim().toLocaleLowerCase();
+}
+
+function validateGallery(gallery: GalleryImage[] | undefined) {
+  if (!gallery) return;
+  const ids = new Set<string>();
+  for (const image of gallery) {
+    if (!image.id || ids.has(image.id) || !image.image_url.trim()) {
+      throw new Error("Gallery images require unique IDs and image URLs.");
+    }
+    ids.add(image.id);
+    for (const value of [image.image_url, image.source_url]) {
+      if (!value) continue;
+      try {
+        const url = new URL(value);
+        if (url.protocol !== "http:" && url.protocol !== "https:")
+          throw new Error();
+      } catch {
+        throw new Error("Gallery image URLs must use HTTP(S).");
+      }
+    }
+  }
 }
 
 async function characterChapters(
@@ -158,6 +181,11 @@ async function toCharacter(
     personality_content_json: data.personality_content_json,
     trivia_content_json: data.trivia_content_json,
     data: data.data,
+    gallery: data.gallery
+      ? [...data.gallery].sort(
+          (left, right) => left.sort_order - right.sort_order,
+        )
+      : undefined,
     first_appearance_chapter_id: null,
     chapter_count: hydrate
       ? chapterCount
@@ -216,6 +244,7 @@ export interface CharacterCreatePayload {
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
   data?: CharacterData;
+  gallery?: GalleryImage[];
   aliases: string[];
   profile_image_url?: string | null;
 }
@@ -224,6 +253,7 @@ export async function createCharacter(
   novelId: string,
   payload: CharacterCreatePayload,
 ): Promise<Character> {
+  validateGallery(payload.gallery);
   const resolvedRole = await resolveRole(payload);
   const ref = doc(charactersCol(novelId));
   await runTransaction(db, async (transaction) => {
@@ -251,6 +281,7 @@ export async function createCharacter(
           ? { trivia_content_json: payload.trivia_content_json }
           : {}),
         ...(payload.data ? { data: payload.data } : {}),
+        ...(payload.gallery ? { gallery: payload.gallery } : {}),
         profile_image_url: payload.profile_image_url ?? null,
         chapter_count: 0,
         ...resolvedRole,
@@ -284,6 +315,7 @@ export interface CharacterUpdatePayload {
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
   data?: CharacterData;
+  gallery?: GalleryImage[];
   aliases?: string[];
   profile_image_url?: string | null;
 }
@@ -293,6 +325,7 @@ export async function updateCharacter(
   characterId: string,
   payload: CharacterUpdatePayload,
 ): Promise<Character> {
+  validateGallery(payload.gallery);
   const update: Record<string, unknown> = {};
   if (payload.name !== undefined) {
     update.name = payload.name;
@@ -311,6 +344,7 @@ export async function updateCharacter(
   if (payload.trivia_content_json !== undefined)
     update.trivia_content_json = payload.trivia_content_json;
   if (payload.data !== undefined) update.data = payload.data;
+  if (payload.gallery !== undefined) update.gallery = payload.gallery;
   if (payload.aliases !== undefined) update.aliases = payload.aliases;
   if (payload.profile_image_url !== undefined) {
     update.profile_image_url = payload.profile_image_url;
@@ -330,6 +364,18 @@ export async function updateCharacter(
     snapshot.id,
     snapshot.data() as CharacterDoc,
     true,
+  );
+}
+
+export async function updateCharacterGallery(
+  novelId: string,
+  characterId: string,
+  gallery: GalleryImage[],
+): Promise<void> {
+  validateGallery(gallery);
+  await updateDoc(
+    characterRef(novelId, characterId),
+    withUpdateTimestamp({ gallery }),
   );
 }
 
@@ -564,7 +610,10 @@ export async function getCharactersPage(
       ? getDocs(query(charactersCol(novelId), ...roleConstraint))
       : Promise.resolve(null),
   ]);
-  const compare = (left: (typeof snapshot.docs)[number], right: (typeof snapshot.docs)[number]) => {
+  const compare = (
+    left: (typeof snapshot.docs)[number],
+    right: (typeof snapshot.docs)[number],
+  ) => {
     const dataLeft = left.data() as CharacterDoc;
     const dataRight = right.data() as CharacterDoc;
     const values =
@@ -579,14 +628,27 @@ export async function getCharactersPage(
               dataLeft.name_search ?? normalizeCharacterName(dataLeft.name),
               dataRight.name_search ?? normalizeCharacterName(dataRight.name),
             ];
-    const order = values[0] < values[1] ? -1 : values[0] > values[1] ? 1 : left.id.localeCompare(right.id);
+    const order =
+      values[0] < values[1]
+        ? -1
+        : values[0] > values[1]
+          ? 1
+          : left.id.localeCompare(right.id);
     return descending ? -order : order;
   };
   const matchedDocs = search ? [...snapshot.docs].sort(compare) : null;
   const searchStart = after
-    ? Math.max(0, (matchedDocs?.findIndex((document) => document.id === after.id) ?? -1) + 1)
+    ? Math.max(
+        0,
+        (matchedDocs?.findIndex((document) => document.id === after.id) ?? -1) +
+          1,
+      )
     : before
-      ? Math.max(0, (matchedDocs?.findIndex((document) => document.id === before.id) ?? 0) - perPage)
+      ? Math.max(
+          0,
+          (matchedDocs?.findIndex((document) => document.id === before.id) ??
+            0) - perPage,
+        )
       : 0;
   const pageDocs = search
     ? (matchedDocs ?? []).slice(searchStart, searchStart + perPage)
@@ -602,7 +664,7 @@ export async function getCharactersPage(
     ? (matchedDocs?.length ?? 0)
     : roleId
       ? (countSnapshot?.size ?? 0)
-    : novel.character_count;
+      : novel.character_count;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
   const first = pageDocs[0];
   const last = pageDocs.at(-1);

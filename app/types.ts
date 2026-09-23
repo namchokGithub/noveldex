@@ -216,6 +216,24 @@ export interface CharacterData {
   };
 }
 
+export type GalleryImageCategory =
+  | "official"
+  | "anime"
+  | "manga"
+  | "light-novel"
+  | "fan-art"
+  | "other";
+
+export interface GalleryImage {
+  id: string;
+  image_url: string;
+  title?: string;
+  caption?: string;
+  source_url?: string;
+  category?: GalleryImageCategory;
+  sort_order: number;
+}
+
 export interface Character {
   id: string;
   novel_id: string;
@@ -233,6 +251,7 @@ export interface Character {
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
   data?: CharacterData;
+  gallery?: GalleryImage[];
   first_appearance_chapter_id: string | null;
   chapter_count: number;
   chapters?: ChapterSummary[];
