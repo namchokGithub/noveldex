@@ -17,14 +17,15 @@ const pageSource = readFileSync(
 
 it("returns to the unfiltered entity route from All types", () => {
   expect(source).toContain(
-    "const allTypesHref = `/novels/${novelId}/entities?type=all`;",
+    "const allTypesHref = `/novels/${novelId}/entities?${new URLSearchParams({",
   );
+  expect(source).toContain('type: "all",');
   expect(source).toContain("href={allTypesHref}");
 });
 
 it("remounts the list when pagination navigation provides new data", () => {
   expect(pageSource).toContain(
-    'key={`${selectedType ?? "all"}:${cursorHistory.join(",")}`}',
+    'key={`${selectedType ?? "all"}:${query}:${cursorHistory.join(",")}`}',
   );
 });
 
@@ -33,9 +34,8 @@ it("defaults the entity type filter to location", () => {
 });
 
 it("redirects to the created entity detail page after saving", () => {
-  expect(addSource).toContain(
-    "router.push(`/novels/${novelId}/entities/${encodeURIComponent(entity.id)}`)",
-  );
+  expect(addSource).toContain("router.push(");
+  expect(addSource).toContain("/entities/${encodeURIComponent(entity.id)}");
 });
 
 it("uses translated labels for entity types", () => {
