@@ -82,7 +82,6 @@ function resolvedEntityIds(references: ReferenceOccurrence[] | undefined) {
 
 function noteReferences({
   sourceType,
-  novelId,
   sourceId,
   volumeId,
   title,
@@ -91,7 +90,6 @@ function noteReferences({
   notes,
 }: {
   sourceType: "chapter_note" | "adaptation_note";
-  novelId: string;
   sourceId: string;
   volumeId: string;
   title: string;
@@ -123,23 +121,25 @@ function noteReferences({
   );
 }
 
-export function referencesForChapterNotes(input: Omit<Parameters<typeof noteReferences>[0], "sourceType">) {
+export function referencesForChapterNotes(
+  input: Omit<Parameters<typeof noteReferences>[0], "sourceType">,
+) {
   return noteReferences({ ...input, sourceType: "chapter_note" });
 }
 
-export function referencesForAdaptationNotes(input: Omit<Parameters<typeof noteReferences>[0], "sourceType">) {
+export function referencesForAdaptationNotes(
+  input: Omit<Parameters<typeof noteReferences>[0], "sourceType">,
+) {
   return noteReferences({ ...input, sourceType: "adaptation_note" });
 }
 
 export function referencesForEvent({
-  novelId: _novelId,
   eventId,
   title,
   sortOrder,
   updatedAt,
   references,
 }: {
-  novelId: string;
   eventId: string;
   title: string;
   sortOrder: number;
@@ -147,7 +147,11 @@ export function referencesForEvent({
   references?: ReferenceOccurrence[];
 }): EntityReference[] {
   return resolvedEntityIds(references).map((entityId) => {
-    const identity = { sourceType: "event" as const, sourceId: eventId, entityId };
+    const identity = {
+      sourceType: "event" as const,
+      sourceId: eventId,
+      entityId,
+    };
     return {
       id: entityReferenceId(identity),
       entity_id: entityId,
@@ -165,27 +169,23 @@ export function referencesForEvent({
 export async function replaceEntityReferences(
   transaction: Transaction,
   novelId: string,
-  source: Source,
+  previous: EntityReference[],
   next: EntityReference[],
 ) {
-  const existing = await transaction.get(
-    query(entityReferencesCol(novelId), where("source_key", "==", sourceKey(source))),
+  previous.forEach(({ id }) =>
+    transaction.delete(doc(entityReferencesCol(novelId), id)),
   );
-  existing.docs.forEach((item) => transaction.delete(item.ref));
   next.forEach(({ id, ...data }) =>
-    transaction.set(
-      doc(entityReferencesCol(novelId), id),
-      data,
-    ),
+    transaction.set(doc(entityReferencesCol(novelId), id), data),
   );
 }
 
 export async function deleteEntityReferences(
   transaction: Transaction,
   novelId: string,
-  source: Source,
+  previous: EntityReference[],
 ) {
-  await replaceEntityReferences(transaction, novelId, source, []);
+  await replaceEntityReferences(transaction, novelId, previous, []);
 }
 
 export async function getEntityReferencePage(
@@ -201,7 +201,9 @@ export async function getEntityReferencePage(
     ...(cursor ? [startAfter(cursor.updated_at, cursor.id)] : []),
     limit(pageSize + 1),
   ];
-  const snapshot = await getDocs(query(entityReferencesCol(novelId), ...clauses));
+  const snapshot = await getDocs(
+    query(entityReferencesCol(novelId), ...clauses),
+  );
   const entries = snapshot.docs.map((item) => ({
     id: item.id,
     ...(item.data() as Omit<EntityReference, "id">),
@@ -211,6 +213,7 @@ export async function getEntityReferencePage(
   const last = items.at(-1);
   return {
     items,
-    nextCursor: hasMore && last ? { id: last.id, updated_at: last.updated_at } : null,
+    nextCursor:
+      hasMore && last ? { id: last.id, updated_at: last.updated_at } : null,
   };
 }

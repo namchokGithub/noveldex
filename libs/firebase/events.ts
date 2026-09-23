@@ -213,8 +213,14 @@ export async function createEvent(
     await replaceEntityReferences(
       transaction,
       novelId,
-      { sourceType: "event", sourceId: ref.id },
-      referencesForEvent({ novelId, eventId: ref.id, title: event.title, sortOrder: event.sort_order, updatedAt: new Date().toISOString(), references: event.description_references }),
+      [],
+      referencesForEvent({
+        eventId: ref.id,
+        title: event.title,
+        sortOrder: event.sort_order,
+        updatedAt: new Date().toISOString(),
+        references: event.description_references,
+      }),
     );
     await applyNonNegativeCounterDeltas(
       transaction,
@@ -281,7 +287,28 @@ export async function updateEvent(
     const previousTarget = eventCounterTarget(previous.data());
     if (changesIndexedState) {
       const current = previous.data();
-      await replaceEntityReferences(transaction, novelId, { sourceType: "event", sourceId: eventId }, referencesForEvent({ novelId, eventId, title: (update.title as string | undefined) ?? current.title, sortOrder: (update.sort_order as number | undefined) ?? current.sort_order, updatedAt: new Date().toISOString(), references: (update.description_references as ReferenceOccurrence[] | undefined) ?? current.description_references }));
+      await replaceEntityReferences(
+        transaction,
+        novelId,
+        referencesForEvent({
+          eventId,
+          title: current.title,
+          sortOrder: current.sort_order,
+          updatedAt: tsToIso(current.updated_at),
+          references: current.description_references,
+        }),
+        referencesForEvent({
+          eventId,
+          title: (update.title as string | undefined) ?? current.title,
+          sortOrder:
+            (update.sort_order as number | undefined) ?? current.sort_order,
+          updatedAt: new Date().toISOString(),
+          references:
+            (update.description_references as
+              | ReferenceOccurrence[]
+              | undefined) ?? current.description_references,
+        }),
+      );
     }
     await applyNonNegativeCounterDeltas(transaction, [
       ...eventCounterDeltas(novelId, previousTarget, -1),
@@ -403,10 +430,18 @@ export async function deleteEvent(
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists()) return;
-    await deleteEntityReferences(transaction, novelId, {
-      sourceType: "event",
-      sourceId: eventId,
-    });
+    const current = snapshot.data();
+    await deleteEntityReferences(
+      transaction,
+      novelId,
+      referencesForEvent({
+        eventId,
+        title: current.title,
+        sortOrder: current.sort_order,
+        updatedAt: tsToIso(current.updated_at),
+        references: current.description_references,
+      }),
+    );
     await applyNonNegativeCounterDeltas(
       transaction,
       eventCounterDeltas(novelId, eventCounterTarget(snapshot.data()), -1),

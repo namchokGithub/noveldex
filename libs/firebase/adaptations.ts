@@ -399,17 +399,25 @@ export async function getAdaptationsForChapterIds(
         query(
           collectionGroup(db, "adaptations"),
           where("novel_id", "==", novelId),
-          where("adapted_chapter_ids", "array-contains-any", uniqueIds.slice(index * 30, index * 30 + 30)),
+          where(
+            "adapted_chapter_ids",
+            "array-contains-any",
+            uniqueIds.slice(index * 30, index * 30 + 30),
+          ),
         ),
       ),
     ),
   );
-  return [...new Map(
-    snapshots.flatMap((snapshot) => snapshot.docs).map((item) => [
-      item.id,
-      toAdaptation(item.id, item.data() as AdaptationDoc),
-    ]),
-  ).values()].sort(compareAdaptations);
+  return [
+    ...new Map(
+      snapshots
+        .flatMap((snapshot) => snapshot.docs)
+        .map((item) => [
+          item.id,
+          toAdaptation(item.id, item.data() as AdaptationDoc),
+        ]),
+    ).values(),
+  ].sort(compareAdaptations);
 }
 
 export async function createAdaptation(
@@ -459,12 +467,11 @@ export async function createAdaptation(
     await replaceEntityReferences(
       transaction,
       novelId,
-      { sourceType: "adaptation_note", sourceId: ref.id },
+      [],
       referencesForAdaptationNotes({
-        novelId,
         sourceId: ref.id,
         volumeId,
-        title: adaptation.title,
+        title: adaptation.title ? adaptation.title : "",
         sortOrder: adaptation.sort_order,
         updatedAt: new Date().toISOString(),
         notes: adaptation.notes,
@@ -517,15 +524,25 @@ export async function updateAdaptation(
       await replaceEntityReferences(
         transaction,
         novelId,
-        { sourceType: "adaptation_note", sourceId: adaptationId },
         referencesForAdaptationNotes({
-          novelId,
+          sourceId: adaptationId,
+          volumeId,
+          title: current.title,
+          sortOrder: current.sort_order,
+          updatedAt: tsToIso(current.updated_at),
+          notes: current.notes ?? [],
+        }),
+        referencesForAdaptationNotes({
           sourceId: adaptationId,
           volumeId,
           title: (update.title as string | undefined) ?? current.title,
-          sortOrder: (update.sort_order as number | undefined) ?? current.sort_order,
+          sortOrder:
+            (update.sort_order as number | undefined) ?? current.sort_order,
           updatedAt: new Date().toISOString(),
-          notes: (update.notes as AdaptationNoteDoc[] | undefined) ?? current.notes ?? [],
+          notes:
+            (update.notes as AdaptationNoteDoc[] | undefined) ??
+            current.notes ??
+            [],
         }),
       );
     }
@@ -544,10 +561,19 @@ export async function deleteAdaptation(
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists()) return;
-    await deleteEntityReferences(transaction, novelId, {
-      sourceType: "adaptation_note",
-      sourceId: adaptationId,
-    });
+    const current = snapshot.data() as AdaptationDoc;
+    await deleteEntityReferences(
+      transaction,
+      novelId,
+      referencesForAdaptationNotes({
+        sourceId: adaptationId,
+        volumeId,
+        title: current.title,
+        sortOrder: current.sort_order,
+        updatedAt: tsToIso(current.updated_at),
+        notes: current.notes ?? [],
+      }),
+    );
     await applyNonNegativeCounterDeltas(
       transaction,
       adaptationCounterDeltas(novelId, volumeId, -1),

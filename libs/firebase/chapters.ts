@@ -647,17 +647,13 @@ export async function createChapter(
       mentioned_character_names: [...nameCounts.keys()],
       mentioned_character_name_counts: Object.fromEntries(nameCounts),
     });
-    tx.set(
-      chapterRefNew,
-      chapterData,
-    );
+    tx.set(chapterRefNew, chapterData);
     await replaceEntityReferences(
       tx,
       novelId,
-      { sourceType: "chapter_note", sourceId: chapterRefNew.id },
+      [],
       referencesForChapterNotes({
-        novelId,
-        chapterId: chapterRefNew.id,
+        sourceId: chapterRefNew.id,
         volumeId,
         title: title_en,
         sortOrder,
@@ -756,7 +752,10 @@ export async function updateChapter(
     payload.title_en !== undefined ||
     payload.title_th !== undefined;
   if (!changesCountedState && !changesIndexedState) {
-    await updateDoc(chapterRef(novelId, volumeId, chapterId), withUpdateTimestamp(update));
+    await updateDoc(
+      chapterRef(novelId, volumeId, chapterId),
+      withUpdateTimestamp(update),
+    );
   } else {
     await runTransaction(db, async (tx) => {
       const ref = chapterRef(novelId, volumeId, chapterId);
@@ -809,14 +808,21 @@ export async function updateChapter(
         }),
       );
       if (changesIndexedState) {
-        const nextNotes = (update.notes as ChapterNoteDoc[] | undefined) ?? current.notes ?? [];
+        const nextNotes =
+          (update.notes as ChapterNoteDoc[] | undefined) ?? current.notes ?? [];
         await replaceEntityReferences(
           tx,
           novelId,
-          { sourceType: "chapter_note", sourceId: chapterId },
           referencesForChapterNotes({
-            novelId,
-            chapterId,
+            sourceId: chapterId,
+            volumeId,
+            title: current.title_en ?? current.title ?? "",
+            sortOrder: current.sort_order ?? current.number ?? 0,
+            updatedAt: tsToIso(current.updated_at),
+            notes: current.notes ?? [],
+          }),
+          referencesForChapterNotes({
+            sourceId: chapterId,
             volumeId,
             title:
               (update.title_en as string | undefined) ??
@@ -872,10 +878,18 @@ export async function deleteChapter(
         delta: -1,
       })),
     );
-    await deleteEntityReferences(tx, novelId, {
-      sourceType: "chapter_note",
-      sourceId: chapterId,
-    });
+    await deleteEntityReferences(
+      tx,
+      novelId,
+      referencesForChapterNotes({
+        sourceId: chapterId,
+        volumeId,
+        title: current.title_en ?? current.title ?? "",
+        sortOrder: current.sort_order ?? current.number ?? 0,
+        updatedAt: tsToIso(current.updated_at),
+        notes: current.notes ?? [],
+      }),
+    );
     tx.delete(ref);
     if (number !== null) tx.delete(markerRef(novelId, volumeId, number));
     const contribution = chapterCounterContribution({

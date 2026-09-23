@@ -19,8 +19,7 @@ const resolved = (entityId: string): ReferenceOccurrence => ({
 describe("entity references", () => {
   it("indexes a resolved entity once per chapter note", () => {
     const entries = referencesForChapterNotes({
-      novelId: "novel-1",
-      chapterId: "chapter-1",
+      sourceId: "chapter-1",
       volumeId: "volume-1",
       title: "Arrival",
       sortOrder: 1,
@@ -61,7 +60,6 @@ describe("entity references", () => {
   it("does not index unresolved event references", () => {
     expect(
       referencesForEvent({
-        novelId: "novel-1",
         eventId: "event-1",
         title: "Arrival",
         sortOrder: 1,
