@@ -93,6 +93,14 @@ export {
   deleteEvent,
 } from "@/libs/firebase/events";
 export type { EventPayload } from "@/libs/firebase/events";
+export {
+  getEntityReferencePage,
+} from "@/libs/firebase/entityReferences";
+export type {
+  EntityReference,
+  EntityReferenceCursor,
+  EntityReferencePage,
+} from "@/libs/firebase/entityReferences";
 // Adaptations domain via Firestore
 export {
   getAdaptationsByVolume,
@@ -100,6 +108,7 @@ export {
   getAdaptationsByChapter,
   getAdaptation,
   getAdaptationsForNovel,
+  getAdaptationsForChapterIds,
   createAdaptation,
   updateAdaptation,
   deleteAdaptation,

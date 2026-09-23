@@ -43,6 +43,11 @@ import {
   chapterCounterContribution,
   chapterCounterDelta,
 } from "./counters";
+import {
+  deleteEntityReferences,
+  referencesForChapterNotes,
+  replaceEntityReferences,
+} from "./entityReferences";
 
 interface ChapterDoc {
   number: number | null;
@@ -620,29 +625,44 @@ export async function createChapter(
       [...counts.keys()].map((characterId) => ({ characterId, delta: 1 })),
     );
     if (marker !== null) tx.set(marker, { chapter_id: chapterRefNew.id });
+    const chapterData = withCreateTimestamps({
+      number,
+      sort_order: sortOrder,
+      kind,
+      custom_label: customLabel,
+      // Keep the former field in sync for older callers and existing data.
+      title: title_en,
+      title_en,
+      title_th,
+      summary: payload.summary ?? "",
+      description: payload.description ?? "",
+      notes: notesToDoc(notes),
+      read_at: readAt,
+      event_count: 0,
+      novel_id: novelId,
+      volume_id: volumeId,
+      tag_ids: [],
+      character_ids: [...counts.keys()],
+      character_mention_counts: Object.fromEntries(counts),
+      mentioned_character_names: [...nameCounts.keys()],
+      mentioned_character_name_counts: Object.fromEntries(nameCounts),
+    });
     tx.set(
       chapterRefNew,
-      withCreateTimestamps({
-        number,
-        sort_order: sortOrder,
-        kind,
-        custom_label: customLabel,
-        // Keep the former field in sync for older callers and existing data.
+      chapterData,
+    );
+    await replaceEntityReferences(
+      tx,
+      novelId,
+      { sourceType: "chapter_note", sourceId: chapterRefNew.id },
+      referencesForChapterNotes({
+        novelId,
+        chapterId: chapterRefNew.id,
+        volumeId,
         title: title_en,
-        title_en,
-        title_th,
-        summary: payload.summary ?? "",
-        description: payload.description ?? "",
-        notes: notesToDoc(notes),
-        read_at: readAt,
-        event_count: 0,
-        novel_id: novelId,
-        volume_id: volumeId,
-        tag_ids: [],
-        character_ids: [...counts.keys()],
-        character_mention_counts: Object.fromEntries(counts),
-        mentioned_character_names: [...nameCounts.keys()],
-        mentioned_character_name_counts: Object.fromEntries(nameCounts),
+        sortOrder,
+        updatedAt: now,
+        notes,
       }),
     );
     applyChapterCounterDelta(
@@ -730,11 +750,13 @@ export async function updateChapter(
     payload.kind !== undefined ||
     payload.number !== undefined ||
     payload.custom_label !== undefined;
-  if (!changesCountedState) {
-    await updateDoc(
-      chapterRef(novelId, volumeId, chapterId),
-      withUpdateTimestamp(update),
-    );
+  const changesIndexedState =
+    payload.notes !== undefined ||
+    payload.title !== undefined ||
+    payload.title_en !== undefined ||
+    payload.title_th !== undefined;
+  if (!changesCountedState && !changesIndexedState) {
+    await updateDoc(chapterRef(novelId, volumeId, chapterId), withUpdateTimestamp(update));
   } else {
     await runTransaction(db, async (tx) => {
       const ref = chapterRef(novelId, volumeId, chapterId);
@@ -786,6 +808,28 @@ export async function updateChapter(
           custom_label: customLabel,
         }),
       );
+      if (changesIndexedState) {
+        const nextNotes = (update.notes as ChapterNoteDoc[] | undefined) ?? current.notes ?? [];
+        await replaceEntityReferences(
+          tx,
+          novelId,
+          { sourceType: "chapter_note", sourceId: chapterId },
+          referencesForChapterNotes({
+            novelId,
+            chapterId,
+            volumeId,
+            title:
+              (update.title_en as string | undefined) ??
+              (update.title as string | undefined) ??
+              current.title_en ??
+              current.title ??
+              "",
+            sortOrder: current.sort_order ?? current.number ?? 0,
+            updatedAt: new Date().toISOString(),
+            notes: nextNotes,
+          }),
+        );
+      }
       applyChapterCounterDelta(
         tx,
         novelId,
@@ -828,6 +872,10 @@ export async function deleteChapter(
         delta: -1,
       })),
     );
+    await deleteEntityReferences(tx, novelId, {
+      sourceType: "chapter_note",
+      sourceId: chapterId,
+    });
     tx.delete(ref);
     if (number !== null) tx.delete(markerRef(novelId, volumeId, number));
     const contribution = chapterCounterContribution({

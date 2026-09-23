@@ -121,6 +121,22 @@
         { "fieldPath": "role_id", "order": "ASCENDING" },
         { "fieldPath": "updated_at", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "adaptations",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "novel_id", "order": "ASCENDING" },
+        { "fieldPath": "adapted_chapter_ids", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
+      "collectionGroup": "entityReferences",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "entity_id", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

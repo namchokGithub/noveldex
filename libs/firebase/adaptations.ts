@@ -9,7 +9,6 @@ import {
   query,
   runTransaction,
   Timestamp,
-  updateDoc,
   where,
   writeBatch,
   type DocumentReference,
@@ -31,6 +30,11 @@ import { reconcileReferenceOccurrences } from "@/libs/entities/reconcile";
 import type { ReferenceOccurrence } from "@/libs/entities/references";
 import { db } from "./app";
 import { applyNonNegativeCounterDeltas } from "./counters";
+import {
+  deleteEntityReferences,
+  referencesForAdaptationNotes,
+  replaceEntityReferences,
+} from "./entityReferences";
 import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 
 interface AdaptationDoc {
@@ -384,6 +388,30 @@ export async function getAdaptationsForNovel(
     .sort(compareAdaptations);
 }
 
+export async function getAdaptationsForChapterIds(
+  novelId: string,
+  chapterIds: string[],
+): Promise<Adaptation[]> {
+  const uniqueIds = [...new Set(chapterIds)];
+  const snapshots = await Promise.all(
+    Array.from({ length: Math.ceil(uniqueIds.length / 30) }, (_, index) =>
+      getDocs(
+        query(
+          collectionGroup(db, "adaptations"),
+          where("novel_id", "==", novelId),
+          where("adapted_chapter_ids", "array-contains-any", uniqueIds.slice(index * 30, index * 30 + 30)),
+        ),
+      ),
+    ),
+  );
+  return [...new Map(
+    snapshots.flatMap((snapshot) => snapshot.docs).map((item) => [
+      item.id,
+      toAdaptation(item.id, item.data() as AdaptationDoc),
+    ]),
+  ).values()].sort(compareAdaptations);
+}
+
 export async function createAdaptation(
   novelId: string,
   volumeId: string,
@@ -428,6 +456,20 @@ export async function createAdaptation(
       adaptationCounterDeltas(novelId, volumeId, 1),
     );
     transaction.set(ref, adaptation);
+    await replaceEntityReferences(
+      transaction,
+      novelId,
+      { sourceType: "adaptation_note", sourceId: ref.id },
+      referencesForAdaptationNotes({
+        novelId,
+        sourceId: ref.id,
+        volumeId,
+        title: adaptation.title,
+        sortOrder: adaptation.sort_order,
+        updatedAt: new Date().toISOString(),
+        notes: adaptation.notes,
+      }),
+    );
   });
   const snapshot = await getDoc(ref);
   return toAdaptation(snapshot.id, snapshot.data() as AdaptationDoc);
@@ -462,7 +504,32 @@ export async function updateAdaptation(
       payload.adapted_chapter_ids,
     );
   }
-  await updateDoc(ref, withUpdateTimestamp(update));
+  const changesIndexedState =
+    payload.notes !== undefined ||
+    payload.title !== undefined ||
+    payload.sort_order !== undefined;
+  await runTransaction(db, async (transaction) => {
+    const previous = await transaction.get(ref);
+    if (!previous.exists()) throw new Error("Request failed.");
+    const current = previous.data();
+    transaction.update(ref, withUpdateTimestamp(update));
+    if (changesIndexedState) {
+      await replaceEntityReferences(
+        transaction,
+        novelId,
+        { sourceType: "adaptation_note", sourceId: adaptationId },
+        referencesForAdaptationNotes({
+          novelId,
+          sourceId: adaptationId,
+          volumeId,
+          title: (update.title as string | undefined) ?? current.title,
+          sortOrder: (update.sort_order as number | undefined) ?? current.sort_order,
+          updatedAt: new Date().toISOString(),
+          notes: (update.notes as AdaptationNoteDoc[] | undefined) ?? current.notes ?? [],
+        }),
+      );
+    }
+  });
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) throw new Error("Request failed.");
   return toAdaptation(snapshot.id, snapshot.data() as AdaptationDoc);
@@ -477,6 +544,10 @@ export async function deleteAdaptation(
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists()) return;
+    await deleteEntityReferences(transaction, novelId, {
+      sourceType: "adaptation_note",
+      sourceId: adaptationId,
+    });
     await applyNonNegativeCounterDeltas(
       transaction,
       adaptationCounterDeltas(novelId, volumeId, -1),
