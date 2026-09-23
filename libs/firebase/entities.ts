@@ -41,6 +41,7 @@ interface EntityDoc {
 
 const entitiesCol = (novelId: string) =>
   collection(db, "novels", novelId, "entities");
+const MAX_DESCRIPTION_LENGTH = 1000;
 
 function sourceId(novelId: string, entityId: string): string {
   const parsed = parseEntityId(entityId);
@@ -64,7 +65,9 @@ function toEntity(novelId: string, id: string, data: EntityDoc): Entity {
     description: data.description ?? "",
     notes: data.notes ?? [],
     gallery: data.gallery
-      ? [...data.gallery].sort((left, right) => left.sort_order - right.sort_order)
+      ? [...data.gallery].sort(
+          (left, right) => left.sort_order - right.sort_order,
+        )
       : [],
   };
 }
@@ -95,12 +98,80 @@ function validateGallery(gallery: GalleryImage[] | undefined) {
       if (!value) continue;
       try {
         const url = new URL(value);
-        if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
+        if (url.protocol !== "http:" && url.protocol !== "https:")
+          throw new Error();
       } catch {
         throw new Error("Gallery image URLs must use HTTP(S).");
       }
     }
   }
+}
+
+function requiredText(value: unknown, field: string): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`${field} is required`);
+  }
+  return value.trim();
+}
+
+function normalizeAliases(value: unknown, name: string): string[] {
+  if (
+    !Array.isArray(value) ||
+    value.some((alias) => typeof alias !== "string")
+  ) {
+    throw new Error("aliases must be an array of strings");
+  }
+  const normalizedName = name.toLocaleLowerCase();
+  const seen = new Set<string>();
+  return value.flatMap((alias) => {
+    const trimmed = alias.trim();
+    const key = trimmed.toLocaleLowerCase();
+    if (!trimmed || key === normalizedName || seen.has(key)) return [];
+    seen.add(key);
+    return [trimmed];
+  });
+}
+
+function validateDescription(value: unknown): string {
+  if (typeof value !== "string")
+    throw new Error("description must be a string");
+  if (value.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(
+      `description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer`,
+    );
+  }
+  return value;
+}
+
+function validateCreatePayload(
+  payload: EntityCreatePayload,
+): EntityCreatePayload {
+  if (!GENERIC_ENTITY_TYPES.includes(payload.type as GenericEntityType)) {
+    throw new Error("type is invalid");
+  }
+  const name = requiredText(payload.name, "name");
+  return {
+    type: payload.type,
+    name,
+    aliases: normalizeAliases(payload.aliases, name),
+    description: validateDescription(payload.description),
+  };
+}
+
+function validateUpdatePayload(
+  payload: EntityUpdatePayload,
+): EntityUpdatePayload {
+  const next = { ...payload };
+  if (payload.name !== undefined)
+    next.name = requiredText(payload.name, "name");
+  if (payload.description !== undefined)
+    next.description = validateDescription(payload.description);
+  if (payload.aliases !== undefined) {
+    const name = next.name ?? "";
+    next.aliases = normalizeAliases(payload.aliases, name);
+  }
+  validateGallery(payload.gallery);
+  return next;
 }
 export type EntityCursor = { name: string; id: string };
 export type EntityPage = {
@@ -132,12 +203,11 @@ export async function createEntity(
   novelId: string,
   payload: EntityCreatePayload,
 ): Promise<Entity> {
+  const validated = validateCreatePayload(payload);
   const ref = await addDoc(
     entitiesCol(novelId),
     withCreateTimestamps({
-      ...payload,
-      aliases: payload.aliases ?? [],
-      description: payload.description ?? "",
+      ...validated,
     }),
   );
   const snapshot = await getDoc(ref);
@@ -252,11 +322,11 @@ export async function updateEntity(
   entityId: string,
   payload: EntityUpdatePayload,
 ): Promise<Entity> {
-  validateGallery(payload.gallery);
+  const validated = validateUpdatePayload(payload);
   const ref = doc(entitiesCol(novelId), sourceId(novelId, entityId));
   await updateDoc(
     ref,
-    withUpdateTimestamp({ ...payload } as Record<string, unknown>),
+    withUpdateTimestamp({ ...validated } as Record<string, unknown>),
   );
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) throw new Error("Request failed.");

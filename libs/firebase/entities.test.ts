@@ -65,6 +65,37 @@ describe("getEntitiesPage", () => {
   });
 });
 
+it("normalizes entity names and aliases before persisting", async () => {
+  const entity = await createEntity("novel-1", {
+    type: "location",
+    name: "  Tempest  ",
+    aliases: [" Jura ", "", "Jura", "Tempest"],
+    description: "",
+  });
+
+  expect(entity.name).toBe("Tempest");
+  expect(entity.aliases).toEqual(["Jura"]);
+});
+
+it("rejects invalid entity types and empty names", async () => {
+  await expect(
+    createEntity("novel-1", {
+      type: "invalid" as never,
+      name: "Tempest",
+      aliases: [],
+      description: "",
+    }),
+  ).rejects.toThrow("type is invalid");
+  await expect(
+    createEntity("novel-1", {
+      type: "location",
+      name: "   ",
+      aliases: [],
+      description: "",
+    }),
+  ).rejects.toThrow("name is required");
+});
+
 describe("getEntitiesPageByNamePrefix", () => {
   it("returns only entities of the requested type whose names start with the prefix", async () => {
     for (const name of ["Tempest", "Temple", "Jura"]) {
@@ -113,11 +144,7 @@ it("persists entity-only rich-text notes without reference fields", async () => 
     },
   ];
 
-  const updated = await updateEntity(
-    "novel-1",
-    entity.id,
-    { notes },
-  );
+  const updated = await updateEntity("novel-1", entity.id, { notes });
 
   expect(updated.notes).toEqual(notes);
 });
