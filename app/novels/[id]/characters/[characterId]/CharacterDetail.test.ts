@@ -37,7 +37,7 @@ describe("character profile rich sections", () => {
     expect(detailSource).toContain("biographical_and_biological");
     expect(detailSource).toContain('label: "Social"');
     expect(detailSource).toContain('label: "Debut"');
-    expect(detailSource).toContain("data: designData");
+    expect(detailSource).toContain("data={designData}");
   });
 
   it("renders and saves the character gallery separately from profile data", () => {
