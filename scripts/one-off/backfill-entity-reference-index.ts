@@ -88,16 +88,18 @@ function noteEntries({
   return notes.flatMap((value) => {
     const note = value as { id?: unknown; content?: unknown; references?: unknown };
     if (typeof note.id !== "string" || typeof note.content !== "string") return [];
+    const noteId = note.id;
+    const preview = note.content;
     return entityIds(note.references).map((entityId) => ({
-      id: referenceId(sourceType, sourceId, note.id, entityId),
+      id: referenceId(sourceType, sourceId, noteId, entityId),
       entity_id: entityId,
       source_type: sourceType,
       source_id: sourceId,
       source_key: `${sourceType}:${encodeURIComponent(sourceId)}`,
-      note_id: note.id,
+      note_id: noteId,
       volume_id: volumeId,
       title,
-      preview: note.content,
+      preview,
       sort_order: sortOrder,
       updated_at: updatedAt,
     }));
