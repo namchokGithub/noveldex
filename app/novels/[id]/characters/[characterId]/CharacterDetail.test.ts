@@ -28,4 +28,11 @@ describe("character profile rich sections", () => {
     expect(editorSource).toContain("enableEntityReferences = true");
     expect(detailSource).toContain("enableEntityReferences={false}");
   });
+
+  it("renders the optional character design data groups", () => {
+    expect(detailSource).toContain("biographical_and_biological");
+    expect(detailSource).toContain('label: "Social"');
+    expect(detailSource).toContain('label: "Debut"');
+    expect(detailSource).toContain("data: designData");
+  });
 });

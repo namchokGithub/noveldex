@@ -182,6 +182,40 @@ export interface CharacterRole {
   is_active: boolean;
 }
 
+export interface CharacterData {
+  biographical_and_biological?: {
+    name_thai?: string;
+    name_japanese?: string;
+    romaji?: string;
+    blessings?: string[];
+    species?: string;
+    kind?: string;
+    age?: string;
+    height?: string;
+    length?: string;
+    hair_color?: string;
+    eye_color?: string;
+    status?: string;
+  };
+  social?: {
+    country_of_residence?: string;
+    base_of_operations?: string;
+    occupations?: string[];
+    classes?: string[];
+    rank?: string;
+    danger_ratings?: string[];
+    adventurer_rank?: string;
+    affiliations?: string[];
+    former_affiliations?: string[];
+  };
+  debut?: {
+    web_novel?: string;
+    light_novel?: string;
+    manga?: string;
+    anime?: string;
+  };
+}
+
 export interface Character {
   id: string;
   novel_id: string;
@@ -198,6 +232,7 @@ export interface Character {
   appearance_content_json?: RichNoteDocument;
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
+  data?: CharacterData;
   first_appearance_chapter_id: string | null;
   chapter_count: number;
   chapters?: ChapterSummary[];

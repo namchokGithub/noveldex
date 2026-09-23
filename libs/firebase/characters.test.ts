@@ -250,6 +250,50 @@ describe("characters", () => {
     });
   });
 
+  it("persists optional character design data without duplicating core fields", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Alice",
+      role: "minor",
+      description: "",
+      aliases: ["Al"],
+      data: {
+        biographical_and_biological: {
+          name_thai: "อลิซ",
+          blessings: ["Moon blessing", "Forest blessing"],
+          species: "Human",
+        },
+        social: {
+          occupations: ["Scholar", "Guide"],
+          affiliations: ["North Guild"],
+        },
+        debut: { anime: "Episode 4" },
+      },
+    });
+
+    expect(character.data).toEqual({
+      biographical_and_biological: {
+        name_thai: "อลิซ",
+        blessings: ["Moon blessing", "Forest blessing"],
+        species: "Human",
+      },
+      social: {
+        occupations: ["Scholar", "Guide"],
+        affiliations: ["North Guild"],
+      },
+      debut: { anime: "Episode 4" },
+    });
+    expect(character.name).toBe("Alice");
+    expect(character.aliases).toEqual(["Al"]);
+
+    const updated = await updateCharacter("novel-1", character.id, {
+      data: {
+        ...character.data,
+        social: { ...character.data?.social, rank: "A" },
+      },
+    });
+    expect(updated.data?.social?.rank).toBe("A");
+  });
+
   it("creates a character resolving a role code to role_id/role_name", async () => {
     const character = await createCharacter("novel-1", {
       name: "Bob",
@@ -403,7 +447,6 @@ describe("characters", () => {
 
   it("getCharacters paginates with a summary", async () => {
     for (let i = 0; i < 3; i += 1) {
-
       await createCharacter("novel-1", {
         name: `Char ${i}`,
         role: "minor",

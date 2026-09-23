@@ -7,6 +7,7 @@ import Link from "next/link";
 import type {
   Adaptation,
   Character,
+  CharacterData,
   CharacterRole,
   NovelEvent,
 } from "../../../../types";
@@ -91,6 +92,9 @@ export default function CharacterDetail({
     character.trivia_content_json,
   );
   const [aliases, setAliases] = useState(character.aliases.join(", "));
+  const [designData, setDesignData] = useState<CharacterData>(
+    character.data ?? {},
+  );
 
   useResetOnSignOut(isAdmin, cancel);
 
@@ -121,6 +125,7 @@ export default function CharacterDetail({
         appearance_content_json: appearanceJson,
         personality_content_json: personalityJson,
         trivia_content_json: triviaJson,
+        data: designData,
       });
       const entity = {
         id: buildEntityId(novelId, "character", updated.id),
@@ -182,6 +187,7 @@ export default function CharacterDetail({
     setAppearanceJson(character.appearance_content_json);
     setPersonalityJson(character.personality_content_json);
     setTriviaJson(character.trivia_content_json);
+    setDesignData(character.data ?? {});
     setEditing(false);
     setError(null);
   }
@@ -361,6 +367,12 @@ export default function CharacterDetail({
             )}
           </div>
 
+          <CharacterDataSections
+            data={designData}
+            editing={editing}
+            onChange={setDesignData}
+          />
+
           <CharacterRichField
             label={t("character.appearance")}
             icon={UserRound}
@@ -533,6 +545,138 @@ export default function CharacterDetail({
         busy={saving}
         danger
       />
+    </div>
+  );
+}
+
+type DesignField = {
+  key: string;
+  label: string;
+  multiple?: boolean;
+};
+
+const designFields: Array<{
+  key: "biographical_and_biological" | "social" | "debut";
+  label: string;
+  fields: DesignField[];
+}> = [
+  {
+    key: "biographical_and_biological",
+    label: "Biographical and Biological",
+    fields: [
+      { key: "name_thai", label: "Name Thai" },
+      { key: "name_japanese", label: "Name Japanese" },
+      { key: "romaji", label: "Rōmaji" },
+      { key: "blessings", label: "Blessing(s)", multiple: true },
+      { key: "species", label: "Species" },
+      { key: "kind", label: "Kind" },
+      { key: "age", label: "Age" },
+      { key: "height", label: "Height" },
+      { key: "length", label: "Length" },
+      { key: "hair_color", label: "Hair Color" },
+      { key: "eye_color", label: "Eye Color" },
+      { key: "status", label: "Status" },
+    ],
+  },
+  {
+    key: "social",
+    label: "Social",
+    fields: [
+      { key: "country_of_residence", label: "Country of Residence" },
+      { key: "base_of_operations", label: "Base of Operations" },
+      { key: "occupations", label: "Occupation(s)", multiple: true },
+      { key: "classes", label: "Class(s)", multiple: true },
+      { key: "rank", label: "Rank" },
+      { key: "danger_ratings", label: "Danger Rating(s)", multiple: true },
+      { key: "adventurer_rank", label: "Adventurer Rank" },
+      { key: "affiliations", label: "Affiliation(s)", multiple: true },
+      {
+        key: "former_affiliations",
+        label: "Former Affiliation(s)",
+        multiple: true,
+      },
+    ],
+  },
+  {
+    key: "debut",
+    label: "Debut",
+    fields: [
+      { key: "web_novel", label: "Web Novel" },
+      { key: "light_novel", label: "Light Novel" },
+      { key: "manga", label: "Manga" },
+      { key: "anime", label: "Anime" },
+    ],
+  },
+];
+
+function CharacterDataSections({
+  data,
+  editing,
+  onChange,
+}: {
+  data: CharacterData;
+  editing: boolean;
+  onChange: (data: CharacterData) => void;
+}) {
+  const populated = (value: unknown) =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value);
+
+  return (
+    <div className="space-y-4">
+      {designFields.map((group) => {
+        const values = data[group.key] ?? {};
+        const hasValues = group.fields.some(({ key }) =>
+          populated((values as Record<string, unknown>)[key]),
+        );
+        if (!editing && !hasValues) return null;
+        return (
+          <section key={group.key} className={`${cardClassName} space-y-4`}>
+            <p className={smallLabelClassName}>{group.label}</p>
+            <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+              {group.fields.map((field) => {
+                const raw = (values as Record<string, unknown>)[field.key];
+                const value = Array.isArray(raw)
+                  ? raw.join(", ")
+                  : String(raw ?? "");
+                if (!editing && !value) return null;
+                return (
+                  <div key={field.key} className="min-w-0">
+                    <p className="text-xs font-medium text-stone-500">
+                      {field.label}
+                    </p>
+                    {editing ? (
+                      <input
+                        value={value}
+                        maxLength={100}
+                        onChange={(event) => {
+                          const nextValue = field.multiple
+                            ? event.target.value
+                                .split(",")
+                                .map((item) => item.trim())
+                                .filter(Boolean)
+                            : event.target.value;
+                          onChange({
+                            ...data,
+                            [group.key]: {
+                              ...values,
+                              [field.key]: nextValue,
+                            },
+                          });
+                        }}
+                        className={`${inputClassName} mt-1`}
+                      />
+                    ) : (
+                      <p className="mt-1 text-sm leading-6 text-stone-700">
+                        {value}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

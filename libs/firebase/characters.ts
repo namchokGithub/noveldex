@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore/lite";
 import type {
   Character,
+  CharacterData,
   CharacterCursor,
   CharacterPage,
   ChapterKind,
@@ -45,6 +46,7 @@ interface CharacterDoc {
   appearance_content_json?: RichNoteDocument;
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
+  data?: CharacterData;
   chapter_count?: number;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -148,6 +150,7 @@ async function toCharacter(
     appearance_content_json: data.appearance_content_json,
     personality_content_json: data.personality_content_json,
     trivia_content_json: data.trivia_content_json,
+    data: data.data,
     first_appearance_chapter_id: null,
     chapter_count: hydrate
       ? chapterCount
@@ -205,6 +208,7 @@ export interface CharacterCreatePayload {
   appearance_content_json?: RichNoteDocument;
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
+  data?: CharacterData;
   aliases: string[];
   profile_image_url?: string | null;
 }
@@ -238,6 +242,7 @@ export async function createCharacter(
         ...(payload.trivia_content_json
           ? { trivia_content_json: payload.trivia_content_json }
           : {}),
+        ...(payload.data ? { data: payload.data } : {}),
         profile_image_url: payload.profile_image_url ?? null,
         chapter_count: 0,
         ...resolvedRole,
@@ -270,6 +275,7 @@ export interface CharacterUpdatePayload {
   appearance_content_json?: RichNoteDocument;
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
+  data?: CharacterData;
   aliases?: string[];
   profile_image_url?: string | null;
 }
@@ -293,6 +299,7 @@ export async function updateCharacter(
     update.personality_content_json = payload.personality_content_json;
   if (payload.trivia_content_json !== undefined)
     update.trivia_content_json = payload.trivia_content_json;
+  if (payload.data !== undefined) update.data = payload.data;
   if (payload.aliases !== undefined) update.aliases = payload.aliases;
   if (payload.profile_image_url !== undefined) {
     update.profile_image_url = payload.profile_image_url;
