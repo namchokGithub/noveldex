@@ -5,7 +5,9 @@ import {
   encodeEntityCursor,
   getEntitiesPageByNamePrefix,
   getEntitiesPage,
+  updateEntity,
 } from "./entities";
+import type { EntityNote } from "@/libs/entities/types";
 import {
   clearFirestoreEmulator,
   connectFirestoreTestEmulator,
@@ -93,4 +95,29 @@ describe("getEntitiesPageByNamePrefix", () => {
       "Temple",
     ]);
   });
+});
+
+it("persists entity-only rich-text notes without reference fields", async () => {
+  const entity = await createEntity("novel-1", {
+    type: "location",
+    name: "Tempest",
+    aliases: [],
+    description: "",
+  });
+  const notes: EntityNote[] = [
+    {
+      id: "note-1",
+      content: "Capital city",
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-01T00:00:00.000Z",
+    },
+  ];
+
+  const updated = await updateEntity(
+    "novel-1",
+    entity.id,
+    { notes },
+  );
+
+  expect(updated.notes).toEqual(notes);
 });

@@ -20,6 +20,7 @@ import { buildEntityId, parseEntityId } from "@/libs/entities/keys";
 import {
   GENERIC_ENTITY_TYPES,
   type Entity,
+  type EntityNote,
   type GenericEntityType,
 } from "@/libs/entities/types";
 import { ResourceNotFoundError } from "@/libs/errors";
@@ -31,6 +32,7 @@ interface EntityDoc {
   name: string;
   aliases?: string[];
   description?: string;
+  notes?: EntityNote[];
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -58,6 +60,7 @@ function toEntity(novelId: string, id: string, data: EntityDoc): Entity {
     name: data.name,
     aliases: data.aliases ?? [],
     description: data.description ?? "",
+    notes: data.notes ?? [],
   };
 }
 
@@ -71,6 +74,7 @@ export interface EntityUpdatePayload {
   name?: string;
   aliases?: string[];
   description?: string;
+  notes?: EntityNote[];
 }
 export type EntityCursor = { name: string; id: string };
 export type EntityPage = {

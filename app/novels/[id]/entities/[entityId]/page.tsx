@@ -10,6 +10,7 @@ import { ResourceNotFoundError } from "@/libs/errors";
 import { DashboardPage, backLinkClassName } from "../../../ui";
 import EntityDetail from "./EntityDetail";
 import EntityCrossReferences from "./EntityCrossReferences";
+import EntityNotesEditor from "./EntityNotesEditor";
 import { adaptationsForEntity } from "@/libs/entityCrossReferences";
 import { CircleChevronLeft } from "lucide-react";
 import { T } from "@/components/i18n/I18nProvider";
@@ -43,6 +44,7 @@ export default async function EntityPage({
           <T k="entities.eyebrow" />
         </Link>
         <EntityDetail novelId={id} entity={entity} />
+        <EntityNotesEditor novelId={id} entity={entity} />
         <EntityCrossReferences
           novelId={id}
           notes={notes}
