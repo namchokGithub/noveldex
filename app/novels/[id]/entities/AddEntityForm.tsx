@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createEntity } from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useI18n } from "@/components/i18n/I18nProvider";
+import { type TranslationKey, useI18n } from "@/components/i18n/I18nProvider";
 import { Select } from "@/components/ui/Select";
 import { normalizeEntity } from "@/libs/search/normalize";
 import { useSearchMutations } from "@/libs/search/SearchIndexProvider";
@@ -19,10 +19,15 @@ import {
   primaryButtonClassName,
   smallLabelClassName,
 } from "../../ui";
-import { GENERIC_ENTITY_TYPES, type GenericEntityType } from "@/libs/entities/types";
+import {
+  GENERIC_ENTITY_TYPES,
+  type GenericEntityType,
+} from "@/libs/entities/types";
 
 export default function AddEntityForm({ novelId }: { novelId: string }) {
   const { t } = useI18n();
+  const entityTypeLabel = (type: GenericEntityType) =>
+    t(`command.resultType.${type}` as TranslationKey);
   const { isAdmin } = useAuth();
   const { upsert } = useSearchMutations();
   const router = useRouter();
@@ -49,7 +54,9 @@ export default function AddEntityForm({ novelId }: { novelId: string }) {
       upsert(normalizeEntity(entity));
       setOpen(false);
       formElement.reset();
-      router.push(`/novels/${novelId}/entities/${encodeURIComponent(entity.id)}`);
+      router.push(
+        `/novels/${novelId}/entities/${encodeURIComponent(entity.id)}`,
+      );
     } catch (cause) {
       setError(userErrorMessage(cause, t));
     } finally {
@@ -73,7 +80,8 @@ export default function AddEntityForm({ novelId }: { novelId: string }) {
       {open && typeof document !== "undefined"
         ? createPortal(
             <div className={fullScreenModalBackdropClassName}>
-              <div className={`${modalPanelClassName} !max-h-none !overflow-visible`}>
+              <div
+                className={`${modalPanelClassName} max-h-none! overflow-visible!`}>
                 <div className="mb-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
                     {t("entities.addEyebrow")}
@@ -84,7 +92,9 @@ export default function AddEntityForm({ novelId }: { novelId: string }) {
                 </div>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                   <div>
-                    <label htmlFor="entity-name" className={smallLabelClassName}>
+                    <label
+                      htmlFor="entity-name"
+                      className={smallLabelClassName}>
                       {t("entities.name")}
                     </label>
                     <input
@@ -96,13 +106,15 @@ export default function AddEntityForm({ novelId }: { novelId: string }) {
                     />
                   </div>
                   <div>
-                    <label className={smallLabelClassName}>{t("entities.type")}</label>
+                    <label className={smallLabelClassName}>
+                      {t("entities.type")}
+                    </label>
                     <Select
                       name="type"
                       defaultValue="location"
                       options={GENERIC_ENTITY_TYPES.map((type) => ({
                         value: type,
-                        label: type,
+                        label: entityTypeLabel(type),
                       }))}
                     />
                   </div>

@@ -37,3 +37,8 @@ it("redirects to the created entity detail page after saving", () => {
     "router.push(`/novels/${novelId}/entities/${encodeURIComponent(entity.id)}`)",
   );
 });
+
+it("uses translated labels for entity types", () => {
+  expect(source).toContain("command.resultType.${type}");
+  expect(addSource).toContain("command.resultType.${type}");
+});

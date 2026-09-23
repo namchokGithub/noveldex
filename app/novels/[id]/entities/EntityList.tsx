@@ -3,11 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Entity, GenericEntityType } from "@/libs/entities/types";
-import { useI18n } from "@/components/i18n/I18nProvider";
-import {
-  emptyStateClassName,
-  secondaryButtonClassName,
-} from "../../ui";
+import { type TranslationKey, useI18n } from "@/components/i18n/I18nProvider";
+import { emptyStateClassName, secondaryButtonClassName } from "../../ui";
 import { entityTypeBadgeStyle } from "@/libs/richNotes/tagColors";
 import { Select } from "@/components/ui/Select";
 
@@ -33,6 +30,8 @@ export default function EntityList({
   nextCursorByType: Partial<Record<GenericEntityType, string>>;
 }) {
   const { t } = useI18n();
+  const entityTypeLabel = (type: GenericEntityType) =>
+    t(`command.resultType.${type}` as TranslationKey);
   const router = useRouter();
   const entities = initial;
   function typeHref(entityType: GenericEntityType, cursors: string[] = []) {
@@ -67,11 +66,10 @@ export default function EntityList({
           wrapperClassName="w-56"
           options={[
             { value: "all", label: t("entities.allTypes") },
-            { value: "location", label: "location" },
-            { value: "skill", label: "skill" },
-            { value: "organization", label: "organization" },
-            { value: "item", label: "item" },
-            { value: "concept", label: "concept" },
+            ...TYPES.map((type) => ({
+              value: type,
+              label: entityTypeLabel(type),
+            })),
           ]}
           aria-label={t("entities.filterType")}
         />
@@ -90,7 +88,7 @@ export default function EntityList({
                 <span
                   className="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize tracking-wide"
                   style={entityTypeBadgeStyle(entityType)}>
-                  {entityType}
+                  {entityTypeLabel(entityType)}
                 </span>
               </h2>
               {group.length ? (

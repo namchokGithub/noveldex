@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Entity } from "@/libs/entities/types";
 import { deleteEntity, updateEntity } from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useI18n } from "@/components/i18n/I18nProvider";
+import { type TranslationKey, useI18n } from "@/components/i18n/I18nProvider";
 import {
   FormError,
   inputClassName,
@@ -28,6 +28,9 @@ export default function EntityDetail({
   entity: Entity;
 }) {
   const { t } = useI18n();
+  const entityTypeLabel = t(
+    `command.resultType.${entity.type}` as TranslationKey,
+  );
   const { isAdmin, loading } = useAuth();
   const { documents, dependents, entityMap, upsertMany, discardMany } =
     useSearchIndex();
@@ -115,7 +118,7 @@ export default function EntityDetail({
       <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
         <div className="flex items-start justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-            {entity.type}
+            {entityTypeLabel}
           </p>
           {!editing && isAdmin ? (
             <button
@@ -185,16 +188,26 @@ export default function EntityDetail({
         ) : (
           <dl className="space-y-4 text-sm">
             <div>
-              <dt className="font-medium text-stone-500">{t("entities.name")}</dt>
+              <dt className="font-medium text-stone-500">
+                {t("entities.name")}
+              </dt>
               <dd className="mt-1 text-stone-900">{entity.name}</dd>
             </div>
             <div>
-              <dt className="font-medium text-stone-500">{t("entities.aliases")}</dt>
-              <dd className="mt-1 text-stone-900">{entity.aliases.join(", ") || "—"}</dd>
+              <dt className="font-medium text-stone-500">
+                {t("entities.aliases")}
+              </dt>
+              <dd className="mt-1 text-stone-900">
+                {entity.aliases.join(", ") || "—"}
+              </dd>
             </div>
             <div>
-              <dt className="font-medium text-stone-500">{t("entities.descriptionField")}</dt>
-              <dd className="mt-1 whitespace-pre-wrap text-stone-900">{entity.description || "—"}</dd>
+              <dt className="font-medium text-stone-500">
+                {t("entities.descriptionField")}
+              </dt>
+              <dd className="mt-1 whitespace-pre-wrap text-stone-900">
+                {entity.description || "—"}
+              </dd>
             </div>
           </dl>
         )}
@@ -202,9 +215,9 @@ export default function EntityDetail({
       </section>
       <ConfirmDialog
         open={confirming}
-        eyebrow="Confirm"
-        title={`Delete ${entity.name}?`}
-        description="This entity will be deleted."
+        eyebrow={t("entities.deleteEyebrow")}
+        title={t("entities.deleteTitle", { name: entity.name })}
+        description={t("entities.deleteDescription")}
         confirmLabel={busy ? t("common.deleting") : t("common.delete")}
         cancelLabel={t("common.cancel")}
         onConfirm={() => void remove()}
