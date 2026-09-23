@@ -1,4 +1,5 @@
 import type { RichNoteDocument } from "@/libs/richNotes/document";
+import type { GalleryImage } from "@/app/types";
 
 export type EntityType =
   | "character"
@@ -35,6 +36,7 @@ export interface Entity {
   aliases: string[];
   description: string;
   notes?: EntityNote[];
+  gallery?: GalleryImage[];
 }
 
 export interface EntityReference {

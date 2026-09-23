@@ -121,3 +121,26 @@ it("persists entity-only rich-text notes without reference fields", async () => 
 
   expect(updated.notes).toEqual(notes);
 });
+
+it("persists entity gallery images with the shared gallery model", async () => {
+  const entity = await createEntity("novel-1", {
+    type: "location",
+    name: "Tempest",
+    aliases: [],
+    description: "",
+  });
+
+  const updated = await updateEntity("novel-1", entity.id, {
+    gallery: [
+      {
+        id: "image-1",
+        image_url: "https://example.com/tempest.jpg",
+        source_url: "https://example.com/source",
+        category: "official",
+        sort_order: 1,
+      },
+    ],
+  });
+
+  expect(updated.gallery?.[0]?.category).toBe("official");
+});

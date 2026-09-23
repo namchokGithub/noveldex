@@ -26,6 +26,7 @@ import {
 import { ResourceNotFoundError } from "@/libs/errors";
 import { db } from "./app";
 import { withCreateTimestamps, withUpdateTimestamp } from "./helpers";
+import type { GalleryImage } from "@/app/types";
 
 interface EntityDoc {
   type: GenericEntityType;
@@ -33,6 +34,7 @@ interface EntityDoc {
   aliases?: string[];
   description?: string;
   notes?: EntityNote[];
+  gallery?: GalleryImage[];
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -61,6 +63,9 @@ function toEntity(novelId: string, id: string, data: EntityDoc): Entity {
     aliases: data.aliases ?? [],
     description: data.description ?? "",
     notes: data.notes ?? [],
+    gallery: data.gallery
+      ? [...data.gallery].sort((left, right) => left.sort_order - right.sort_order)
+      : [],
   };
 }
 
@@ -75,6 +80,27 @@ export interface EntityUpdatePayload {
   aliases?: string[];
   description?: string;
   notes?: EntityNote[];
+  gallery?: GalleryImage[];
+}
+
+function validateGallery(gallery: GalleryImage[] | undefined) {
+  if (!gallery) return;
+  const ids = new Set<string>();
+  for (const image of gallery) {
+    if (!image.id || ids.has(image.id) || !image.image_url.trim()) {
+      throw new Error("Gallery images require unique IDs and image URLs.");
+    }
+    ids.add(image.id);
+    for (const value of [image.image_url, image.source_url]) {
+      if (!value) continue;
+      try {
+        const url = new URL(value);
+        if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
+      } catch {
+        throw new Error("Gallery image URLs must use HTTP(S).");
+      }
+    }
+  }
 }
 export type EntityCursor = { name: string; id: string };
 export type EntityPage = {
@@ -226,6 +252,7 @@ export async function updateEntity(
   entityId: string,
   payload: EntityUpdatePayload,
 ): Promise<Entity> {
+  validateGallery(payload.gallery);
   const ref = doc(entitiesCol(novelId), sourceId(novelId, entityId));
   await updateDoc(
     ref,
@@ -234,6 +261,18 @@ export async function updateEntity(
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) throw new Error("Request failed.");
   return toEntity(novelId, snapshot.id, snapshot.data() as EntityDoc);
+}
+
+export async function updateEntityGallery(
+  novelId: string,
+  entityId: string,
+  gallery: GalleryImage[],
+): Promise<void> {
+  validateGallery(gallery);
+  await updateDoc(
+    doc(entitiesCol(novelId), sourceId(novelId, entityId)),
+    withUpdateTimestamp({ gallery }),
+  );
 }
 
 export async function deleteEntity(

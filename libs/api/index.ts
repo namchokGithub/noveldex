@@ -119,6 +119,7 @@ export {
   getEntitiesPageByNamePrefix,
   getEntity,
   updateEntity,
+  updateEntityGallery,
 } from "@/libs/firebase/entities";
 export type {
   EntityCreatePayload,

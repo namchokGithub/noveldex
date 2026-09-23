@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Entity } from "@/libs/entities/types";
-import { deleteEntity, updateEntity } from "@/libs/api";
+import { deleteEntity, updateEntity, updateEntityGallery } from "@/libs/api";
+import type { GalleryImage } from "@/app/types";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { type TranslationKey, useI18n } from "@/components/i18n/I18nProvider";
 import {
@@ -19,6 +20,7 @@ import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { normalizeEntity } from "@/libs/search/normalize";
 import { dependentRefreshes } from "@/libs/search/refresh";
 import { userErrorMessage } from "@/libs/userErrorMessage";
+import CharacterGallery from "../../characters/[characterId]/CharacterGallery";
 
 export default function EntityDetail({
   novelId,
@@ -38,6 +40,7 @@ export default function EntityDetail({
   const [name, setName] = useState(entity.name);
   const [aliases, setAliases] = useState(entity.aliases.join(", "));
   const [description, setDescription] = useState(entity.description);
+  const [gallery, setGallery] = useState<GalleryImage[]>(entity.gallery ?? []);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -110,6 +113,20 @@ export default function EntityDetail({
       setSnackbar({ tone: "error", message });
     } finally {
       setBusy(false);
+    }
+  }
+  async function saveGallery(nextGallery: GalleryImage[]) {
+    setError(null);
+    try {
+      await updateEntityGallery(novelId, entity.id, nextGallery);
+      setGallery(nextGallery);
+      setSnackbar({ tone: "success", message: t("entities.saveSuccess") });
+      router.refresh();
+    } catch (cause) {
+      const message = userErrorMessage(cause, t);
+      setError(message);
+      setSnackbar({ tone: "error", message });
+      throw cause;
     }
   }
   if (loading) return null;
@@ -213,6 +230,7 @@ export default function EntityDetail({
         )}
         {error ? <FormError>{error}</FormError> : null}
       </section>
+      <CharacterGallery gallery={gallery} canEdit={isAdmin} onSave={saveGallery} />
       <ConfirmDialog
         open={confirming}
         eyebrow={t("entities.deleteEyebrow")}
