@@ -13,6 +13,7 @@ import {
 } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { normalizeCursorPage } from "@/libs/pagination";
+import type { CharacterSort, SortDirection } from "@/app/types";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
 
@@ -32,6 +33,9 @@ export default async function CharactersPage({
     after?: string;
     before?: string;
     role?: string;
+    q?: string;
+    sort?: string;
+    direction?: string;
   }>;
 }) {
   const { id } = await params;
@@ -42,6 +46,13 @@ export default async function CharactersPage({
     : 10;
   const { after, before } = resolveCharacterCursorSearch(resolvedSearchParams);
   const roleId = resolvedSearchParams.role?.trim() || null;
+  const search = resolvedSearchParams.q?.trim() || null;
+  const sort: CharacterSort =
+    resolvedSearchParams.sort === "updated_at" || resolvedSearchParams.sort === "role"
+      ? resolvedSearchParams.sort
+      : "name";
+  const direction: SortDirection =
+    resolvedSearchParams.direction === "desc" ? "desc" : "asc";
   const page = normalizeCursorPage(
     parsePositiveInt(resolvedSearchParams.page, 1),
     Boolean(after || before),
@@ -52,7 +63,16 @@ export default async function CharactersPage({
 
   try {
     [characters, roles] = await Promise.all([
-      getCharactersPage(id, { page, perPage, after, before, roleId }),
+      getCharactersPage(id, {
+        page,
+        perPage,
+        after,
+        before,
+        roleId,
+        search,
+        sort,
+        direction,
+      }),
       getCharacterRoles(),
     ]);
   } catch (error) {
@@ -84,6 +104,9 @@ export default async function CharactersPage({
           characters={characters.items}
           roles={roles}
           roleId={roleId}
+          search={search ?? ""}
+          sort={sort}
+          direction={direction}
           pagination={characters.pagination}
           previousCursor={
             characters.previousCursor

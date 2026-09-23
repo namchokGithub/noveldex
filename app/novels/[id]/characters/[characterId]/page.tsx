@@ -12,6 +12,7 @@ import {
 } from "@/libs/api";
 import { adaptationsForCharacter } from "@/libs/characterCrossReferences";
 import { ResourceNotFoundError } from "@/libs/errors";
+import BackToTopButton from "@/app/novels/BackToTopButton";
 
 export default async function CharacterPage({
   params,
@@ -42,7 +43,10 @@ export default async function CharacterPage({
   return (
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
-        <Link href={`/novels/${id}/characters`} className={backLinkClassName}>
+        <Link
+          id="character-detail-back-link"
+          href={`/novels/${id}/characters`}
+          className={backLinkClassName}>
           ← <T k="nav.characters" />
         </Link>
 
@@ -57,6 +61,7 @@ export default async function CharacterPage({
             new Set(character.chapters?.map((chapter) => chapter.id) ?? []),
           )}
         />
+        <BackToTopButton anchorId="character-detail-back-link" />
       </div>
     </DashboardPage>
   );

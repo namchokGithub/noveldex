@@ -250,8 +250,11 @@ export interface CharacterListSummary {
   total_characters: number;
 }
 
+export type CharacterSort = "name" | "updated_at" | "role";
+export type SortDirection = "asc" | "desc";
+
 export interface CharacterCursor {
-  name: string;
+  values: string[];
   id: string;
 }
 

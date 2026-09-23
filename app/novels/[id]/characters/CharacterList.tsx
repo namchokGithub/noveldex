@@ -5,12 +5,14 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { Character, CharacterRole, PaginationMeta } from "@/app/types";
+import type { CharacterSort, SortDirection } from "@/app/types";
 import {
   emptyStateClassName,
   listClassName,
   listRowClassName,
   roleColorClassNames,
   secondaryButtonClassName,
+  inputClassName,
 } from "../../ui";
 import { T } from "@/components/i18n/I18nProvider";
 import { useRouter } from "next/navigation";
@@ -26,6 +28,9 @@ export default function CharacterList({
   nextCursor,
   roles,
   roleId,
+  search,
+  sort,
+  direction,
 }: {
   novelId: string;
   characters: Character[];
@@ -34,6 +39,9 @@ export default function CharacterList({
   nextCursor: string | null;
   roles: CharacterRole[];
   roleId: string | null;
+  search: string;
+  sort: CharacterSort;
+  direction: SortDirection;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -59,7 +67,19 @@ export default function CharacterList({
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  if (characters.length === 0 && pagination.page === 1) {
+  function resetWith(next: Record<string, string | null>) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+    params.delete("after");
+    params.delete("before");
+    Object.entries(next).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    });
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
+  if (characters.length === 0 && pagination.page === 1 && !search && !roleId) {
     return (
       <div className={emptyStateClassName}>
         <T k="characters.noCharacters" />
@@ -67,7 +87,10 @@ export default function CharacterList({
     );
   }
 
-  const rangeStart = (pagination.page - 1) * pagination.per_page + 1;
+  const rangeStart =
+    pagination.total_items === 0
+      ? 0
+      : (pagination.page - 1) * pagination.per_page + 1;
   const rangeEnd = Math.min(
     pagination.page * pagination.per_page,
     pagination.total_items,
@@ -105,10 +128,51 @@ export default function CharacterList({
             ]}
           />
         </label>
+        <form
+          className="flex min-w-56 flex-1 items-center gap-2 sm:max-w-xs"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const input = new FormData(event.currentTarget).get("q");
+            resetWith({ q: typeof input === "string" ? input.trim() : null });
+          }}>
+          <input
+            name="q"
+            defaultValue={search}
+            placeholder="Search name…"
+            className={`${inputClassName} py-2`}
+          />
+        </form>
+        <div className="flex items-center gap-2 text-sm text-stone-500">
+          <span>Sort</span>
+          <Select
+            value={sort}
+            onValueChange={(value) => resetWith({ sort: value })}
+            wrapperClassName="min-w-32"
+            className="py-2"
+            options={[
+              { value: "name", label: "Name" },
+              { value: "updated_at", label: "Updated at" },
+              { value: "role", label: "Role" },
+            ]}
+          />
+          <button
+            type="button"
+            onClick={() =>
+              resetWith({ direction: direction === "asc" ? "desc" : "asc" })
+            }
+            className={secondaryButtonClassName}
+            aria-label={direction === "asc" ? "Sort descending" : "Sort ascending"}>
+            {direction === "asc" ? "↑" : "↓"}
+          </button>
+        </div>
       </div>
 
       <ul className="divide-y divide-stone-200">
-        {characters.map((char) => (
+        {characters.length === 0 ? (
+          <li className="px-4 py-8 text-center text-sm text-stone-500">
+            <T k="characters.noCharacters" />
+          </li>
+        ) : characters.map((char) => (
           <li key={char.id}>
             <Link
               href={`/novels/${novelId}/characters/${char.id}`}
