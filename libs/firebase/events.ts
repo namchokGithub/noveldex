@@ -22,6 +22,11 @@ import { tsToIso, withCreateTimestamps, withUpdateTimestamp } from "./helpers";
 import { getAllCharacters, getCharactersByIds } from "./characters";
 import { applyNonNegativeCounterDeltas } from "./counters";
 import { chapterEventOrder } from "@/libs/timelineOrder";
+import {
+  deleteEntityReferences,
+  referencesForEvent,
+  replaceEntityReferences,
+} from "./entityReferences";
 
 interface EventDoc {
   title: string;
@@ -205,6 +210,18 @@ export async function createEvent(
     ...chapterFields,
   });
   await runTransaction(db, async (transaction) => {
+    await replaceEntityReferences(
+      transaction,
+      novelId,
+      [],
+      referencesForEvent({
+        eventId: ref.id,
+        title: event.title,
+        sortOrder: event.sort_order,
+        updatedAt: new Date().toISOString(),
+        references: event.description_references,
+      }),
+    );
     await applyNonNegativeCounterDeltas(
       transaction,
       eventCounterDeltas(novelId, eventCounterTarget(chapterFields), 1),
@@ -260,10 +277,39 @@ export async function updateEvent(
     nextTarget = eventCounterTarget(chapterFields);
   }
 
+  const changesIndexedState =
+    payload.description !== undefined ||
+    payload.title !== undefined ||
+    payload.sort_order !== undefined;
   await runTransaction(db, async (transaction) => {
     const previous = await transaction.get(ref);
     if (!previous.exists()) throw new Error("Request failed.");
     const previousTarget = eventCounterTarget(previous.data());
+    if (changesIndexedState) {
+      const current = previous.data();
+      await replaceEntityReferences(
+        transaction,
+        novelId,
+        referencesForEvent({
+          eventId,
+          title: current.title,
+          sortOrder: current.sort_order,
+          updatedAt: tsToIso(current.updated_at),
+          references: current.description_references,
+        }),
+        referencesForEvent({
+          eventId,
+          title: (update.title as string | undefined) ?? current.title,
+          sortOrder:
+            (update.sort_order as number | undefined) ?? current.sort_order,
+          updatedAt: new Date().toISOString(),
+          references:
+            (update.description_references as
+              | ReferenceOccurrence[]
+              | undefined) ?? current.description_references,
+        }),
+      );
+    }
     await applyNonNegativeCounterDeltas(transaction, [
       ...eventCounterDeltas(novelId, previousTarget, -1),
       ...eventCounterDeltas(
@@ -384,6 +430,18 @@ export async function deleteEvent(
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists()) return;
+    const current = snapshot.data();
+    await deleteEntityReferences(
+      transaction,
+      novelId,
+      referencesForEvent({
+        eventId,
+        title: current.title,
+        sortOrder: current.sort_order,
+        updatedAt: tsToIso(current.updated_at),
+        references: current.description_references,
+      }),
+    );
     await applyNonNegativeCounterDeltas(
       transaction,
       eventCounterDeltas(novelId, eventCounterTarget(snapshot.data()), -1),

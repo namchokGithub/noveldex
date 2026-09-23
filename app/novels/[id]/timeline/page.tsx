@@ -46,6 +46,7 @@ import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
 import { normalizeEvent } from "@/libs/search/normalize";
 import { TimelineEventActions } from "./TimelineEventActions";
 import { characterIdsInTimeline } from "@/libs/timelineParticipants";
+import { CircleChevronLeft } from "lucide-react";
 
 interface ChapterOption {
   id: string;
@@ -366,7 +367,8 @@ export default function TimelinePage({
     <DashboardPage maxWidth="w-full max-w-6xl">
       <div className="space-y-5">
         <Link href={`/novels/${novelId}`} className={backLinkClassName}>
-          ← {t("nav.backToNovel")}
+          <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />{" "}
+          {t("nav.backToNovel")}
         </Link>
         <SectionHeading
           eyebrow={t("timeline.eyebrow")}

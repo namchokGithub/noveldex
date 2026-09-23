@@ -70,6 +70,7 @@ export {
   getCharacter,
   createCharacter,
   updateCharacter,
+  updateCharacterGallery,
   deleteCharacter,
   decodeCharacterCursor,
   encodeCharacterCursor,
@@ -92,6 +93,14 @@ export {
   deleteEvent,
 } from "@/libs/firebase/events";
 export type { EventPayload } from "@/libs/firebase/events";
+export {
+  getEntityReferencePage,
+} from "@/libs/firebase/entityReferences";
+export type {
+  EntityReference as EntityReferenceIndexEntry,
+  EntityReferenceCursor,
+  EntityReferencePage,
+} from "@/libs/firebase/entityReferences";
 // Adaptations domain via Firestore
 export {
   getAdaptationsByVolume,
@@ -99,6 +108,7 @@ export {
   getAdaptationsByChapter,
   getAdaptation,
   getAdaptationsForNovel,
+  getAdaptationsForChapterIds,
   createAdaptation,
   updateAdaptation,
   deleteAdaptation,
@@ -115,8 +125,10 @@ export {
   encodeEntityCursor,
   getEntities,
   getEntitiesPage,
+  getEntitiesPageByNamePrefix,
   getEntity,
   updateEntity,
+  updateEntityGallery,
 } from "@/libs/firebase/entities";
 export type {
   EntityCreatePayload,

@@ -11,7 +11,6 @@ Use the relevant guide in `.agents/` before working in that area:
 - `.agents/firestore-data-modeling/SKILL.md` for Firestore collections, fields, queries, indexes, or batch changes.
 - `.agents/firestore-security/SKILL.md` for Firestore rules or authentication and authorization changes.
 - `.agents/code-review/SKILL.md` when reviewing changes without modifying them.
-
 - The runtime is `web` (Next.js + direct Firestore). Do not reintroduce a Go API, Redis, SQL migrations, or `NEXT_PUBLIC_API_URL`.
 - PostgreSQL and `backups/postgres/` are legacy recovery/migration material only.
 - Use `corepack pnpm` in `web`. Do not run test or build commands; create or update the relevant test files only, then provide the exact lint, test, and build commands for the user to run after handoff.

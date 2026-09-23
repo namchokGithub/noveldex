@@ -17,11 +17,15 @@ import {
 } from "firebase/firestore/lite";
 import type {
   Character,
+  CharacterData,
   CharacterCursor,
+  GalleryImage,
   CharacterPage,
+  CharacterSort,
   ChapterKind,
   ChapterSummary,
   PaginatedCharacters,
+  SortDirection,
 } from "@/app/types";
 import type { RichNoteDocument } from "@/libs/richNotes/document";
 import { ResourceNotFoundError } from "@/libs/errors";
@@ -33,6 +37,7 @@ import { relatedNotesForCharacter } from "@/libs/characterRelatedNotes";
 
 interface CharacterDoc {
   name: string;
+  name_search?: string;
   aliases: string[];
   role_id: string;
   role: string;
@@ -45,6 +50,8 @@ interface CharacterDoc {
   appearance_content_json?: RichNoteDocument;
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
+  data?: CharacterData;
+  gallery?: GalleryImage[];
   chapter_count?: number;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -58,6 +65,31 @@ function charactersCol(novelId: string) {
 
 function characterRef(novelId: string, characterId: string) {
   return doc(db, "novels", novelId, "characters", characterId);
+}
+
+function normalizeCharacterName(value: string) {
+  return value.trim().toLocaleLowerCase();
+}
+
+function validateGallery(gallery: GalleryImage[] | undefined) {
+  if (!gallery) return;
+  const ids = new Set<string>();
+  for (const image of gallery) {
+    if (!image.id || ids.has(image.id) || !image.image_url.trim()) {
+      throw new Error("Gallery images require unique IDs and image URLs.");
+    }
+    ids.add(image.id);
+    for (const value of [image.image_url, image.source_url]) {
+      if (!value) continue;
+      try {
+        const url = new URL(value);
+        if (url.protocol !== "http:" && url.protocol !== "https:")
+          throw new Error();
+      } catch {
+        throw new Error("Gallery image URLs must use HTTP(S).");
+      }
+    }
+  }
 }
 
 async function characterChapters(
@@ -148,6 +180,12 @@ async function toCharacter(
     appearance_content_json: data.appearance_content_json,
     personality_content_json: data.personality_content_json,
     trivia_content_json: data.trivia_content_json,
+    data: data.data,
+    gallery: data.gallery
+      ? [...data.gallery].sort(
+          (left, right) => left.sort_order - right.sort_order,
+        )
+      : undefined,
     first_appearance_chapter_id: null,
     chapter_count: hydrate
       ? chapterCount
@@ -205,6 +243,8 @@ export interface CharacterCreatePayload {
   appearance_content_json?: RichNoteDocument;
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
+  data?: CharacterData;
+  gallery?: GalleryImage[];
   aliases: string[];
   profile_image_url?: string | null;
 }
@@ -213,6 +253,7 @@ export async function createCharacter(
   novelId: string,
   payload: CharacterCreatePayload,
 ): Promise<Character> {
+  validateGallery(payload.gallery);
   const resolvedRole = await resolveRole(payload);
   const ref = doc(charactersCol(novelId));
   await runTransaction(db, async (transaction) => {
@@ -224,6 +265,7 @@ export async function createCharacter(
       ref,
       withCreateTimestamps({
         name: payload.name,
+        name_search: normalizeCharacterName(payload.name),
         aliases: payload.aliases,
         description: payload.description,
         appearance: payload.appearance ?? "",
@@ -238,6 +280,8 @@ export async function createCharacter(
         ...(payload.trivia_content_json
           ? { trivia_content_json: payload.trivia_content_json }
           : {}),
+        ...(payload.data ? { data: payload.data } : {}),
+        ...(payload.gallery ? { gallery: payload.gallery } : {}),
         profile_image_url: payload.profile_image_url ?? null,
         chapter_count: 0,
         ...resolvedRole,
@@ -270,6 +314,8 @@ export interface CharacterUpdatePayload {
   appearance_content_json?: RichNoteDocument;
   personality_content_json?: RichNoteDocument;
   trivia_content_json?: RichNoteDocument;
+  data?: CharacterData;
+  gallery?: GalleryImage[];
   aliases?: string[];
   profile_image_url?: string | null;
 }
@@ -279,8 +325,12 @@ export async function updateCharacter(
   characterId: string,
   payload: CharacterUpdatePayload,
 ): Promise<Character> {
+  validateGallery(payload.gallery);
   const update: Record<string, unknown> = {};
-  if (payload.name !== undefined) update.name = payload.name;
+  if (payload.name !== undefined) {
+    update.name = payload.name;
+    update.name_search = normalizeCharacterName(payload.name);
+  }
   if (payload.description !== undefined)
     update.description = payload.description;
   if (payload.appearance !== undefined) update.appearance = payload.appearance;
@@ -293,6 +343,8 @@ export async function updateCharacter(
     update.personality_content_json = payload.personality_content_json;
   if (payload.trivia_content_json !== undefined)
     update.trivia_content_json = payload.trivia_content_json;
+  if (payload.data !== undefined) update.data = payload.data;
+  if (payload.gallery !== undefined) update.gallery = payload.gallery;
   if (payload.aliases !== undefined) update.aliases = payload.aliases;
   if (payload.profile_image_url !== undefined) {
     update.profile_image_url = payload.profile_image_url;
@@ -312,6 +364,18 @@ export async function updateCharacter(
     snapshot.id,
     snapshot.data() as CharacterDoc,
     true,
+  );
+}
+
+export async function updateCharacterGallery(
+  novelId: string,
+  characterId: string,
+  gallery: GalleryImage[],
+): Promise<void> {
+  validateGallery(gallery);
+  await updateDoc(
+    characterRef(novelId, characterId),
+    withUpdateTimestamp({ gallery }),
   );
 }
 
@@ -352,15 +416,16 @@ export function decodeCharacterCursor(value: string): CharacterCursor | null {
     if (!parsed || typeof parsed !== "object") return null;
     const cursor = parsed as Partial<CharacterCursor>;
     if (
-      typeof cursor.name !== "string" ||
-      cursor.name.length === 0 ||
+      !Array.isArray(cursor.values) ||
+      cursor.values.length === 0 ||
+      cursor.values.some((item) => typeof item !== "string") ||
       typeof cursor.id !== "string" ||
       cursor.id.length === 0 ||
       cursor.id.includes("/")
     ) {
       return null;
     }
-    return { name: cursor.name, id: cursor.id };
+    return { values: cursor.values, id: cursor.id };
   } catch {
     return null;
   }
@@ -468,6 +533,9 @@ export async function getCharactersPage(
     after?: CharacterCursor | null;
     before?: CharacterCursor | null;
     roleId?: string | null;
+    search?: string | null;
+    sort?: CharacterSort;
+    direction?: SortDirection;
   },
 ): Promise<CharacterPage> {
   const after = options?.after ?? null;
@@ -484,55 +552,132 @@ export async function getCharactersPage(
       ? (options?.perPage as number)
       : 5;
   const roleId = options?.roleId ?? null;
+  const search = normalizeCharacterName(options?.search ?? "");
+  const sort = options?.sort ?? "name";
+  const direction = options?.direction ?? "asc";
   const roleConstraint = roleId ? [where("role_id", "==", roleId)] : [];
-  const charactersQuery = before
+  const descending = direction === "desc";
+  const queryDirection = before ? (descending ? "asc" : "desc") : direction;
+  const sortFields =
+    sort === "updated_at"
+      ? ["updated_at"]
+      : sort === "role"
+        ? ["role_id", "name"]
+        : ["name"];
+  const cursorValues = (cursor: CharacterCursor) =>
+    sort === "updated_at"
+      ? [Timestamp.fromDate(new Date(cursor.values[0]))]
+      : cursor.values;
+  const nativeQuery = before
     ? query(
         charactersCol(novelId),
         ...roleConstraint,
-        orderBy("name", "desc"),
-        orderBy(documentId(), "desc"),
-        startAfter(before.name, before.id),
+        ...sortFields.map((field) => orderBy(field, queryDirection)),
+        orderBy(documentId(), queryDirection),
+        startAfter(...cursorValues(before), before.id),
         limit(perPage),
       )
     : after
       ? query(
           charactersCol(novelId),
           ...roleConstraint,
-          orderBy("name", "asc"),
-          orderBy(documentId(), "asc"),
-          startAfter(after.name, after.id),
+          ...sortFields.map((field) => orderBy(field, queryDirection)),
+          orderBy(documentId(), queryDirection),
+          startAfter(...cursorValues(after), after.id),
           limit(perPage),
         )
       : query(
           charactersCol(novelId),
           ...roleConstraint,
-          orderBy("name", "asc"),
-          orderBy(documentId(), "asc"),
+          ...sortFields.map((field) => orderBy(field, queryDirection)),
+          orderBy(documentId(), queryDirection),
           limit(perPage),
         );
+  const searchQuery = search
+    ? query(
+        charactersCol(novelId),
+        ...roleConstraint,
+        where("name_search", ">=", search),
+        where("name_search", "<=", `${search}\uf8ff`),
+        orderBy("name_search", "asc"),
+        orderBy(documentId(), "asc"),
+      )
+    : null;
   const [novel, snapshot, countSnapshot] = await Promise.all([
     getNovel(novelId),
-    getDocs(charactersQuery),
-    roleId
+    getDocs(searchQuery ?? nativeQuery),
+    search || roleId
       ? getDocs(query(charactersCol(novelId), ...roleConstraint))
       : Promise.resolve(null),
   ]);
-  const pageDocs = before ? [...snapshot.docs].reverse() : snapshot.docs;
+  const compare = (
+    left: (typeof snapshot.docs)[number],
+    right: (typeof snapshot.docs)[number],
+  ) => {
+    const dataLeft = left.data() as CharacterDoc;
+    const dataRight = right.data() as CharacterDoc;
+    const values =
+      sort === "updated_at"
+        ? [dataLeft.updated_at.toMillis(), dataRight.updated_at.toMillis()]
+        : sort === "role"
+          ? [
+              `${dataLeft.role_id}\u0000${dataLeft.name_search ?? normalizeCharacterName(dataLeft.name)}`,
+              `${dataRight.role_id}\u0000${dataRight.name_search ?? normalizeCharacterName(dataRight.name)}`,
+            ]
+          : [
+              dataLeft.name_search ?? normalizeCharacterName(dataLeft.name),
+              dataRight.name_search ?? normalizeCharacterName(dataRight.name),
+            ];
+    const order =
+      values[0] < values[1]
+        ? -1
+        : values[0] > values[1]
+          ? 1
+          : left.id.localeCompare(right.id);
+    return descending ? -order : order;
+  };
+  const matchedDocs = search ? [...snapshot.docs].sort(compare) : null;
+  const searchStart = after
+    ? Math.max(
+        0,
+        (matchedDocs?.findIndex((document) => document.id === after.id) ?? -1) +
+          1,
+      )
+    : before
+      ? Math.max(
+          0,
+          (matchedDocs?.findIndex((document) => document.id === before.id) ??
+            0) - perPage,
+        )
+      : 0;
+  const pageDocs = search
+    ? (matchedDocs ?? []).slice(searchStart, searchStart + perPage)
+    : before
+      ? [...snapshot.docs].reverse()
+      : snapshot.docs;
   const items = await Promise.all(
     pageDocs.map((d) =>
       toCharacter(novelId, d.id, d.data() as CharacterDoc, false),
     ),
   );
-  const totalItems = roleId
-    ? (countSnapshot?.size ?? 0)
-    : novel.character_count;
+  const totalItems = search
+    ? (matchedDocs?.length ?? 0)
+    : roleId
+      ? (countSnapshot?.size ?? 0)
+      : novel.character_count;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
   const first = pageDocs[0];
   const last = pageDocs.at(-1);
-  const cursorFor = (document: (typeof pageDocs)[number]): CharacterCursor => ({
-    name: (document.data() as CharacterDoc).name,
-    id: document.id,
-  });
+  const cursorFor = (document: (typeof pageDocs)[number]): CharacterCursor => {
+    const data = document.data() as CharacterDoc;
+    const values =
+      sort === "updated_at"
+        ? [tsToIso(data.updated_at)]
+        : sort === "role"
+          ? [data.role_id, data.name]
+          : [data.name];
+    return { values, id: document.id };
+  };
 
   return {
     novel,

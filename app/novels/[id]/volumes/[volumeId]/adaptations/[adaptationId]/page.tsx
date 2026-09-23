@@ -17,6 +17,7 @@ import {
 } from "@/libs/api";
 import { linkedEntitiesForAdaptation } from "@/libs/adaptationDetailRelations";
 import { ResourceNotFoundError } from "@/libs/errors";
+import { CircleChevronLeft } from "lucide-react";
 
 export default async function AdaptationDetailPage({
   params,
@@ -56,7 +57,8 @@ export default async function AdaptationDetailPage({
           id="adaptation-detail-back-link"
           href={`/novels/${id}/adaptations#adaptation-${adaptationId}`}
           className={backLinkClassName}>
-          ← {novel.title}
+          <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />{" "}
+          {novel.title}
         </Link>
         <SectionHeading
           eyebrow={<T k="adaptations.title" />}

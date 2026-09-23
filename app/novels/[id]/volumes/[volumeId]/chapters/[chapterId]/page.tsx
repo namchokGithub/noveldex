@@ -26,6 +26,7 @@ import { charactersByIds } from "@/libs/charactersByIds";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { formatChapterPrefix } from "@/libs/chapterLabel";
 import type { ChapterWithCharacters } from "@/app/types";
+import { CircleChevronLeft } from "lucide-react";
 
 // Next.js calls generateMetadata and the page body separately for the same
 // request; cache() dedupes their getChapter() calls into a single Firestore read.
@@ -125,7 +126,8 @@ export default async function ChapterPage({
           id="chapter-back-link"
           href={`/novels/${id}/volumes/${volumeId}`}
           className={backLinkClassName}>
-          ← <T k="nav.backToVolume" />
+          <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+          <T k="nav.backToVolume" />
         </Link>
 
         <SectionHeading

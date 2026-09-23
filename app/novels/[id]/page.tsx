@@ -21,6 +21,7 @@ import {
 } from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
 import { normalizeCursorPage } from "@/libs/pagination";
+import { CircleChevronLeft } from "lucide-react";
 
 const ALLOWED_PAGE_SIZES = new Set([5, 10, 20, 50]);
 
@@ -71,7 +72,8 @@ export default async function NovelPage({
             id="novel-back-link"
             href="/novels"
             className={backLinkClassName}>
-            ← <T k="nav.allNovels" />
+            <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+            <T k="nav.allNovels" />
           </Link>
           <AddVolumeForm novelId={id} />
         </div>

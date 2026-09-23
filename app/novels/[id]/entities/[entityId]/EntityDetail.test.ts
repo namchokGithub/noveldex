@@ -17,3 +17,10 @@ it("uses a destructive red treatment for the entity delete action", () => {
   expect(source).toContain("text-rose-700");
   expect(source).toContain("hover:bg-rose-50");
 });
+
+it("uses translation keys for the entity type and delete confirmation", () => {
+  expect(source).toContain("command.resultType.${entity.type}");
+  expect(source).toContain('t("entities.deleteEyebrow")');
+  expect(source).toContain('t("entities.deleteTitle", { name: entity.name })');
+  expect(source).toContain('t("entities.deleteDescription")');
+});

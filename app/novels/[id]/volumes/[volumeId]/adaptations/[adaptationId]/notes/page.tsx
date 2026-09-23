@@ -8,8 +8,14 @@ import {
   DashboardPage,
   SectionHeading,
 } from "@/app/novels/ui";
-import { getAdaptation, getAllCharacters, getEntities, getNovel } from "@/libs/api";
+import {
+  getAdaptation,
+  getAllCharacters,
+  getEntities,
+  getNovel,
+} from "@/libs/api";
 import { ResourceNotFoundError } from "@/libs/errors";
+import { CircleChevronLeft } from "lucide-react";
 
 export default async function AdaptationNotesPage({
   params,
@@ -39,14 +45,19 @@ export default async function AdaptationNotesPage({
           id="adaptation-notes-back-link"
           href={`/novels/${id}/volumes/${volumeId}/adaptations/${adaptationId}`}
           className={backLinkClassName}>
-          ← {novel.title}
+          <CircleChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />{" "}
+          {novel.title}
         </Link>
         <SectionHeading
           eyebrow={<T k="adaptations.title" />}
           title={adaptation.title}
           description={<T k="adaptations.notes" />}
         />
-        <AdaptationNotesEditor adaptation={adaptation} characters={characters} genericEntities={genericEntities} />
+        <AdaptationNotesEditor
+          adaptation={adaptation}
+          characters={characters}
+          genericEntities={genericEntities}
+        />
         <BackToTopButton anchorId="adaptation-notes-back-link" />
       </div>
     </DashboardPage>

@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Brain, Lightbulb, UserRound, type LucideIcon } from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import {
+  Brain,
+  ChevronDown,
+  Lightbulb,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type {
   Adaptation,
   Character,
+  CharacterData,
+  GalleryImage,
   CharacterRole,
   NovelEvent,
 } from "../../../../types";
@@ -28,7 +36,11 @@ import ConfirmDialog from "../../../ConfirmDialog";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import LocalizedDate from "@/components/i18n/LocalizedDate";
 import { ChapterLabel } from "@/components/chapters/ChapterLabel";
-import { deleteCharacter, updateCharacter } from "@/libs/api";
+import {
+  deleteCharacter,
+  updateCharacter,
+  updateCharacterGallery,
+} from "@/libs/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useResetOnSignOut } from "@/components/auth/useResetOnSignOut";
 import { useSearchIndex } from "@/libs/search/SearchIndexProvider";
@@ -40,6 +52,7 @@ import { crossReferencePreview } from "@/libs/crossReferencePreview";
 import { userErrorMessage } from "@/libs/userErrorMessage";
 import { Select } from "@/components/ui/Select";
 import CharacterProfileImageModal from "./CharacterProfileImageModal";
+import CharacterGallery from "./CharacterGallery";
 import {
   RichNoteEditor,
   RichNoteContent,
@@ -91,6 +104,12 @@ export default function CharacterDetail({
     character.trivia_content_json,
   );
   const [aliases, setAliases] = useState(character.aliases.join(", "));
+  const [designData, setDesignData] = useState<CharacterData>(
+    character.data ?? {},
+  );
+  const [gallery, setGallery] = useState<GalleryImage[]>(
+    character.gallery ?? [],
+  );
 
   useResetOnSignOut(isAdmin, cancel);
 
@@ -121,6 +140,7 @@ export default function CharacterDetail({
         appearance_content_json: appearanceJson,
         personality_content_json: personalityJson,
         trivia_content_json: triviaJson,
+        data: sanitizeCharacterData(designData),
       });
       const entity = {
         id: buildEntityId(novelId, "character", updated.id),
@@ -145,6 +165,21 @@ export default function CharacterDetail({
       setSnackbar({ tone: "error", message });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveGallery(nextGallery: GalleryImage[]) {
+    setError(null);
+    try {
+      await updateCharacterGallery(novelId, character.id, nextGallery);
+      setGallery(nextGallery);
+      setSnackbar({ tone: "success", message: t("character.saveSuccess") });
+      router.refresh();
+    } catch (cause) {
+      const message = userErrorMessage(cause, t);
+      setError(message);
+      setSnackbar({ tone: "error", message });
+      throw cause;
     }
   }
 
@@ -182,6 +217,8 @@ export default function CharacterDetail({
     setAppearanceJson(character.appearance_content_json);
     setPersonalityJson(character.personality_content_json);
     setTriviaJson(character.trivia_content_json);
+    setDesignData(character.data ?? {});
+    setGallery(character.gallery ?? []);
     setEditing(false);
     setError(null);
   }
@@ -258,33 +295,41 @@ export default function CharacterDetail({
 
       {error && <FormError>{error}</FormError>}
 
-      <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className={`${cardClassName} h-fit`}>
-          <p className={smallLabelClassName}>{t("character.role")}</p>
-          {editing ? (
-            <Select
-              value={roleId}
-              onValueChange={setRoleId}
-              options={roles.map((role) => ({
-                value: role.id,
-                label: role.name,
-              }))}
-            />
-          ) : (
-            <span
-              className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleColorClassNames[character.role] ?? roleColorClassNames.minor}`}>
-              {displayRole}
-            </span>
-          )}
+      <div className="grid items-start gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="space-y-4">
+          <div className={`${cardClassName} h-fit`}>
+            <p className={smallLabelClassName}>{t("character.role")}</p>
+            {editing ? (
+              <Select
+                value={roleId}
+                onValueChange={setRoleId}
+                options={roles.map((role) => ({
+                  value: role.id,
+                  label: role.name,
+                }))}
+              />
+            ) : (
+              <span
+                className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleColorClassNames[character.role] ?? roleColorClassNames.minor}`}>
+                {displayRole}
+              </span>
+            )}
 
-          <div className="mt-6 border-t border-stone-200 pt-5">
-            <p className={smallLabelClassName}>
-              {t("character.chapterAppearances")}
-            </p>
-            <p className="text-3xl font-semibold tracking-tighter text-stone-950">
-              {character.chapter_count}
-            </p>
+            <div className="mt-6 border-t border-stone-200 pt-5">
+              <p className={smallLabelClassName}>
+                {t("character.chapterAppearances")}
+              </p>
+              <p className="text-3xl font-semibold tracking-tighter text-stone-950">
+                {character.chapter_count}
+              </p>
+            </div>
           </div>
+
+          <CharacterDataSections
+            data={designData}
+            editing={editing}
+            onChange={setDesignData}
+          />
         </div>
 
         <div className="space-y-4">
@@ -390,6 +435,12 @@ export default function CharacterDetail({
           />
         </div>
       </div>
+
+      <CharacterGallery
+        gallery={gallery}
+        canEdit={isAdmin}
+        onSave={saveGallery}
+      />
 
       {character.chapters && character.chapters.length > 0 && (
         <div className={cardClassName}>
@@ -533,6 +584,286 @@ export default function CharacterDetail({
         busy={saving}
         danger
       />
+    </div>
+  );
+}
+
+type DesignField = {
+  key: string;
+  label: string;
+  section: string;
+  multiple?: boolean;
+};
+
+function sanitizeCharacterData(data: CharacterData): CharacterData {
+  const result = structuredClone(data);
+  for (const group of Object.values(result)) {
+    if (!group) continue;
+    for (const [key, value] of Object.entries(group)) {
+      if (Array.isArray(value)) {
+        (group as Record<string, unknown>)[key] = value.filter(Boolean);
+      }
+    }
+  }
+  return result;
+}
+
+const designFields: Array<{
+  key: "biographical_and_biological" | "social" | "debut";
+  label: string;
+  fields: DesignField[];
+}> = [
+  {
+    key: "biographical_and_biological",
+    label: "Biographical and Biological",
+    fields: [
+      { key: "name_thai", label: "Name Thai", section: "Names" },
+      { key: "name_japanese", label: "Name Japanese", section: "Names" },
+      { key: "romaji", label: "Rōmaji", section: "Names" },
+      {
+        key: "blessings",
+        label: "Blessing(s)",
+        section: "Biology",
+        multiple: true,
+      },
+      { key: "species", label: "Species", section: "Biology" },
+      { key: "kind", label: "Kind", section: "Biology" },
+      { key: "age", label: "Age", section: "Biology" },
+      { key: "height", label: "Height", section: "Biology" },
+      { key: "length", label: "Length", section: "Biology" },
+      { key: "hair_color", label: "Hair Color", section: "Appearance" },
+      { key: "eye_color", label: "Eye Color", section: "Appearance" },
+      { key: "status", label: "Status", section: "Appearance" },
+    ],
+  },
+  {
+    key: "social",
+    label: "Social",
+    fields: [
+      {
+        key: "country_of_residence",
+        label: "Country of Residence",
+        section: "Base",
+      },
+      {
+        key: "base_of_operations",
+        label: "Base of Operations",
+        section: "Base",
+      },
+      {
+        key: "occupations",
+        label: "Occupation(s)",
+        section: "Roles and Ratings",
+        multiple: true,
+      },
+      {
+        key: "classes",
+        label: "Class(s)",
+        section: "Roles and Ratings",
+        multiple: true,
+      },
+      { key: "rank", label: "Rank", section: "Roles and Ratings" },
+      {
+        key: "danger_ratings",
+        label: "Danger Rating(s)",
+        section: "Roles and Ratings",
+        multiple: true,
+      },
+      {
+        key: "adventurer_rank",
+        label: "Adventurer Rank",
+        section: "Roles and Ratings",
+      },
+      {
+        key: "affiliations",
+        label: "Affiliation(s)",
+        section: "Affiliations",
+        multiple: true,
+      },
+      {
+        key: "former_affiliations",
+        label: "Former Affiliation(s)",
+        section: "Affiliations",
+        multiple: true,
+      },
+    ],
+  },
+  {
+    key: "debut",
+    label: "Debut",
+    fields: [
+      { key: "web_novel", label: "Web Novel", section: "Media" },
+      { key: "light_novel", label: "Light Novel", section: "Media" },
+      { key: "manga", label: "Manga", section: "Media" },
+      { key: "anime", label: "Anime", section: "Media" },
+    ],
+  },
+];
+
+function CharacterDataSections({
+  data,
+  editing,
+  onChange,
+}: {
+  data: CharacterData;
+  editing: boolean;
+  onChange: (data: CharacterData) => void;
+}) {
+  const populated = (value: unknown) =>
+    Array.isArray(value) ? value.length > 0 : Boolean(value);
+
+  return (
+    <div className="space-y-4">
+      {designFields.map((group) => {
+        const values = data[group.key] ?? {};
+        const hasValues = group.fields.some(({ key }) =>
+          populated((values as Record<string, unknown>)[key]),
+        );
+        if (!editing && !hasValues) return null;
+        return (
+          <details
+            key={group.key}
+            open={editing || undefined}
+            className={`${cardClassName} group space-y-4`}>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500 [&::-webkit-details-marker]:hidden">
+              {group.label}
+              <ChevronDown
+                aria-hidden="true"
+                size={16}
+                strokeWidth={1.8}
+                className="text-stone-400 transition-transform group-open:rotate-180"
+              />
+            </summary>
+            <div className="space-y-3">
+              {Array.from(
+                new Set(group.fields.map((field) => field.section)),
+              ).map((section) => {
+                const sectionFields = group.fields.filter(
+                  (field) => field.section === section,
+                );
+                return (
+                  <div
+                    key={section}
+                    className="rounded-2xl bg-stone-50/70 p-3 ring-1 ring-stone-200/50">
+                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+                      {section}
+                    </p>
+                    <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2">
+                      {sectionFields.map((field) => {
+                        const raw = (values as Record<string, unknown>)[
+                          field.key
+                        ];
+                        const value = Array.isArray(raw)
+                          ? (editing ? raw : raw.filter(Boolean)).join(", ")
+                          : String(raw ?? "");
+                        if (!editing && !value) return null;
+                        return (
+                          <Fragment key={field.key}>
+                            <div
+                              className={
+                                field.multiple
+                                  ? "min-w-0 sm:col-span-2"
+                                  : "min-w-0"
+                              }>
+                              <p className="text-[11px] font-medium text-stone-500">
+                                {field.label}
+                              </p>
+                              {editing ? (
+                                <input
+                                  value={value}
+                                  {...(!field.multiple
+                                    ? { maxLength: 100 }
+                                    : {})}
+                                  onKeyDown={(event) => {
+                                    if (
+                                      !field.multiple ||
+                                      event.key !== " " ||
+                                      event.nativeEvent.isComposing
+                                    )
+                                      return;
+                                    const input = event.currentTarget;
+                                    const start =
+                                      input.selectionStart ??
+                                      input.value.length;
+                                    const end = input.selectionEnd ?? start;
+                                    const before = input.value.slice(0, start);
+                                    const after = input.value.slice(end);
+                                    if (
+                                      !before.trim() ||
+                                      before.trimEnd().endsWith(",")
+                                    )
+                                      return;
+                                    event.preventDefault();
+                                    const next = `${before.trimEnd()}, ${after.trimStart()}`;
+                                    onChange({
+                                      ...data,
+                                      [group.key]: {
+                                        ...values,
+                                        [field.key]: next
+                                          .split(",")
+                                          .map((item) => item.trim()),
+                                      },
+                                    });
+                                    const cursor = before.trimEnd().length + 2;
+                                    requestAnimationFrame(() =>
+                                      input.setSelectionRange(cursor, cursor),
+                                    );
+                                  }}
+                                  onChange={(event) => {
+                                    const nextValue = field.multiple
+                                      ? event.target.value
+                                          .split(",")
+                                          .map((item) => item.trim())
+                                      : event.target.value;
+                                    onChange({
+                                      ...data,
+                                      [group.key]: {
+                                        ...values,
+                                        [field.key]: nextValue,
+                                      },
+                                    });
+                                  }}
+                                  className={`${inputClassName} mt-1 text-sm`}
+                                />
+                              ) : group.key === "debut" ? (
+                                <span className="mt-2 inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700 ring-1 ring-stone-200/80">
+                                  {value}
+                                </span>
+                              ) : field.multiple && Array.isArray(raw) ? (
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {raw.filter(Boolean).map((item) => (
+                                    <span
+                                      key={item}
+                                      className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-stone-700 ring-1 ring-stone-200/80">
+                                      {item}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : field.key === "status" ? (
+                                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                                  <span
+                                    aria-hidden="true"
+                                    className="h-1.5 w-1.5 rounded-full bg-emerald-400"
+                                  />
+                                  {value}
+                                </span>
+                              ) : (
+                                <p className="mt-1 text-[15px] leading-6 text-stone-800">
+                                  {value}
+                                </p>
+                              )}
+                            </div>
+                          </Fragment>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+        );
+      })}
     </div>
   );
 }

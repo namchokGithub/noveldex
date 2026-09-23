@@ -9,7 +9,7 @@ Status legend: `[x]` done this session · `[ ]` open, prioritized for a future s
 ## Baseline facts (apply to the whole app)
 
 - **No `onSnapshot` anywhere** (`grep -rn onSnapshot app components libs` → 0 hits). The app uses `firebase/firestore/lite`, which doesn't even expose realtime listeners. There is nothing to trim on that axis, and nothing should be added — realtime behavior isn't part of the current design (guest users only read).
-- **Firestore-level pagination:** `getTagsPage` (`libs/firebase/tags.ts:42`) and `getVolumesPage` (`libs/firebase/volumes.ts`) use bounded cursor queries. The Character list remains an in-memory pagination concern (H6).
+- **Firestore-level pagination:** `getTagsPage` (`libs/firebase/tags.ts:42`), `getVolumesPage` (`libs/firebase/volumes.ts`), and the normal (non-prefix-search) `getCharactersPage` path use bounded cursor queries. Character prefix search is intentionally handled separately in H6 because it reads all prefix matches before client-side sorting and slicing.
 - **Firebase Lite 11.10 aggregation constraint:** the installed public `firebase/firestore/lite` entry point does **not** export `getCountFromServer` or `getAggregateFromServer`. This was verified by TypeScript compilation. Current Firebase documentation describes aggregation APIs for newer SDK surfaces, but this audit must plan against the pinned `firebase ^11.10.0` runtime. Do not add full-SDK aggregation imports to work around this: Cloudflare Workers depend on Lite modules.
 - **Global search is one eager client-side MiniSearch index** (`libs/search/SearchIndexProvider.tsx`, mounted once in `app/layout.tsx`), built by `loadSearchDataset()` (`libs/search/loader.ts`), which walks **every novel → every volume/chapter/note/character/entity/event/adaptation** on first page load. This is the intentional Phase 3 architecture (`docs/ai/AGENTS.md`: "one derived client-side MiniSearch index... do not add Firestore full-text queries, an HTTP search endpoint, or a second authoritative datastore"), so it is **not** being redesigned here, but it is the single largest read-cost driver in the app and is called out explicitly below.
 - Tests were run against the local Firestore/Auth emulator (`corepack pnpm run emulators`) before and after this session's edits. Baseline had 4 pre-existing failures in `libs/firebase/chapters.test.ts` (mention auto-link / legacy-notes assertions) unrelated to Firestore reads; they fail identically with and without this session's changes, so they're not a regression. Everything else (164 tests) passes; `tsc --noEmit` and `pnpm lint` are clean.
@@ -71,17 +71,26 @@ This record is intentionally pending: no production maintenance window, Firebase
 
 ### H6 — `[x]` Character list now reads a bounded cursor page
 
-**Fix:** `getCharactersPage()` orders the direct Character subcollection by
-`name` plus document ID and reads at most `per_page` documents using opaque
-`after`/`before` cursors. It reads `novels/{novelId}.character_count` for the
-total and each page item carries its maintained `chapter_count`; it no longer
-scans the novel's Chapters collection. Character and Chapter mutations maintain
-the counters, and `backfill:denormalized-counters` reconciles legacy data.
+**Fix:** The normal `getCharactersPage()` path orders the direct Character
+subcollection by the selected name, update-time, or role sort plus document ID
+and reads at most `per_page` documents using opaque `after`/`before` cursors.
+It reads `novels/{novelId}.character_count` for the unfiltered total and each
+page item carries its maintained `chapter_count`; it no longer scans the
+novel's Chapters collection. Character and Chapter mutations maintain the
+counters, and `backfill:denormalized-counters` reconciles legacy data.
+
+**Prefix search trade-off:** `name_search` is a trimmed lowercase derived field.
+The prefix query reads all matching Character documents before client-side sort
+and cursor slicing, because users can choose name, updated-at, or role ordering.
+Deploy the matching Character indexes and run
+`backfill:character-name-search` before enabling the feature against legacy
+data.
 
 **Impact:** a normal directory request is one Novel document plus at most
-`per_page` Character documents, with no Chapter collection read. Production
-backfill/apply/verify remains an explicit pending operator action; this code
-change does not write production data.
+`per_page` Character documents, with no Chapter collection read. A prefix
+search reads one query result per matching Character, but still performs no
+Chapter collection read. Production backfill/apply/verify remains an explicit
+pending operator action; this code change does not write production data.
 
 ### H7 — `[x]` Defer the global search index until the command palette opens
 
@@ -101,12 +110,13 @@ change does not write production data.
 **Fix:** Done: the Explore card displays static navigation help; `/novels/:id` no longer reads the characters collection.
 **Impact:** This concern is closed independently of the Volume counter strategy; no character counter is needed for the Novel detail page.
 
-### M2 — `[ ]` `getEventsForCharacter` / `getEventsForEntity` read the full events collection
+### M2 — `[ ]` `getEventsForCharacter` reads the full events collection
 
-**File:** `libs/firebase/events.ts:296-322`, used by `characters/[characterId]/page.tsx` and `entities/[entityId]/page.tsx`
-**Current:** both read every event in the novel, then filter in memory via `eventsForCharacter`/`eventsForEntity`.
+**File:** `libs/firebase/events.ts:296-322`, used by `characters/[characterId]/page.tsx`
+**Current:** the Character detail flow reads every Event in the Novel, then filters in memory via `eventsForCharacter`.
 **Investigated fix (rejected — see below):** an `array-contains` query on `character_ids` looked promising since chapters already use that pattern (`characterChapters` in `characters.ts`), but `eventsForCharacter` matches on **`character_ids` OR a resolved `[[mention]]` in `description_references`** (`libs/characterCrossReferences.ts:26-34`). A server-side `array-contains` query would silently drop events that only match via the description-mention path — a real behavior change, not just an optimization. Not safe without also maintaining a denormalized "resolved character ids" array that includes mention-derived ids, which is a schema change.
-**Status:** left as-is; events collections are typically small (curated timeline), so priority is Medium rather than High. If this becomes expensive, the right fix is denormalizing resolved mention ids into `character_ids` at write time (schema change, needs its own ADR), not a query-shape change.
+**Entity status:** closed separately. Entity detail now reads the cursor-bounded `entityReferences` inverse index lazily, including Event-description entries, rather than calling `getEventsForEntity` or scanning the Events collection.
+**Status:** Character flow is left as-is; events collections are typically small (curated timeline), so priority is Medium rather than High. If this becomes expensive, the right fix is denormalizing resolved mention ids into `character_ids` at write time (schema change, needs its own ADR), not a query-shape change.
 
 ### M3 — `[ ]` `getCharacterRoles()` re-reads a tiny global collection on every character-related page
 
@@ -120,11 +130,12 @@ change does not write production data.
 **Current:** every request re-reads the full novels collection. Since Firestore SDK calls aren't tracked by Next's `fetch` cache, this is already effectively dynamic on every other page too (the `force-dynamic` export here doesn't change anything relative to pages without it) — so there is no existing caching layer to lean on anywhere in the app.
 **Proposed:** wrap `getNovels()` (and similar rarely-changing reads) in `unstable_cache` with a short revalidate window (e.g. 30–60s). Same idea as M3, broader scope. Needs a decision on acceptable staleness since guest and authenticated users share the same public read path (ADR-012).
 
-### M5 — `[ ]` Adaptation lookups on character/entity detail pages are novel-wide
+### M5 — `[ ]` Adaptation lookups on Character detail pages are novel-wide
 
-**Pages:** `characters/[characterId]/page.tsx`, `entities/[entityId]/page.tsx`
-**Current:** both call `getAdaptationsForNovel(id)` (a `collectionGroup("adaptations")` scan of the whole novel) then filter client-side to the one character/entity via `adaptationsForCharacter`/`adaptationsForEntity`.
-**Assessment:** same shape as M2, but adaptation collections are usually the smallest in the data model (episodes/movies, not chapters). Documented for completeness; not worth the risk/effort unless a novel has an unusually large adaptation list.
+**Page:** `characters/[characterId]/page.tsx`
+**Current:** Character detail calls `getAdaptationsForNovel(id)` (a `collectionGroup("adaptations")` scan of the whole Novel), then filters client-side via `adaptationsForCharacter`.
+**Entity status:** closed separately. Entity detail does not call `getAdaptationsForNovel`; its lazy index panel reads direct Adaptation-note references and fetches Chapter-linked Adaptations in bounded `array-contains-any` queries, chunked to at most 30 Chapter IDs.
+**Assessment:** the remaining Character path has the same shape as M2, but Adaptation collections are usually the smallest in the data model (episodes/movies, not chapters). Documented for completeness; not worth the risk/effort unless a Novel has an unusually large Adaptation list.
 
 ### M6 — `[x]` Cross-chapter entity-lookup memoization (follow-up to H4)
 
@@ -157,14 +168,14 @@ change does not write production data.
 | H3  | Volume detail: share one`getTags()` read with `getChaptersByVolume` | High     | ✅ Done                                          |
 | H4  | Memoize entity/character lookups inside`firestoreEntityLookup()`    | High     | ✅ Done                                          |
 | H5  | Volume list: bounded cursor page from stored counters               | High     | ✅ Done                                          |
-| H6  | Character list: choose a separate maintained counter strategy       | High     | ⬜ Open                                          |
+| H6  | Character list: bounded cursor page and maintained counters         | High     | ✅ Done                                          |
 | H7  | Search index: lazy-start instead of eager root-layout load          | High     | ✅ Done                                          |
 | M1  | Novel page: removed tracked-character count read                    | Medium   | ✅ Done                                          |
-| M2  | `getEventsForCharacter`/`getEventsForEntity` full-collection reads  | Medium   | ⬜ Open (fix requires schema change — see notes) |
+| M2  | `getEventsForCharacter` full-collection read                        | Medium   | ⬜ Open (fix requires schema change — see notes) |
 | M3  | Cache`getCharacterRoles()` (tiny, global, rarely changes)           | Medium   | ⬜ Open                                          |
 | M4  | Time-based cache for`getNovels()` and similar reference reads       | Medium   | ⬜ Open                                          |
-| M5  | `getAdaptationsForNovel` on character/entity detail pages           | Medium   | ⬜ Open                                          |
+| M5  | `getAdaptationsForNovel` on Character detail                        | Medium   | ⬜ Open                                          |
 | M6  | Hoist entity lookup across chapters (follow-up to H4)               | Medium   | ✅ Done                                          |
 | M7  | `validateChapterIds` avoids chapter hydration for membership checks | Medium   | ✅ Done                                          |
 
-No schema changes were made or proposed as required. All "Done" items preserve existing ordering, filters, permissions, and output shape — verified with `tsc --noEmit`, `pnpm lint`, and the full test suite against the local emulator (same 4 pre-existing, unrelated failures before and after).
+The Entity-detail optimization adds the derived `entityReferences` collection and its required Firestore index; source records remain authoritative and the Admin reconciliation repairs drift. All other "Done" items preserve existing ordering, filters, permissions, and output shape — verified with `tsc --noEmit`, `pnpm lint`, and the full test suite against the local emulator (same 4 pre-existing, unrelated failures before and after).

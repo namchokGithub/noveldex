@@ -18,6 +18,7 @@ import {
   encodeCharacterCursor,
   resolveCharacterCursorSearch,
   updateCharacter,
+  updateCharacterGallery,
 } from "./characters";
 import { applyCharacterChapterCountDeltas } from "./counters";
 import {
@@ -122,6 +123,7 @@ describe("characters", () => {
     ] as const) {
       await setDoc(doc(db, "novels", "novel-1", "characters", id), {
         name,
+        name_search: name.toLowerCase(),
         aliases: [],
         role_id: "role-minor",
         role: "minor",
@@ -164,13 +166,104 @@ describe("characters", () => {
     expect(first.pagination.total_items).toBe(6);
   });
 
+  it("finds a case-insensitive name prefix and sorts its matches", async () => {
+    await createCharacter("novel-1", {
+      name: "Rimuru Tempest",
+      role: "minor",
+      description: "",
+      aliases: [],
+    });
+    await createCharacter("novel-1", {
+      name: "Rimuru Mikami",
+      role: "protagonist",
+      description: "",
+      aliases: [],
+    });
+    await createCharacter("novel-1", {
+      name: "Shizu",
+      role: "minor",
+      description: "",
+      aliases: [],
+    });
+
+    const page = await getCharactersPage("novel-1", {
+      page: 1,
+      perPage: 5,
+      search: "rim",
+      sort: "name",
+      direction: "asc",
+    });
+
+    expect(page.items.map((character) => character.name)).toEqual([
+      "Rimuru Mikami",
+      "Rimuru Tempest",
+    ]);
+    expect(page.pagination.total_items).toBe(2);
+  });
+
+  it("sorts characters by updated time and role in either direction", async () => {
+    const older = Timestamp.fromMillis(1_000);
+    const newer = Timestamp.fromMillis(2_000);
+    await setDoc(
+      doc(db, "novels", "novel-1"),
+      { character_count: 2 },
+      { merge: true },
+    );
+    await setDoc(doc(db, "novels", "novel-1", "characters", "alice"), {
+      name: "Alice",
+      name_search: "alice",
+      aliases: [],
+      role_id: "role-minor",
+      role: "minor",
+      role_name: "Minor",
+      profile_image_url: null,
+      description: "",
+      created_at: older,
+      updated_at: older,
+    });
+    await setDoc(doc(db, "novels", "novel-1", "characters", "rimuru"), {
+      name: "Rimuru",
+      name_search: "rimuru",
+      aliases: [],
+      role_id: "role-protagonist",
+      role: "protagonist",
+      role_name: "Protagonist",
+      profile_image_url: null,
+      description: "",
+      created_at: newer,
+      updated_at: newer,
+    });
+
+    const byUpdated = await getCharactersPage("novel-1", {
+      perPage: 5,
+      sort: "updated_at",
+      direction: "desc",
+    });
+    const byRole = await getCharactersPage("novel-1", {
+      perPage: 5,
+      sort: "role",
+      direction: "desc",
+    });
+
+    expect(byUpdated.items.map((character) => character.name)).toEqual([
+      "Rimuru",
+      "Alice",
+    ]);
+    expect(byRole.items.map((character) => character.name)).toEqual([
+      "Rimuru",
+      "Alice",
+    ]);
+  });
+
   it("rejects malformed character cursors and preserves the cursor contract", () => {
-    const cursor = { name: "Alice", id: "character-1" };
+    const cursor = { values: ["alice"], id: "character-1" };
     expect(decodeCharacterCursor(encodeCharacterCursor(cursor))).toEqual(
       cursor,
     );
-    expect(decodeCharacterCursor('{"name":1,"id":"character-1"}')).toBeNull();
-    expect(decodeCharacterCursor('{"name":"Alice","id":"a/b"}')).toBeNull();
+    expect(
+      decodeCharacterCursor('{"values":[1],"id":"character-1"}'),
+    ).toBeNull();
+    expect(decodeCharacterCursor('{"values":["alice"],"id":"a/b"}')).toBeNull();
     expect(resolveCharacterCursorSearch({ after: "invalid" })).toEqual({
       after: null,
       before: null,
@@ -247,6 +340,109 @@ describe("characters", () => {
       appearance: "Short silver hair",
       personality: "Thoughtful but bold",
       trivia: "Can read three scripts",
+    });
+  });
+
+  it("persists optional character design data without duplicating core fields", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Alice",
+      role: "minor",
+      description: "",
+      aliases: ["Al"],
+      data: {
+        biographical_and_biological: {
+          name_thai: "อลิซ",
+          blessings: ["Moon blessing", "Forest blessing"],
+          species: "Human",
+        },
+        social: {
+          occupations: ["Scholar", "Guide"],
+          affiliations: ["North Guild"],
+        },
+        debut: { anime: "Episode 4" },
+      },
+    });
+
+    expect(character.data).toEqual({
+      biographical_and_biological: {
+        name_thai: "อลิซ",
+        blessings: ["Moon blessing", "Forest blessing"],
+        species: "Human",
+      },
+      social: {
+        occupations: ["Scholar", "Guide"],
+        affiliations: ["North Guild"],
+      },
+      debut: { anime: "Episode 4" },
+    });
+    expect(character.name).toBe("Alice");
+    expect(character.aliases).toEqual(["Al"]);
+
+    const updated = await updateCharacter("novel-1", character.id, {
+      data: {
+        ...character.data,
+        social: { ...character.data?.social, rank: "A" },
+      },
+    });
+    expect(updated.data?.social?.rank).toBe("A");
+  });
+
+  it("persists an ordered character gallery with image metadata", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Alice",
+      role: "minor",
+      description: "",
+      aliases: [],
+      gallery: [
+        {
+          id: "official-1",
+          image_url: "https://images.example.com/alice.jpg",
+          title: "Official portrait",
+          category: "official",
+          sort_order: 1,
+        },
+        {
+          id: "anime-1",
+          image_url: "https://images.example.com/alice.gif",
+          caption: "Anime appearance",
+          source_url: "https://example.com/source",
+          category: "anime",
+          sort_order: 2,
+        },
+      ],
+    });
+
+    expect(character.gallery?.map((image) => image.id)).toEqual([
+      "official-1",
+      "anime-1",
+    ]);
+    expect(character.gallery?.[1]).toMatchObject({
+      image_url: "https://images.example.com/alice.gif",
+      category: "anime",
+      sort_order: 2,
+    });
+  });
+
+  it("updates only the gallery field without hydrating character chapters", async () => {
+    const character = await createCharacter("novel-1", {
+      name: "Alice",
+      role: "minor",
+      description: "",
+      aliases: [],
+    });
+    const gallery = [
+      {
+        id: "portrait-1",
+        image_url: "https://images.example.com/alice.jpg",
+        sort_order: 1,
+      },
+    ];
+
+    await expect(
+      updateCharacterGallery("novel-1", character.id, gallery),
+    ).resolves.toBeUndefined();
+    await expect(getCharacter("novel-1", character.id)).resolves.toMatchObject({
+      gallery,
     });
   });
 
@@ -403,7 +599,6 @@ describe("characters", () => {
 
   it("getCharacters paginates with a summary", async () => {
     for (let i = 0; i < 3; i += 1) {
-
       await createCharacter("novel-1", {
         name: `Char ${i}`,
         role: "minor",
