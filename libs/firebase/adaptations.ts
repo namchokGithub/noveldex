@@ -597,9 +597,21 @@ export async function reorderAdaptations(
   for (let index = 0; index < entries.length; index += BATCH_CHUNK_SIZE) {
     const batch = writeBatch(db);
     entries.slice(index, index + BATCH_CHUNK_SIZE).forEach((entry) => {
+      const adaptation = existing.find((item) => item.id === entry.id);
+      if (!adaptation) return;
       batch.update(
         adaptationRef(novelId, volumeId, entry.id),
         withUpdateTimestamp({ sort_order: entry.sort_order }),
+      );
+      referencesForAdaptationNotes({
+        sourceId: entry.id,
+        volumeId,
+        title: adaptation.title,
+        sortOrder: entry.sort_order,
+        updatedAt: new Date().toISOString(),
+        notes: adaptation.notes,
+      }).forEach(({ id, ...data }) =>
+        batch.set(doc(db, "novels", novelId, "entityReferences", id), data),
       );
     });
     await batch.commit();

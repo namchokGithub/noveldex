@@ -935,12 +935,28 @@ export async function reorderChapters(
   volumeId: string,
   entries: ChapterOrderEntry[],
 ): Promise<void> {
+  const chapterDocs = await getDocs(chaptersCol(novelId, volumeId));
+  const chapterById = new Map(
+    chapterDocs.docs.map((item) => [item.id, item.data() as ChapterDoc]),
+  );
   const batch = writeBatch(db);
   entries.forEach((entry) => {
+    const chapter = chapterById.get(entry.id);
+    if (!chapter) throw new Error("chapter does not belong to this volume");
     batch.update(chapterRef(novelId, volumeId, entry.id), {
       sort_order: entry.sort_order,
       updated_at: serverTimestamp(),
     });
+    referencesForChapterNotes({
+      sourceId: entry.id,
+      volumeId,
+      title: chapter.title_en ?? chapter.title ?? "",
+      sortOrder: entry.sort_order,
+      updatedAt: new Date().toISOString(),
+      notes: chapter.notes ?? [],
+    }).forEach(({ id, ...data }) =>
+      batch.set(doc(db, "novels", novelId, "entityReferences", id), data),
+    );
   });
   await batch.commit();
 }
