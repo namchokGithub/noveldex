@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Adaptation } from "@/app/types";
 import {
   cardClassName,
@@ -25,9 +26,12 @@ function AdaptationImage({ adaptation }: { adaptation: Adaptation }) {
         onClick={() => setOpen(true)}
         className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
         aria-label={t("adaptations.viewImage", { title: adaptation.title })}>
-        <img
+        <Image
           src={adaptation.source_img_url}
           alt=""
+          width={36}
+          height={48}
+          sizes="36px"
           referrerPolicy="no-referrer"
           className="h-12 w-9 rounded-lg object-contain"
         />
@@ -48,11 +52,15 @@ function AdaptationImage({ adaptation }: { adaptation: Adaptation }) {
             {t("common.close")}
           </button>
         </div>
-        <img
+        <Image
           src={adaptation.source_img_url}
           alt={adaptation.title}
+          width={1600}
+          height={1200}
+          sizes="(max-width: 1024px) 100vw, 896px"
           referrerPolicy="no-referrer"
-          className="max-h-[70dvh] w-full rounded-2xl object-contain"
+          className="h-auto max-h-[70dvh] w-full rounded-2xl object-contain"
+          unoptimized
         />
       </ModalDialog>
     </>
